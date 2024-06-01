@@ -44,6 +44,7 @@ for V in                                    3.8; do
     ./generate.sh
 
     # Tag version
+    git add --all
     git commit --all -m "Generate stubs for Ninja Forms ${LATEST}"
     git tag "v${LATEST}"
 done
