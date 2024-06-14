@@ -1049,6 +1049,10 @@ namespace {
         /**
          * @var string
          */
+        protected $_group = '';
+        /**
+         * @var string
+         */
         protected $_image = '';
         /**
          * @var array
@@ -1149,6 +1153,16 @@ namespace {
          * @return string
          */
         public function get_section()
+        {
+        }
+        /**
+         * Get Group
+         *
+         * Returns the drawer group for an action.
+         *
+         * @return string
+         */
+        public function get_group()
         {
         }
         /**
@@ -3210,6 +3224,10 @@ namespace {
          */
         protected $_priority = '10';
         /**
+         * @var string
+         */
+        protected $_group = 'core';
+        /**
          * Constructor
          */
         public function __construct()
@@ -3328,6 +3346,10 @@ namespace {
          */
         protected $_priority = 10;
         /**
+         * @var string
+         */
+        protected $_group = 'core';
+        /**
          * Constructor
          */
         public function __construct()
@@ -3364,6 +3386,10 @@ namespace {
          * @var int
          */
         protected $_priority = 10;
+        /**
+         * @var string
+         */
+        protected $_group = 'core';
         /**
          * Constructor
          */
@@ -3411,6 +3437,10 @@ namespace {
          * @var int
          */
         protected $_priority = 10;
+        /**
+         * @var string
+         */
+        protected $_group = 'core';
         /**
          * Constructor
          */
@@ -3504,6 +3534,10 @@ namespace {
          */
         protected $_priority = 10;
         /**
+         * @var string
+         */
+        protected $_group = 'core';
+        /**
          * Constructor
          */
         public function __construct()
@@ -3550,6 +3584,10 @@ namespace {
          * @var int
          */
         protected $_priority = '10';
+        /**
+         * @var string
+         */
+        protected $_group = 'core';
         /**
          * @var string
          */
@@ -3712,6 +3750,10 @@ namespace {
          */
         protected $_priority = 20;
         /**
+         * @var string
+         */
+        protected $_group = 'core';
+        /**
          * Constructor
          */
         public function __construct()
@@ -3748,6 +3790,10 @@ namespace {
          * @var int
          */
         protected $_priority = '-1';
+        /**
+         * @var string
+         */
+        protected $_group = 'core';
         /**
          * Constructor
          */
@@ -3850,6 +3896,10 @@ namespace {
          * @var int
          */
         protected $_priority = 10;
+        /**
+         * @var string
+         */
+        protected $_group = 'core';
         /**
          * Constructor
          */
@@ -7663,6 +7713,30 @@ namespace {
         {
         }
         public static function localize_preview($form_id)
+        {
+        }
+        /**
+         * Set root element that will insert the WP element
+         * 
+         * @since 3.7.4
+         * 
+         * @param string Form ID
+         * 
+         * @return void
+         */
+        public static function localize_iframe($form_id)
+        {
+        }
+        /**
+         * Enqueue scripts and localize data needed to insert the iFrame
+         * 
+         * @since 3.7.4
+         * 
+         * @param string Form ID
+         * 
+         * @return void
+         */
+        public static function enqueue_iframe_scripts($form_id)
         {
         }
         protected static function ensureProductRelatedCostPreviewFormats(array $field, string $currencySymbol) : array
@@ -13836,6 +13910,18 @@ namespace {
         protected function referer_url()
         {
         }
+        protected function mergetag_random($length = 5)
+        {
+        }
+        protected function mergetag_year()
+        {
+        }
+        protected function mergetag_month()
+        {
+        }
+        protected function mergetag_day()
+        {
+        }
     }
     /**
      * Class NF_MergeTags_System
@@ -15384,7 +15470,7 @@ namespace {
         /**
          * @since 3.0
          */
-        const VERSION = '3.8.3';
+        const VERSION = '3.8.4';
         /**
          * @since 3.4.0
          */
