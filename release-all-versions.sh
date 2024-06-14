@@ -62,6 +62,7 @@ while IFS= read -r VERSION; do
     # Clean up downloaded files to prevent conflicts
     echo "Cleaning up source/ directory ..."
     rm -rf source/*
+    
 done < "$OUTPUT_FILE"
 
 echo "All versions processed."
