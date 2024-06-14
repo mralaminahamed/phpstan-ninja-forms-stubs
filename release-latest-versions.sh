@@ -32,10 +32,6 @@ for V in "${VERSIONS[@]}"; do
     # Clean up source/ directory.
     git status --ignored --short -- source/ | sed -n -e 's#^!! ##p' | xargs --no-run-if-empty rm -rf
 
-    # Update composer.json with the new version.
-    printf -v SED_EXP 's#\\("ninja-forms/ninja-forms"\\): "[0-9]\\+\\.[0-9]\\+\\.[0-9]\\+"#\\1: "%s"#' "${LATEST}"
-    sed -i -e "$SED_EXP" source/composer.json
-
     # Download and unzip the new version.
     wget -q -P source/ "https://downloads.wordpress.org/plugin/ninja-forms.${LATEST}.zip"
     unzip -q -d source/ source/ninja-forms.${LATEST}.zip
