@@ -4482,6 +4482,12 @@ class NF_THREE_Submenu
     public function settings_upgrade_button_display()
     {
     }
+    public function optin()
+    {
+    }
+    public function optout()
+    {
+    }
 }
 abstract class NF_Abstracts_Controller
 {
@@ -4524,6 +4530,43 @@ abstract class NF_Abstracts_Controller
     {
     }
 }
+class NF_AJAX_Controllers_DeleteAllData extends \NF_Abstracts_Controller
+{
+    public function __construct()
+    {
+    }
+    public function delete_all_data()
+    {
+    }
+    private function prepare_in($sql, $vals)
+    {
+    }
+}
+class NF_AJAX_Controllers_DispatchPoints
+{
+    /*
+     * Constructor method
+     */
+    public function __construct()
+    {
+    }
+    /*
+     * Function called when the undo manager is used in the builder.
+     * 
+     * @since 3.2
+     */
+    public function undo_click()
+    {
+    }
+    /*
+     * Function to startup our form data telemtry.
+     * 
+     * @since 3.2
+     */
+    public function form_telemetry()
+    {
+    }
+}
 class NF_AJAX_Controllers_Form extends \NF_Abstracts_Controller
 {
     private $publish_processing;
@@ -4537,6 +4580,14 @@ class NF_AJAX_Controllers_Form extends \NF_Abstracts_Controller
     {
     }
     public function delete()
+    {
+    }
+    /**
+     * Let's generate a unique nonce for each form render so that we don't get
+     * caught with an expiring nonce accidentally and fail to allow a submission
+     * @since 3.2
+     */
+    public function get_new_nonce()
     {
     }
 }
@@ -4567,6 +4618,15 @@ class NF_AJAX_Controllers_FormEndpoints extends \NF_Abstracts_Controller
     {
     }
     public function duplicate()
+    {
+    }
+}
+class NF_AJAX_Controllers_JSError
+{
+    public function __construct()
+    {
+    }
+    public function log_error()
     {
     }
 }
@@ -4641,6 +4701,12 @@ class NF_AJAX_Controllers_Submission extends \NF_Abstracts_Controller
     {
     }
     protected function is_preview()
+    {
+    }
+    /*
+     * Overwrite method for parent class.
+     */
+    protected function _respond($data = array())
     {
     }
 }
@@ -5062,6 +5128,24 @@ abstract class NF_AJAX_REST_Controller extends \NF_Abstracts_Controller
     {
     }
 }
+class NF_AJAX_REST_BatchProcess extends \NF_AJAX_REST_Controller
+{
+    protected $action = 'nf_batch_process';
+    public function __construct()
+    {
+    }
+    /**
+     * POST /forms/<id>/
+     * @param array $request_data [ int $clone_id ]
+     * @return array $data [ int $new_form_id ]
+     */
+    public function post($request_data)
+    {
+    }
+    protected function get_request_data()
+    {
+    }
+}
 class NF_AJAX_REST_Forms extends \NF_AJAX_REST_Controller
 {
     protected $action = 'nf_forms';
@@ -5108,6 +5192,16 @@ class NF_AJAX_REST_NewFormTemplates extends \NF_AJAX_REST_Controller
      * @return array [ $new_form_templates ]
      */
     public function get()
+    {
+    }
+    /**
+     * Comparison function used to sort templates alphabetically by title
+     * @since  3.2.22
+     * @param  array   $a item being compared
+     * @param  array   $b item being compared
+     * @return int
+     */
+    private function cmp($a, $b)
     {
     }
 }
@@ -5329,6 +5423,36 @@ abstract class NF_Abstracts_ActionNewsletter extends \NF_Abstracts_Action
     {
     }
     private function cache_lists($lists)
+    {
+    }
+}
+/**
+ * Class NF_Abstracts_Batch_Process
+ */
+abstract class NF_Abstracts_BatchProcess
+{
+    /**
+     * Constructor
+     */
+    public function __construct($data = array())
+    {
+    }
+    /**
+     * Function to loop over the batch.
+     */
+    public function process()
+    {
+    }
+    /**
+     * Function to run any setup steps necessary to begin processing.
+     */
+    public function startup()
+    {
+    }
+    /**
+     * Function to cleanup any lingering temporary elements of a batch process after completion.
+     */
+    public function cleanup()
     {
     }
 }
@@ -5634,6 +5758,9 @@ abstract class NF_Abstracts_List extends \NF_Abstracts_Field
     public function admin_form_element($id, $value)
     {
     }
+    /*
+     * Appropriate output for a column cell in submissions list.
+     */
     public function custom_columns($value, $field)
     {
     }
@@ -6395,8 +6522,11 @@ class NF_Abstracts_ModelFactory
      * A wrapper for the Form Model import method.
      *
      * @param $import
+     * @param $decode_utf8
+     * @param $id
+     * @param $is_conversion
      */
-    public function import_form($import, $id = \FALSE, $is_conversion = \FALSE)
+    public function import_form($import, $decode_utf8 = \TRUE, $id = \FALSE, $is_conversion = \FALSE)
     {
     }
     /*
@@ -6692,7 +6822,7 @@ class NF_Fields_Textbox extends \NF_Abstracts_Input
     protected $_type = 'textbox';
     protected $_templates = 'textbox';
     protected $_test_value = 'Lorem ipsum';
-    protected $_settings = array('disable_browser_autocomplete', 'mask', 'custom_mask');
+    protected $_settings = array('disable_browser_autocomplete', 'mask', 'custom_mask', 'custom_name_attribute');
     public function __construct()
     {
     }
@@ -6710,6 +6840,77 @@ abstract class NF_Abstracts_UserInfo extends \NF_Fields_Textbox
     {
     }
     public abstract function filter_default_value($default_value, $field_class, $settings);
+}
+/**
+ * Class NF_Actions_Akismet
+ */
+final class NF_Actions_Akismet extends \NF_Abstracts_Action
+{
+    /**
+     * @var string
+     */
+    protected $_name = 'akismet';
+    /**
+     * @var array
+     */
+    protected $_tags = array('spam', 'filtering', 'akismet');
+    /**
+     * @var string
+     */
+    protected $_timing = 'normal';
+    /**
+     * @var int
+     */
+    protected $_priority = '10';
+    /**
+     * Constructor
+     */
+    public function __construct()
+    {
+    }
+    /**
+     * Remove the action registration if Akismet functions not available.
+     *
+     * @param array $action_type_settings
+     *
+     * @return array
+     */
+    public function maybe_remove_action($action_type_settings)
+    {
+    }
+    /**
+     * Is Akismet installed and connected with a valid key?
+     *
+     * @return bool
+     */
+    protected function akismet_available()
+    {
+    }
+    /**
+     * Process the action
+     *
+     * @param array $action_settings
+     * @param int   $form_id
+     * @param array $data
+     *
+     * @return array
+     */
+    public function process($action_settings, $form_id, $data)
+    {
+    }
+    /**
+     * Verify submission
+     *
+     * @param $name
+     * @param $email
+     * @param $url
+     * @param $message
+     *
+     * @return bool
+     */
+    protected function is_submission_spam($name, $email, $url, $message)
+    {
+    }
 }
 /**
  * Class NF_Action_CollectPayment
@@ -6738,8 +6939,11 @@ final class NF_Actions_CollectPayment extends \NF_Abstracts_Action
     protected $payment_gateways = array();
     /**
      * Constructor
+     *
+     * @param string $cp_nice_name
+     * @param string $cp_name
      */
-    public function __construct()
+    public function __construct($cp_nice_name = 'Collect Payment', $cp_name = 'collectpayment')
     {
     }
     public function save($action_settings)
@@ -6823,6 +7027,16 @@ final class NF_Actions_Email extends \NF_Abstracts_Action
      * PUBLIC METHODS
      */
     public function process($action_settings, $form_id, $data)
+    {
+    }
+    /**
+     * Sanitizes email address settings
+     * @since 3.2.2
+     *
+     * @param  array $action_settings
+     * @return array
+     */
+    protected function sanitize_address_fields($action_settings)
     {
     }
     protected function check_for_errors($action_settings)
@@ -7130,6 +7344,9 @@ class NF_Admin_CPT_Submission
     function custom_post_type()
     {
     }
+    public function nf_trash_sub($post_id)
+    {
+    }
     public function enqueue_scripts()
     {
     }
@@ -7317,6 +7534,16 @@ final class NF_Admin_Menus_Forms extends \NF_Abstracts_Menu
     {
     }
     private function _localize_form_data($form_id)
+    {
+    }
+    /**
+     * Null Data Check
+     * Accepts array of settings and removes null data the array.
+     *
+     * @param $settings - a key/value pair of settings.
+     * @return array
+     */
+    private function null_data_check($settings)
     {
     }
     private function _localize_field_type_data()
@@ -7523,6 +7750,19 @@ final class NF_Admin_Menus_Submissions extends \NF_Abstracts_Submenu
     public function __construct()
     {
     }
+    /**
+     * Change Views
+     * WordPress hook that modifies the links on our submissions CPT to allow
+     * users to switch between completed and trashed submissions.
+     * @since 3.2.17
+     *
+     * @param $views The views that are associated with this CPT.
+     *      $views[ 'view' ]
+     * @return array Returns modified views to allow our users access to the trash.
+     */
+    public function change_views($views)
+    {
+    }
     public function get_page_title()
     {
     }
@@ -7530,6 +7770,12 @@ final class NF_Admin_Menus_Submissions extends \NF_Abstracts_Submenu
      * Display
      */
     public function display()
+    {
+    }
+    /**
+     * enqueue scripts here
+     */
+    public function enqueue_scripts()
     {
     }
     /**
@@ -7735,6 +7981,54 @@ class NF_Admin_Notices
     }
     // Special parameters function that is to be used in any extension of this class
     public function special_parameters($admin_notices)
+    {
+    }
+}
+/**
+ * Class NF_Abstracts_Batch_Process
+ */
+class NF_Admin_Processes_ChunkPublish extends \NF_Abstracts_BatchProcess
+{
+    //	header( 'Content-Type: application/json' );
+    private $data;
+    private $form_id;
+    private $response = array('last_request' => 'failure', 'batch_complete' => \false);
+    protected $_data = array();
+    protected $_errors = array();
+    protected $_debug = array();
+    /**
+     * Constructor
+     */
+    public function __construct($data = array())
+    {
+    }
+    /**
+     * Function to loop over the batch.
+     * 
+     * @return JSON
+     *  Str last_response = success/failure
+     *  Bool batch_complete = true/false
+     *  Int requesting = x
+     */
+    public function process()
+    {
+    }
+    /**
+     * Function to run any setup steps necessary to begin processing.
+     */
+    public function startup()
+    {
+    }
+    /**
+     * Function to cleanup any lingering temporary elements of a batch process after completion.
+     */
+    public function cleanup()
+    {
+    }
+    /*
+     * Function to remove our management option and remove any temporary chunk data.
+     */
+    public function remove_option()
     {
     }
 }
@@ -8087,6 +8381,12 @@ final class NF_Database_Models_Form extends \NF_Abstracts_Model
     public function delete()
     {
     }
+    private function delete_submissions()
+    {
+    }
+    private function prepare_in($sql, $vals)
+    {
+    }
     public static function get_next_sub_seq($form_id)
     {
     }
@@ -8176,7 +8476,7 @@ final class NF_Database_Models_Submission
     public function get_seq_num()
     {
     }
-    public function get_sub_date($format = 'm/d/Y')
+    public function get_sub_date($format)
     {
     }
     public function get_mod_date($format = 'm/d/Y')
@@ -8316,6 +8616,56 @@ final class NF_Database_PublishProcessing extends \WP_Background_Process
     }
 }
 /**
+ * Handles sending information to our api.ninjaforms.com endpoint.
+ *
+ * @since  3.2
+ */
+final class NF_Dispatcher
+{
+    private $api_url = 'http://api.ninjaforms.com/';
+    /**
+     * Returns bool true if we are opted-in or have a premium add-on.
+     * If a premium add-on is installed, then users have opted into tracked via our terms and conditions.
+     * If no premium add-ons are installed, check to see if the user has opted in or out of anonymous usage tracking.
+     *
+     * @since  version
+     * @return bool
+     */
+    public function should_we_send()
+    {
+    }
+    /**
+     * Package up our environment variables and send those to our API endpoint.
+     * 
+     * @since  3.2
+     * @return void
+     */
+    public function update_environment_vars()
+    {
+    }
+    /**
+     * Package up our form data and send it to our API endpoint.
+     * 
+     * @since 3.2
+     * @return void
+     */
+    public function form_data()
+    {
+    }
+    /**
+     * Sends a campaign slug and data to our API endpoint.
+     * Checks to ensure that the user has 1) opted into tracking or 2) they have a premium add-on installed.
+     * 
+     * @since  3.2
+     * @param  string       $slug   Campaign slug
+     * @param  array        $data   Array of data being sent. Should NOT already be a JSON string.
+     * @return void
+     */
+    public function send($slug, $data = array())
+    {
+    }
+}
+/**
  * Class NF_Display_Preview
  */
 final class NF_Display_Preview
@@ -8356,6 +8706,7 @@ final class NF_Display_Render
     protected static $form_uses_recaptcha = array();
     protected static $form_uses_datepicker = array();
     protected static $form_uses_inputmask = array();
+    protected static $form_uses_currencymask = array();
     protected static $form_uses_rte = array();
     protected static $form_uses_textarea_media = array();
     protected static $form_uses_helptext = array();
@@ -8467,24 +8818,73 @@ class NF_Fields_Checkbox extends \NF_Abstracts_Input
     protected $_type = 'checkbox';
     protected $_templates = 'checkbox';
     protected $_test_value = 0;
-    protected $_settings = array('checkbox_default_value', 'checked_calc_value', 'unchecked_calc_value');
+    protected $_settings = array('checkbox_default_value', 'checkbox_values', 'checked_calc_value', 'unchecked_calc_value');
     protected $_settings_exclude = array('default', 'placeholder', 'input_limit_set');
+    /**
+     * NF_Fields_Checkbox constructor.
+     * @since 3.0
+     */
     public function __construct()
     {
     }
+    /**
+     * Admin Form Element
+     * Display the checkbox on the edit submissions area.
+     * @since 3.0
+     *
+     * @param $id Field ID.
+     * @param $value Field value.
+     * @return string HTML used for display of checkbox.
+     */
     public function admin_form_element($id, $value)
     {
     }
+    /**
+     * Custom Columns
+     * Creates what is displayed in the columns on the submissions page.
+     * @since 3.0
+     *
+     * @param $value checkbox value
+     * @param $field field model.
+     * @return $value string|void
+     */
     public function custom_columns($value, $field)
     {
     }
+    /**
+     * Filter Merge Tag Value
+     * This is what provides the merge tag with the fields value.
+     * @since 3.0
+     *
+     * @param $value Field value
+     * @param $field field model
+     * @return string|void
+     */
     public function filter_merge_tag_value($value, $field)
     {
     }
+    /**
+     * Filter Merge Tag Value Calc
+     * Provides the calculation value when the merge tag is used.
+     * @since 3.0
+     *
+     * @param $value checkbox value
+     * @param $field field model
+     * @return $field
+     */
     public function filter_merge_tag_value_calc($value, $field)
     {
     }
-    public function export_value($value)
+    /**
+     * Export Value
+     * Determines the value to send to submission export.
+     * @since 3.0
+     *
+     * @param $value checkbox field value
+     * @param $field checkbox field model
+     * @return string|void
+     */
+    public function export_value($value, $field)
     {
     }
 }
@@ -8501,6 +8901,28 @@ class NF_Fields_City extends \NF_Fields_Textbox
     protected $_templates = 'city';
     protected $_test_value = 'Cleveland';
     public function __construct()
+    {
+    }
+}
+/**
+ * Class NF_Fields_Confirm
+ */
+class NF_Fields_Confirm extends \NF_Abstracts_Input
+{
+    protected $_name = 'confirm';
+    protected $_type = 'confirm';
+    protected $_nicename = 'Confirm';
+    protected $_section = 'misc';
+    protected $_icon = 'check-circle-o';
+    protected $_error_message = '';
+    protected $_settings = array('confirm_field');
+    public function __construct()
+    {
+    }
+    function hide_field_type($field_types)
+    {
+    }
+    public function validate($field, $data)
     {
     }
 }
@@ -8643,7 +9065,7 @@ class NF_Fields_Date extends \NF_Fields_Textbox
     protected $_templates = 'date';
     protected $_test_value = '12/12/2022';
     protected $_settings = array('date_default', 'date_format', 'year_range');
-    protected $_settings_exclude = array('default', 'placeholder', 'input_limit_set', 'disable_input');
+    protected $_settings_exclude = array('default', 'input_limit_set', 'disable_input');
     public function __construct()
     {
     }
@@ -8666,6 +9088,7 @@ class NF_Fields_Email extends \NF_Abstracts_UserInfo
     protected $_icon = 'envelope-o';
     protected $_templates = 'email';
     protected $_test_value = 'foo@bar.dev';
+    protected $_settings_all_fields = array('custom_name_attribute');
     public function __construct()
     {
     }
@@ -8790,6 +9213,9 @@ class NF_Fields_ListCountry extends \NF_Abstracts_List
     public function filter_options($options, $settings)
     {
     }
+    private function sort_options_by_label($option_a, $option_b)
+    {
+    }
     public function filter_options_preview($field_settings)
     {
     }
@@ -8802,7 +9228,7 @@ class NF_Fields_ListCountry extends \NF_Abstracts_List
     private function get_options()
     {
     }
-    public function filter_csv_value($field_value)
+    public function filter_csv_value($field_value, $field)
     {
     }
 }
@@ -8817,6 +9243,7 @@ class NF_Fields_ListMultiselect extends \NF_Abstracts_List
     protected $_section = 'common';
     protected $_templates = 'listselect';
     protected $_old_classname = 'list-multiselect';
+    protected $_settings = array('multi_size');
     public function __construct()
     {
     }
@@ -9022,6 +9449,12 @@ class NF_Fields_Product extends \NF_Abstracts_Input
     public function merge_tag_value($value, $field)
     {
     }
+    public function custom_columns($value, $field, $sub_id)
+    {
+    }
+    public function admin_form_element($id, $value)
+    {
+    }
 }
 /**
  * Class NF_Fields_ProductQuantity
@@ -9042,7 +9475,7 @@ class NF_Fields_Quantity extends \NF_Fields_Number
     }
 }
 /**
- * Class NF_Fields_CreditCard
+ * Class NF_Fields_Recaptcha
  */
 class NF_Fields_Recaptcha extends \NF_Abstracts_Field
 {
@@ -9135,7 +9568,7 @@ class NF_Fields_StarRating extends \NF_Abstracts_Input
     protected $_aliases = array('rating');
     protected $_type = 'starrating';
     protected $_templates = 'starrating';
-    protected $_settings_only = array('label', 'label_pos', 'default', 'required', 'classes', 'key', 'admin_label');
+    protected $_settings_only = array('label', 'label_pos', 'default', 'number_of_stars', 'required', 'classes', 'key', 'admin_label');
     public function __construct()
     {
     }
@@ -9279,6 +9712,30 @@ class NF_Fields_Hr extends \NF_Abstracts_Input
     }
 }
 /**
+ * Adds Ninja Forms widget.
+ */
+class NF_FormBlock
+{
+    /**
+     * Register widget with WordPress.
+     */
+    public function __construct()
+    {
+    }
+    function nf_form_block_load()
+    {
+    }
+    function nf_form_block()
+    {
+    }
+    public function load_preview_data()
+    {
+    }
+    public function load_preview_iframe()
+    {
+    }
+}
+/**
  * Class WPN_Helper
  *
  * The WP Ninjas Static Helper Class
@@ -9306,6 +9763,15 @@ final class WPN_Helper
      * @return array|string
      */
     public static function utf8_decode($input)
+    {
+    }
+    /**
+     * Function to clean json data before json_decode.
+     * @since 3.2
+     * @param $input String
+     * @return String
+     */
+    public static function json_cleanup($input)
     {
     }
     /**
@@ -9387,16 +9853,6 @@ final class WPN_Helper
     {
     }
     public static function maybe_unserialize($original)
-    {
-    }
-    /**
-     * Function to get this installation's TLS version
-     * 
-     * Since 3.0
-     * 
-     * @return float OR false
-     */
-    public static function get_tls()
     {
     }
     private static function parse_utf8_serialized($matches)
@@ -9685,6 +10141,33 @@ class NF_EOS_Stack
     {
     }
 }
+class NF_Whip
+{
+    /**
+     * NF_Whip constructor.
+     * Hooks into the WordPress admin notice system and calls our whip_message.
+     * @Since 3.2.19
+     */
+    public function __construct()
+    {
+    }
+    /**
+     * Whip Message
+     * Builds and outputs our message.
+     * @Since 3.2.19
+     */
+    public function whip_message()
+    {
+    }
+    /**
+     * Set Dismiss
+     * Sets a transient for 4 weeks out that will remove the whip notice.
+     * @Since 3.2.19
+     */
+    public function set_dismiss()
+    {
+    }
+}
 /**
  * Class NF_MergeTags_Calcs
  */
@@ -9714,15 +10197,7 @@ final class NF_MergeTags_Calcs extends \NF_Abstracts_MergeTags
 final class NF_MergeTags_Deprecated extends \NF_Abstracts_MergeTags
 {
     protected $id = 'deprecated';
-    /**
-     * @var array
-     * $post_meta[ $meta_key ] = $meta_value;
-     */
-    protected $post_meta = array();
     public function __construct()
-    {
-    }
-    public function init()
     {
     }
     protected function post_id()
@@ -9738,9 +10213,6 @@ final class NF_MergeTags_Deprecated extends \NF_Abstracts_MergeTags
     {
     }
     protected function post_author_email()
-    {
-    }
-    public function setup_post_meta($post_id)
     {
     }
     protected function user_id()
@@ -9803,6 +10275,17 @@ final class NF_MergeTags_Fields extends \NF_Abstracts_MergeTags
     public function add_field($field)
     {
     }
+    /**
+     * Get List Labels
+     * Accepts a field loops over options, compares field values and returns the labels.
+     * @since 3.2.22
+     *
+     * @param $field array
+     * @return array - label of the option.
+     */
+    public function get_list_labels($field)
+    {
+    }
     public function add($callback, $id, $tag, $value, $calc_value = \false)
     {
     }
@@ -9840,6 +10323,7 @@ final class NF_MergeTags_Fields extends \NF_Abstracts_MergeTags
 final class NF_MergeTags_Form extends \NF_Abstracts_MergeTags
 {
     protected $id = 'form';
+    protected $form_id;
     protected $sub_seq;
     public function __construct()
     {
@@ -9854,6 +10338,25 @@ final class NF_MergeTags_Form extends \NF_Abstracts_MergeTags
      * @param mixed $sub_seq
      */
     public function setSubSeq($sub_id)
+    {
+    }
+    /**
+     * Setter method for the form_id and callback for the nf_get_form_id action.
+     * @since 3.2.2
+     *
+     * @param string $form_id The ID of the current form.
+     * @return void
+     */
+    public function set_form_id($form_id)
+    {
+    }
+    /**
+     * Gets a count of the form submissions and callback for the sub_count merge tag setting.
+     * @since 3.2.2
+     *
+     * @return array|int Count of the form submissions.
+     */
+    public function get_sub_count()
     {
     }
 }
@@ -9879,6 +10382,9 @@ final class NF_MergeTags_Other extends \NF_Abstracts_MergeTags
     {
     }
     protected function system_date()
+    {
+    }
+    protected function system_time()
     {
     }
     protected function user_ip()
@@ -9910,17 +10416,14 @@ final class NF_MergeTags_System extends \NF_Abstracts_MergeTags
 final class NF_MergeTags_WP extends \NF_Abstracts_MergeTags
 {
     protected $id = 'wp';
-    /**
-     * @var array
-     * $post_meta[ $meta_key ] = $meta_value;
-     */
-    protected $post_meta = array();
     public function __construct()
     {
     }
-    public function init()
-    {
-    }
+    /**
+     * Custom replace() method for custom post meta or user meta.
+     * @param string|array $subject
+     * @return string
+     */
     public function replace($subject)
     {
     }
@@ -9937,9 +10440,6 @@ final class NF_MergeTags_WP extends \NF_Abstracts_MergeTags
     {
     }
     protected function post_author_email()
-    {
-    }
-    public function setup_post_meta($post_id)
     {
     }
     protected function user_id()
@@ -10081,6 +10581,7 @@ final class NF_Conversion_Calculations implements \NF_Conversion
 {
     private $operations = array('add' => '+', 'subtract' => '-', 'multiply' => '*', 'divide' => '/');
     private $form = array();
+    private $tax_rate;
     public function __construct($form_data)
     {
     }
@@ -10094,6 +10595,15 @@ final class NF_Conversion_Calculations implements \NF_Conversion
     {
     }
     private function merge_tag($field)
+    {
+    }
+    /**
+     * Sets a float formatted tax rate.
+     * @param string|int|float $tax
+     *
+     * @return float|int
+     */
+    private function set_tax($tax)
     {
     }
 }
@@ -10144,6 +10654,14 @@ final class NF_Tracking
      * @hook admin_init
      */
     public function maybe_opt_in()
+    {
+    }
+    /**
+     * Report that a user has opted-in.
+     *
+     * @param array $data Dispatch event data.
+     */
+    function report_optin($data = array())
     {
     }
     /**
@@ -10225,6 +10743,12 @@ final class NF_Tracking
      * @return string $url
      */
     private function get_opt_out_url($url)
+    {
+    }
+    public function check_setting($setting)
+    {
+    }
+    public function update_setting($value)
     {
     }
 }
@@ -12697,6 +13221,10 @@ function ninja_forms_display_sub_number_shortcode($atts)
 function ninja_forms_display_sub_number_remaining_shortcode($atts)
 {
 }
+// class Foo_Widget
+function NF_register_widgets()
+{
+}
 // End Class
 /**
  * The main function responsible for returning The Highlander Ninja_Forms
@@ -12732,13 +13260,13 @@ function ninja_forms_three_admin_notice()
 function ninja_forms_konami()
 {
 }
-function ninja_forms_three_calc_check()
-{
-}
 function ninja_forms_three_addons_version_check()
 {
 }
 function ninja_forms_three_addons_check()
+{
+}
+function ninja_forms_valid_slug($slug)
 {
 }
 function ninja_forms_uninstall()
@@ -12779,6 +13307,15 @@ function ninja_forms_ajax_import_form()
 {
 }
 function ninja_forms_ajax_import_fields()
+{
+}
+/**
+ * Upgrade Throttle
+ * @param int $threshold
+ * @option int $compare
+ * @return bool
+ */
+function ninja_forms_three_throttle($threshold = 5)
 {
 }
 function ninja_forms_three_table_exists()
