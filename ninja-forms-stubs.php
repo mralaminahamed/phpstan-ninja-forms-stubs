@@ -415,6 +415,14 @@ namespace {
         protected function process()
         {
         }
+        /**
+         * Upon request, preserve a resumed action's  extra data from before halt
+         *
+         * @return void
+         */
+        private function maybePreserveExtraData() : void
+        {
+        }
         protected function validate_field($field_settings)
         {
         }
@@ -3722,7 +3730,7 @@ namespace {
     /**
      * Class NF_Action_Save
      */
-    final class NF_Actions_Save extends \NF_Abstracts_Action
+    class NF_Actions_Save extends \NF_Abstracts_Action
     {
         /**
          * @var string
@@ -3766,33 +3774,39 @@ namespace {
         {
         }
         /**
-         * Compare Expiration Option
-         * Accepts $expiration_data and checks to see if the values already exist in the array.
-         * @since 3.3.2
+         * Retrieve a stored option
          *
-         * @param array $expiration_value - key/value pair
-         *      $expiration_value[ 'form_id' ]      = form_id(int)
-         *      $expiration_value[ 'expire_time' ]  = subs_expire_time(int)
-         * @param array $expiration_option - list of key/value pairs of the expiration options.
-         *
-         * @return void
+         * @param string $key
+         * @param mixed $default
+         * @return mixed
          */
-        public function compare_expiration_option($expiration_value, $expiration_option)
+        protected function getOption(string $key, $default)
         {
         }
         /**
-         * Remove Expiration Option
-         * If the expiration action setting is turned off this helper method
-         * removes the form id and expiration time from the option.
+         * Update a stored value in option table
          *
-         * @param array $expiration_value - key/value pair
+         * @param string $key
+         * @param mixed $value
+         * @return void
+         */
+        protected function updateOption(string $key, $value) : void
+        {
+        }
+        /**
+         * Compare Expiration Option
+         * Accepts $expiration_data and checks to see if the values already exist in the array.
+         * This allows to resave the option with new cron interval if it is set and just remove the form from the option if it is not set
+         * @since 3.6.35
+         *
+         * @param string $expiration_value - key/value pair
          *      $expiration_value[ 'form_id' ]      = form_id(int)
          *      $expiration_value[ 'expire_time' ]  = subs_expire_time(int)
          * @param array $expiration_option - list of key/value pairs of the expiration options.
          *
-         * @return void
+         * @return array $expiration_option without current saved form 
          */
-        public function remove_expiration_option($expiration_value, $expiration_option)
+        public function clean_form_option($expiration_value, $expiration_option)
         {
         }
         public function process($action_settings, $form_id, $data)
@@ -5057,6 +5071,14 @@ namespace NinjaForms\Includes\Admin\Metaboxes {
         protected function isDebugSet() : bool
         {
         }
+        /**
+         * Get the input server referer
+         *
+         * @return mixed
+         */
+        protected function getReferer()
+        {
+        }
     }
 }
 namespace {
@@ -5500,6 +5522,14 @@ namespace {
          * @return void
          */
         public function insert_form()
+        {
+        }
+        /**
+         * Construct columns and column types from form settings
+         *
+         * @return array
+         */
+        protected function constructFormColumnsAndTypes() : array
         {
         }
         /**
@@ -6288,10 +6318,10 @@ namespace NinjaForms\Includes\Database {
     }
 }
 namespace {
-    final class NF_Database_FieldsController
+    class NF_Database_FieldsController
     {
         private $db;
-        private $factory;
+        private $form_id;
         private $fields_data;
         private $new_field_ids;
         private $insert_fields;
@@ -7415,6 +7445,7 @@ namespace {
     }
     abstract class NF_Display_Page
     {
+        protected $_wp_query;
         public function __construct()
         {
         }
@@ -7467,6 +7498,8 @@ namespace {
     }
     class NF_Display_PagePublicLink extends \NF_Display_Page
     {
+        protected $form_id;
+        protected $form;
         public function __construct($form_id)
         {
         }
@@ -7907,6 +7940,12 @@ namespace NinjaForms\Includes\Entities {
          * @var array
          */
         protected $submissionHandlers = [];
+        /**
+         * Sequence number
+         *
+         * @var int
+         */
+        protected $seq_num;
         /**
          * User ID of the submitter, "0" if user non logged-in
          *
@@ -9121,13 +9160,13 @@ namespace {
          * 
          * @return string
          */
-        public function handle();
+        public function handle() : string;
         /**
          * Provide submissionCollection indices in reverse order
          * 
          * CSV output sorts earliest to current; submissionAggregate returns in reverse order
          *
-         * @return void
+         * @return array
          */
         public function reverseSubmissionOrder() : array;
         /**
@@ -9141,10 +9180,7 @@ namespace {
          * Set submission collection used in generating the CSV
          * @param SubmissionCollectionInterface $submissionCollection
          */
-        public function setSubmissionCollection(
-            /* SubmissionCollectionInterface */
-            $submissionCollection
-        );
+        public function setSubmissionCollection(\NF_Exports_Interfaces_SubmissionCollectionInterface $submissionCollection) : \NF_Exports_Interfaces_SubmissionCsvExportInterface;
         /**
          * Set boolean useAdminLabels
          * @param bool $useAdminLabels
@@ -9161,10 +9197,7 @@ namespace {
          * Set date format
          * @param string $dateFormat
          */
-        public function setDateFormat(
-            /* string */
-            $dateFormat
-        );
+        public function setDateFormat(string $dateFormat) : \NF_Exports_Interfaces_SubmissionCsvExportInterface;
     }
     /**
      * Provides and stores single submission data using Custom Post Type
@@ -9915,7 +9948,13 @@ namespace {
          * Generate CSV output and return
          * @return string
          */
-        public function handle()
+        public function handle() : string
+        {
+        }
+        /**
+         * Append each submission from the collection as a row
+         */
+        protected function appendRows()
         {
         }
         /** @inheritDoc */
@@ -9931,12 +9970,6 @@ namespace {
          * @return string
          */
         protected function prepareCsv()
-        {
-        }
-        /**
-         * Append each submission from the collection as a row
-         */
-        protected function appendRows()
         {
         }
         /**
@@ -9999,10 +10032,7 @@ namespace {
          * @param SubmissionCollectionInterface $submissionCollection
          * @return SubmissionCsvExportInterface
          */
-        public function setSubmissionCollection(
-            /* SubmissionCollectionInterface */
-            $submissionCollection
-        )
+        public function setSubmissionCollection(\NF_Exports_Interfaces_SubmissionCollectionInterface $submissionCollection) : \NF_Exports_Interfaces_SubmissionCsvExportInterface
         {
         }
         /**
@@ -10011,7 +10041,7 @@ namespace {
          * @param SubmissionAggregateCsvExportAdapter $submissionAggregateCsvExportAdapter
          * @return SubmissionCsvExportInterface
          */
-        public function setSubmissionAggregateCsvExportAdapter(\NinjaForms\Includes\Handlers\SubmissionAggregateCsvExportAdapter $submissionAggregateCsvExportAdapter)
+        public function setSubmissionAggregateCsvExportAdapter(\NinjaForms\Includes\Handlers\SubmissionAggregateCsvExportAdapter $submissionAggregateCsvExportAdapter) : \NF_Exports_Interfaces_SubmissionCsvExportInterface
         {
         }
         /**
@@ -10029,10 +10059,7 @@ namespace {
          * @param string $dateFormat
          * @return SubmissionCsvExportInterface
          */
-        public function setDateFormat(
-            /* string */
-            $dateFormat = \null
-        )
+        public function setDateFormat(string $dateFormat = \null) : \NF_Exports_Interfaces_SubmissionCsvExportInterface
         {
         }
     }
@@ -12259,10 +12286,38 @@ namespace {
         {
         }
         /**
+         * Replace utf8_encode with mimicked functionaliy
+         * 
+         * Deprecated in PHP8 and removed in PHP9
+         * 
+         * Replacement credit: https://php.watch/versions/8.2/utf8_encode-utf8_decode-deprecated
+         * and https://github.com/symfony/polyfill-php72/blob/v1.26.0/Php72.php#L32-39
+         *
+         * @param string $string
+         * @return string
+         */
+        public static function iso8859_1_to_utf8($s)
+        {
+        }
+        /**
          * @param $input
          * @return array|string
          */
         public static function utf8_decode($input)
+        {
+        }
+        /**
+         * Replace utf8_decode with mimicked functionaliy
+         * 
+         * Deprecated in PHP8 and removed in PHP9
+         * 
+         * Replacement credit: https://php.watch/versions/8.2/utf8_encode-utf8_decode-deprecated
+         * and https://github.com/symfony/polyfill-php72/blob/v1.26.0/Php72.php#L40-69
+         *
+         * @param string $string
+         * @return string
+         */
+        public static function utf8_to_iso8859_1($string)
         {
         }
         /**
@@ -12538,6 +12593,7 @@ namespace {
         private $version = '';
         private $wp_override = \false;
         private $cache_key = '';
+        private $beta = \false;
         private $health_check_timeout = 5;
         /**
          * Class constructor.
@@ -13812,6 +13868,16 @@ namespace {
          * @return string
          */
         public function replace($subject)
+        {
+        }
+        /**
+         * Wrap WP get_user_meta to enable unit testing
+         *
+         * @param int $user_id
+         * @param string $meta_key
+         * @return mixed
+         */
+        protected function getUserMeta($user_id, $meta_key)
         {
         }
         /**
@@ -15315,7 +15381,7 @@ namespace {
         /**
          * @since 3.0
          */
-        const VERSION = '3.6.34';
+        const VERSION = '3.7.3';
         /**
          * @since 3.4.0
          */
