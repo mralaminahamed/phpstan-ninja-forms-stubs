@@ -40,12 +40,13 @@ while IFS= read -r VERSION; do
     # Attempt to download and process the version, handle errors
     {
         # Get new version
+        # https://downloads.wordpress.org/plugin/ninja-forms.3.8.8.zip
         wget -q -P source/ "https://downloads.wordpress.org/plugin/ninja-forms.${VERSION}.zip"
         unzip -q -d source/ source/ninja-forms.${VERSION}.zip
 
         # Generate stubs (replace with actual generate.sh script command)
         echo "Generating stubs ..."
-        # Example: ./generate.sh
+        ./generate.sh
 
         # Add files
         echo "Adding files ..."
