@@ -7539,7 +7539,7 @@ namespace {
      *
      * @since  3.2
      */
-    final class NF_Dispatcher
+    class NF_Dispatcher
     {
         private $api_url = 'http://api.ninjaforms.com/';
         /**
@@ -7562,6 +7562,144 @@ namespace {
          * @updated 3.3.17
          */
         public function update_environment_vars()
+        {
+        }
+        /**
+         * Construct environment variable array
+         *
+         * @return array
+         */
+        protected function constructEnvironmentVariableArray() : array
+        {
+        }
+        /**
+         * Get NinjaForms VERSION constant
+         *
+         * @return string
+         */
+        protected function getNinjaFormsVersion() : string
+        {
+        }
+        /**
+         * Get NF DB version
+         *
+         * @return string
+         */
+        protected function getNfDbVersion() : string
+        {
+        }
+        /**
+         * Get WP version as defined by get_bloginfo
+         *
+         * @return string
+         */
+        protected function getWpVersion() : string
+        {
+        }
+        /**
+         * Return value of WP's is_multisite() function
+         *
+         * Default is 0
+         * 
+         * @return boolean
+         */
+        protected function isMultisiteEnabled() : int
+        {
+        }
+        /**
+         * Get server type as defined by SERVER superglobal
+         *
+         * @return string
+         */
+        protected function getServerType() : string
+        {
+        }
+        /**
+         * Get PHP version
+         *
+         * @return string
+         */
+        protected function getPhpVersion() : string
+        {
+        }
+        /**
+         * Get SQL version
+         *
+         * @return string
+         */
+        protected function getSqlVersion() : string
+        {
+        }
+        /**
+         * Get WP_MEMORY_LIMIT constant
+         *
+         * @return string
+         */
+        protected function getWpMemoryLimit() : string
+        {
+        }
+        /**
+         * Is WP debug set to true
+         *
+         * @return integer
+         */
+        protected function isWpDebugOn() : int
+        {
+        }
+        /**
+         * Get WP's LANG constant
+         *
+         * @return string
+         */
+        protected function getWpLang() : string
+        {
+        }
+        /**
+         * Get max upload size defined by WP
+         *
+         * @return string
+         */
+        protected function getMaxUploadSize() : string
+        {
+        }
+        /**
+         * Get PHP post_max_size configuration value
+         *
+         * @return string
+         */
+        protected function getPhpPostMaxSize() : string
+        {
+        }
+        /**
+         * Construct HostName
+         *
+         * @return string
+         */
+        protected function getHostName() : string
+        {
+        }
+        /**
+         * Get PHP SMTP configuration value
+         *
+         * @return string
+         */
+        protected function getPhpSmtp() : string
+        {
+        }
+        /**
+         * Get PHP SMTP PORT configuration value
+         *
+         * @return string
+         */
+        protected function getPhpSmtpPort() : string
+        {
+        }
+        /**
+         * Active plugins as defined by WP's stored option
+         *
+         * @return array
+         */
+        protected function getActivePlugins() : array
         {
         }
         /**
@@ -10857,7 +10995,7 @@ namespace {
         protected $_aliases = array('html');
         protected $_type = 'html';
         protected $_templates = 'html';
-        protected $_settings_only = array('label', 'default', 'classes');
+        protected $_settings_only = array('label', 'default', 'classes', 'admin_label', 'key');
         protected $_use_merge_tags_include = array('calculations');
         public function __construct()
         {
@@ -11436,7 +11574,7 @@ namespace {
         protected $_type = 'submit';
         protected $_templates = 'submit';
         protected $_wrap_template = 'wrap-no-label';
-        protected $_settings = array('label', 'timed_submit', 'processing_label', 'classes', 'key');
+        protected $_settings = array('label', 'timed_submit', 'processing_label', 'classes', 'key', 'admin_label');
         public function __construct()
         {
         }
@@ -11558,7 +11696,7 @@ namespace {
         protected $_aliases = array('html');
         protected $_type = 'hr';
         protected $_templates = 'hr';
-        protected $_settings_only = array('classes');
+        protected $_settings_only = array('classes', 'admin_label');
         public function __construct()
         {
         }
@@ -15563,7 +15701,7 @@ namespace {
         /**
          * @since 3.0
          */
-        const VERSION = '3.8.8';
+        const VERSION = '3.8.9';
         /**
          * @since 3.4.0
          */
