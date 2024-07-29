@@ -1049,7 +1049,15 @@ namespace {
         /**
          * @var string
          */
+        protected $_group = '';
+        /**
+         * @var string
+         */
         protected $_image = '';
+        /**
+         * @var string
+         */
+        protected $_documentation_url = '';
         /**
          * @var array
          */
@@ -1152,6 +1160,16 @@ namespace {
         {
         }
         /**
+         * Get Group
+         *
+         * Returns the drawer group for an action.
+         *
+         * @return string
+         */
+        public function get_group()
+        {
+        }
+        /**
          * Get Image
          *
          * Returns the url of a branded action's image.
@@ -1159,6 +1177,16 @@ namespace {
          * @return string
          */
         public function get_image()
+        {
+        }
+        /**
+         * Get Documentation URL
+         *
+         * Returns the action's documentation URL.
+         *
+         * @return string
+         */
+        public function get_doc_url()
         {
         }
         /**
@@ -3210,6 +3238,10 @@ namespace {
          */
         protected $_priority = '10';
         /**
+         * @var string
+         */
+        protected $_group = 'core';
+        /**
          * Constructor
          */
         public function __construct()
@@ -3322,11 +3354,19 @@ namespace {
         /**
          * @var string
          */
+        protected $_documentation_url = 'https://ninjaforms.com/docs/wp-hook/';
+        /**
+         * @var string
+         */
         protected $_timing = 'normal';
         /**
          * @var int
          */
         protected $_priority = 10;
+        /**
+         * @var string
+         */
+        protected $_group = 'core';
         /**
          * Constructor
          */
@@ -3359,11 +3399,19 @@ namespace {
         /**
          * @var string
          */
+        protected $_documentation_url = 'https://ninjaforms.com/docs/delete-data-request-action/';
+        /**
+         * @var string
+         */
         protected $_timing = 'late';
         /**
          * @var int
          */
         protected $_priority = 10;
+        /**
+         * @var string
+         */
+        protected $_group = 'core';
         /**
          * Constructor
          */
@@ -3406,11 +3454,19 @@ namespace {
         /**
          * @var string
          */
+        protected $_documentation_url = 'https://ninjaforms.com/docs/email/';
+        /**
+         * @var string
+         */
         protected $_timing = 'late';
         /**
          * @var int
          */
         protected $_priority = 10;
+        /**
+         * @var string
+         */
+        protected $_group = 'core';
         /**
          * Constructor
          */
@@ -3498,11 +3554,19 @@ namespace {
         /**
          * @var string
          */
+        protected $_documentation_url = 'https://ninjaforms.com/docs/export-data-request-action/';
+        /**
+         * @var string
+         */
         protected $_timing = 'late';
         /**
          * @var int
          */
         protected $_priority = 10;
+        /**
+         * @var string
+         */
+        protected $_group = 'core';
         /**
          * Constructor
          */
@@ -3550,6 +3614,10 @@ namespace {
          * @var int
          */
         protected $_priority = '10';
+        /**
+         * @var string
+         */
+        protected $_group = 'core';
         /**
          * @var string
          */
@@ -3706,11 +3774,19 @@ namespace {
         /**
          * @var string
          */
+        protected $_documentation_url = 'https://ninjaforms.com/docs/redirect-action/';
+        /**
+         * @var string
+         */
         protected $_timing = 'late';
         /**
          * @var int
          */
         protected $_priority = 20;
+        /**
+         * @var string
+         */
+        protected $_group = 'core';
         /**
          * Constructor
          */
@@ -3743,11 +3819,19 @@ namespace {
         /**
          * @var string
          */
+        protected $_documentation_url = 'https://ninjaforms.com/docs/record-submission-action/';
+        /**
+         * @var string
+         */
         protected $_timing = 'late';
         /**
          * @var int
          */
         protected $_priority = '-1';
+        /**
+         * @var string
+         */
+        protected $_group = 'core';
         /**
          * Constructor
          */
@@ -3845,11 +3929,19 @@ namespace {
         /**
          * @var string
          */
+        protected $_documentation_url = 'https://ninjaforms.com/docs/success-message/';
+        /**
+         * @var string
+         */
         protected $_timing = 'late';
         /**
          * @var int
          */
         protected $_priority = 10;
+        /**
+         * @var string
+         */
+        protected $_group = 'core';
         /**
          * Constructor
          */
@@ -4425,7 +4517,7 @@ namespace {
     final class NF_Admin_Menus_Addons extends \NF_Abstracts_Submenu
     {
         public $parent_slug = 'ninja-forms';
-        public $menu_slug = 'ninja-forms#apps';
+        public $menu_slug = 'ninja-forms#add-ons';
         public $position = 7;
         public function __construct()
         {
@@ -4446,6 +4538,9 @@ namespace {
         {
         }
         public static function filterItemsByCategroy($items, $category)
+        {
+        }
+        public static function getItemStatus($item)
         {
         }
     }
@@ -5657,6 +5752,54 @@ namespace {
          * @return Void
          */
         public function setTransient()
+        {
+        }
+        /**
+         * Echo the html for the notice
+         *
+         * @return Void
+         */
+        public function getNoticeHtml()
+        {
+        }
+    }
+    /**
+     * NF_Survey_Promo Class
+     *
+     * @since 3.6
+     */
+    class NF_Admin_SurveyPromo
+    {
+        public $isDashboard = \false;
+        /**
+         *
+         */
+        public function __construct()
+        {
+        }
+        public function show()
+        {
+        }
+        public function isTargetPage()
+        {
+        }
+        /**
+         * Check if we should show the survey promo
+         *
+         * @return bool
+         */
+        public function shouldShow()
+        {
+        }
+        public function isDashboard()
+        {
+        }
+        /**
+         * Set the ninja_forms_disable_survey_promo transient
+         *
+         * @return Void
+         */
+        public function dismiss()
         {
         }
         /**
@@ -7396,7 +7539,7 @@ namespace {
      *
      * @since  3.2
      */
-    final class NF_Dispatcher
+    class NF_Dispatcher
     {
         private $api_url = 'http://api.ninjaforms.com/';
         /**
@@ -7419,6 +7562,144 @@ namespace {
          * @updated 3.3.17
          */
         public function update_environment_vars()
+        {
+        }
+        /**
+         * Construct environment variable array
+         *
+         * @return array
+         */
+        protected function constructEnvironmentVariableArray() : array
+        {
+        }
+        /**
+         * Get NinjaForms VERSION constant
+         *
+         * @return string
+         */
+        protected function getNinjaFormsVersion() : string
+        {
+        }
+        /**
+         * Get NF DB version
+         *
+         * @return string
+         */
+        protected function getNfDbVersion() : string
+        {
+        }
+        /**
+         * Get WP version as defined by get_bloginfo
+         *
+         * @return string
+         */
+        protected function getWpVersion() : string
+        {
+        }
+        /**
+         * Return value of WP's is_multisite() function
+         *
+         * Default is 0
+         * 
+         * @return boolean
+         */
+        protected function isMultisiteEnabled() : int
+        {
+        }
+        /**
+         * Get server type as defined by SERVER superglobal
+         *
+         * @return string
+         */
+        protected function getServerType() : string
+        {
+        }
+        /**
+         * Get PHP version
+         *
+         * @return string
+         */
+        protected function getPhpVersion() : string
+        {
+        }
+        /**
+         * Get SQL version
+         *
+         * @return string
+         */
+        protected function getSqlVersion() : string
+        {
+        }
+        /**
+         * Get WP_MEMORY_LIMIT constant
+         *
+         * @return string
+         */
+        protected function getWpMemoryLimit() : string
+        {
+        }
+        /**
+         * Is WP debug set to true
+         *
+         * @return integer
+         */
+        protected function isWpDebugOn() : int
+        {
+        }
+        /**
+         * Get WP's LANG constant
+         *
+         * @return string
+         */
+        protected function getWpLang() : string
+        {
+        }
+        /**
+         * Get max upload size defined by WP
+         *
+         * @return string
+         */
+        protected function getMaxUploadSize() : string
+        {
+        }
+        /**
+         * Get PHP post_max_size configuration value
+         *
+         * @return string
+         */
+        protected function getPhpPostMaxSize() : string
+        {
+        }
+        /**
+         * Construct HostName
+         *
+         * @return string
+         */
+        protected function getHostName() : string
+        {
+        }
+        /**
+         * Get PHP SMTP configuration value
+         *
+         * @return string
+         */
+        protected function getPhpSmtp() : string
+        {
+        }
+        /**
+         * Get PHP SMTP PORT configuration value
+         *
+         * @return string
+         */
+        protected function getPhpSmtpPort() : string
+        {
+        }
+        /**
+         * Active plugins as defined by WP's stored option
+         *
+         * @return array
+         */
+        protected function getActivePlugins() : array
         {
         }
         /**
@@ -7663,6 +7944,30 @@ namespace {
         {
         }
         public static function localize_preview($form_id)
+        {
+        }
+        /**
+         * Set root element that will insert the WP element
+         * 
+         * @since 3.7.4
+         * 
+         * @param string Form ID
+         * 
+         * @return void
+         */
+        public static function localize_iframe($form_id)
+        {
+        }
+        /**
+         * Enqueue scripts and localize data needed to insert the iFrame
+         * 
+         * @since 3.7.4
+         * 
+         * @param string Form ID
+         * 
+         * @return void
+         */
+        public static function enqueue_iframe_scripts($form_id)
         {
         }
         protected static function ensureProductRelatedCostPreviewFormats(array $field, string $currencySymbol) : array
@@ -10690,7 +10995,7 @@ namespace {
         protected $_aliases = array('html');
         protected $_type = 'html';
         protected $_templates = 'html';
-        protected $_settings_only = array('label', 'default', 'classes');
+        protected $_settings_only = array('label', 'default', 'classes', 'admin_label', 'key');
         protected $_use_merge_tags_include = array('calculations');
         public function __construct()
         {
@@ -11269,7 +11574,7 @@ namespace {
         protected $_type = 'submit';
         protected $_templates = 'submit';
         protected $_wrap_template = 'wrap-no-label';
-        protected $_settings = array('label', 'timed_submit', 'processing_label', 'classes', 'key');
+        protected $_settings = array('label', 'timed_submit', 'processing_label', 'classes', 'key', 'admin_label');
         public function __construct()
         {
         }
@@ -11391,7 +11696,7 @@ namespace {
         protected $_aliases = array('html');
         protected $_type = 'hr';
         protected $_templates = 'hr';
-        protected $_settings_only = array('classes');
+        protected $_settings_only = array('classes', 'admin_label');
         public function __construct()
         {
         }
@@ -13833,6 +14138,21 @@ namespace {
         protected function user_ip()
         {
         }
+        protected function referer_url()
+        {
+        }
+        protected function mergetag_random($length = 5)
+        {
+        }
+        protected function mergetag_year()
+        {
+        }
+        protected function mergetag_month()
+        {
+        }
+        protected function mergetag_day()
+        {
+        }
     }
     /**
      * Class NF_MergeTags_System
@@ -15381,7 +15701,7 @@ namespace {
         /**
          * @since 3.0
          */
-        const VERSION = '3.7.3';
+        const VERSION = '3.8.9';
         /**
          * @since 3.4.0
          */
@@ -15854,7 +16174,7 @@ namespace NinjaForms {
 }
 namespace {
     // autoload_real.php @generated by Composer
-    class ComposerAutoloaderInit18de4977af396231a18c52861016d1c6
+    class ComposerAutoloaderInite9b8b4150496273fa661dc8e0462d223
     {
         private static $loader;
         public static function loadClassLoader($class)
@@ -15869,7 +16189,7 @@ namespace {
     }
 }
 namespace Composer\Autoload {
-    class ComposerStaticInit18de4977af396231a18c52861016d1c6
+    class ComposerStaticInite9b8b4150496273fa661dc8e0462d223
     {
         public static $prefixLengthsPsr4 = array('N' => array('NinjaForms\\NinjaForms\\' => 22, 'NinjaForms\\Includes\\' => 20, 'NinjaForms\\Blocks\\' => 18));
         public static $prefixDirsPsr4 = array('NinjaForms\\NinjaForms\\' => array(0 => __DIR__ . '/../..' . '/'), 'NinjaForms\\Includes\\' => array(0 => __DIR__ . '/../..' . '/includes'), 'NinjaForms\\Blocks\\' => array(0 => __DIR__ . '/../..' . '/blocks/views/includes'));
