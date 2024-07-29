@@ -15563,7 +15563,7 @@ namespace {
         /**
          * @since 3.0
          */
-        const VERSION = '3.8.6';
+        const VERSION = '3.8.7';
         /**
          * @since 3.4.0
          */
