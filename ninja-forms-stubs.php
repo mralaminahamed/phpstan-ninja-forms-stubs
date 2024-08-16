@@ -15701,7 +15701,7 @@ namespace {
         /**
          * @since 3.0
          */
-        const VERSION = '3.8.10';
+        const VERSION = '3.8.11';
         /**
          * @since 3.4.0
          */
