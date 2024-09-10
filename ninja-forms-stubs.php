@@ -8018,7 +8018,8 @@ namespace NinjaForms\Includes\Entities {
         {
         }
         /** @inheritDoc */
-        public function jsonSerialize() : mixed
+        #[\ReturnTypeWillChange]
+        public function jsonSerialize()
         {
         }
     }
@@ -8058,7 +8059,8 @@ namespace NinjaForms\Includes\Entities {
         {
         }
         /** @inheritDoc */
-        public function jsonSerialize() : mixed
+        #[\ReturnTypeWillChange]
+        public function jsonSerialize()
         {
         }
     }
@@ -8883,7 +8885,8 @@ namespace NinjaForms\Includes\Entities {
         {
         }
         /** @inheritDoc */
-        public function jsonSerialize() : mixed
+        #[\ReturnTypeWillChange]
+        public function jsonSerialize()
         {
         }
     }
@@ -8915,7 +8918,8 @@ namespace NinjaForms\Includes\Entities {
         {
         }
         /** @inheritDoc */
-        public function jsonSerialize() : mixed
+        #[\ReturnTypeWillChange]
+        public function jsonSerialize()
         {
         }
     }
@@ -15942,7 +15946,7 @@ namespace {
         /**
          * @since 3.0
          */
-        const VERSION = '3.8.13';
+        const VERSION = '3.8.14';
         /**
          * @since 3.4.0
          */
