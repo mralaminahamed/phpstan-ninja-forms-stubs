@@ -10587,17 +10587,118 @@ namespace NinjaForms\Includes\Factories {
     class ConstructUsageEntity
     {
         /**
+         * Ninja Forms database version
+         *
+         * @var string
+         */
+        protected $nFdBVersion;
+        /**
+         * Indexed array of stored forms
+         *
+         * keys: id, title
+         * 
+         * @var array
+         */
+        protected $forms = [];
+        /**
+         * Time spent making NF Forms request in microseconds
+         *
+         * @var integer
+         */
+        protected $formsRequestTime = 0;
+        /**
+         * Total number of forms
+         *
+         * @var integer
+         */
+        protected $countForms = 1;
+        /**
+         * Indexed array of form settings
+         *
+         * keys: 
+         * @var array
+         */
+        protected $formMeta = [];
+        /**
+         * Time spent making NF form settings request in microseconds
+         *
+         * @var integer
+         */
+        protected $formMetaRequestTime = 0;
+        /**
+         * Indexed array of fields
+         *
+         * keys: id, type, parent_id
+         * 
+         * @var array
+         */
+        protected $fields = [];
+        /**
+         * Time spent making NF fields request in microseconds
+         *
+         * @var integer
+         */
+        protected $fieldsRequestTime = 0;
+        /**
+         * Indexed array of field settings
+         *
+         * keys: 
+         * @var array
+         */
+        protected $fieldMeta = [];
+        /**
+         * Time spent making NF field settings request in microseconds
+         *
+         * @var integer
+         */
+        protected $fieldMetaRequestTime = 0;
+        /**
+         * Indexed array of active stored actions
+         *
+         * keys: id, type, parent_id
+         * @var array
+         */
+        protected $actions = [];
+        /**
+         * Time spent making NF actions request in microseconds
+         *
+         * @var integer
+         */
+        protected $actionsRequestTime = 0;
+        /**
+         * 
+         *
+         * @var array
+         */
+        protected $calculations = [];
+        /**
          * Array of stored NF settings
+         *
+         * key-value pairs of all Ninja Forms settings stored in options table
          *
          * @var array
          */
         protected $ninjaFormsSettings = [];
         /**
-         * Time spent making NF settings request in milliseconds
+         * Time spent making NF settings request in microseconds
          *
          * @var integer
          */
         protected $ninjaFormsSettingsRequestTime = 0;
+        /**
+         * Wordpress global DB object
+         *
+         * @var object
+         */
+        protected $wpdb;
+        /**
+         * Construct with NF database version
+         *
+         * @param string|null $nFdBVersion
+         */
+        public function __construct(?string $nFdBVersion = '1.4')
+        {
+        }
         /**
          * Return constructed site environment entity
          *
@@ -10617,6 +10718,7 @@ namespace NinjaForms\Includes\Factories {
         /**
          * Construct array of plugin usage
          *
+         * Activation, deactivation, time between activation and deactivation
          * @return array
          */
         protected function constructPluginUsage() : array
@@ -10625,6 +10727,9 @@ namespace NinjaForms\Includes\Factories {
         /**
          * Construct array of forms usage
          *
+         * Number of forms, forms appended to a post or page, forms with public link
+         * enabled
+         * 
          * @return array
          */
         protected function constructFormsUsage() : array
@@ -10633,30 +10738,111 @@ namespace NinjaForms\Includes\Factories {
         /**
          * Construct array of fields usage
          *
+         * Data, current and planned:
+         * - mean fields per form
+         * - mean each field type per form
+         * 
          * @return array
          */
         protected function constructFieldsUsage() : array
         {
         }
         /**
-         * Construct array of field settings usage
+         * Calculate fields per form
          *
+         * @return float
+         */
+        protected function calculateFieldsPerForm() : float
+        {
+        }
+        /**
+         * Calculate count of each field type per form
+         *
+         * key-value pairs fieldType:countOfFieldTypePerForm
+         * 
          * @return array
          */
-        protected function constructFieldSettingsUsage() : array
+        protected function calculateFieldTypesCountPerForm() : array
+        {
+        }
+        /**
+         * Construct array of field settings usage
+         *
+         * Data, current and planned:
+         * - custom class name wrapper - empty/not empty
+         * - custom class name element - empty/not empty
+         * - label position - default/not default
+         * - custom name attribute - empty/not empty
+         * - field key - default/not default
+         * - admin label - empty/not empty
+         * 
+         * @return array
+         */
+        protected function constructFieldMetaUsage() : array
         {
         }
         /**
          * Construct array of actions usage
-         *
+         * 
+         * Data, current and planned:
+         * - active actions per form
+         * - active action types per form
+         * - reCaptcha action active on at least one form - true/false
+         * - Akisment action active on at least one - true/false
+         * - Delete Data action active on at least one - true/false
+         * - Export Data action active on at least one - true/false
+         * - WP Hook action active on at least one - true/false
+         * - Record Submissions action active on at least one form - true/false
+         * - - Designated submitter's email address value set
+         * - - Save All or Save None
+         * - - Except - empty/not empty
+         * - - Set Submissions to Expire - true/false
+         * 
          * @return array
          */
         protected function constructActionsUsage() : array
         {
         }
         /**
-         * Construct array of display settings usage
+         * Calculate actions per form
          *
+         * @return float
+         */
+        protected function calculateActionsPerForm() : float
+        {
+        }
+        /**
+         * Calculate count of each action type per form
+         *
+         * key-value pairs actionType:countOfActionTypePerForm
+         * 
+         * @return array
+         */
+        protected function calculateActionTypesCountPerForm() : array
+        {
+        }
+        /**
+         * Construct array of display settings usage
+         * 
+         * Data, current and planned:
+         * - Display form title - count true
+         * - Clear successfully completed form - count true
+         * - Hide successfully completed form - count true
+         * - Default label position - count each position
+         * - Wrapper class - count custom
+         * - Element class - count custom
+         * - Form title heading level - count each value
+         * - Email error message - count custom
+         * - Date error message - count custom
+         * - Field error message - count custom
+         * - Num Min error message - count custom
+         * - Num Max error message - count custom
+         * - Num IncrementBy error message - count custom
+         * - Correct Errors error message - count custom
+         * - Validate Required Field error message - count custom
+         * - Honeypot error message - count custom
+         * - Field Marked Required error message - count custom
+         * 
          * @return array
          */
         protected function constructDisplaySettingsUsage() : array
@@ -10665,6 +10851,14 @@ namespace NinjaForms\Includes\Factories {
         /**
          * Construct array of restrictions usage
          *
+         * Data, current and planned:
+         * - Unique field usage count
+         * - Non-default unique field error message count
+         * - Require users to be logged in count
+         * - Non-default must-be-logged-in message count
+         * - Submission limit usage count
+         * - Non-default submission limit message count
+         * 
          * @return array
          */
         protected function constructRestrictionsUsage() : array
@@ -10705,20 +10899,86 @@ namespace NinjaForms\Includes\Factories {
         {
         }
         /**
-         * Populate ninja_forms_settings
-         *
-         * @return void
-         */
-        protected function populateNinjaFormsSettings() : void
-        {
-        }
-        /**
-         * Calculate elapsed time from given start time in milliseconds
+         * Calculate elapsed time from given start time in microseconds
          *
          * @param float $startTime
          * @return integer
          */
         protected function calculateElapsedTime(float $startTime) : int
+        {
+        }
+        /**
+         * Populate $wpdb with global WordPress DB object
+         *
+         * @return void
+         */
+        protected function populateWpdb() : void
+        {
+        }
+        /**
+         * Populate Forms data
+         *
+         * @return void
+         */
+        protected function populateForms() : void
+        {
+        }
+        /**
+         * Populate Form Meta data
+         *
+         * @return void
+         */
+        protected function populateFormMeta() : void
+        {
+        }
+        /**
+         * SQL for form meta data
+         *
+         * @return string
+         */
+        protected function constructFormMetaSql() : string
+        {
+        }
+        /**
+         * Populate Fields 
+         *
+         * @return void
+         */
+        protected function populateFields() : void
+        {
+        }
+        /**
+         * Populate Field Settings
+         *
+         * @return void
+         */
+        protected function populateFieldMeta() : void
+        {
+        }
+        /**
+         * SQL for field meta data
+         * 
+         * Modify for NF DB Version < 1.3
+         *
+         * @return string
+         */
+        protected function constructFieldMetaSql() : string
+        {
+        }
+        /**
+         * Populate NfActions 
+         *
+         * @return void
+         */
+        protected function populateActions() : void
+        {
+        }
+        /**
+         * Populate ninja_forms_settings $ninjaFormsSettings
+         *
+         * @return void
+         */
+        protected function populateNinjaFormsSettings() : void
         {
         }
     }
@@ -15946,7 +16206,7 @@ namespace {
         /**
          * @since 3.0
          */
-        const VERSION = '3.8.14';
+        const VERSION = '3.8.15';
         /**
          * @since 3.4.0
          */
@@ -16424,7 +16684,7 @@ namespace NinjaForms {
 }
 namespace {
     // autoload_real.php @generated by Composer
-    class ComposerAutoloaderInite9b8b4150496273fa661dc8e0462d223
+    class ComposerAutoloaderInit18f2a846da5e0265e7af58121389e9a1
     {
         private static $loader;
         public static function loadClassLoader($class)
@@ -16439,7 +16699,7 @@ namespace {
     }
 }
 namespace Composer\Autoload {
-    class ComposerStaticInite9b8b4150496273fa661dc8e0462d223
+    class ComposerStaticInit18f2a846da5e0265e7af58121389e9a1
     {
         public static $prefixLengthsPsr4 = array('N' => array('NinjaForms\\NinjaForms\\' => 22, 'NinjaForms\\Includes\\' => 20, 'NinjaForms\\Blocks\\' => 18));
         public static $prefixDirsPsr4 = array('NinjaForms\\NinjaForms\\' => array(0 => __DIR__ . '/../..' . '/'), 'NinjaForms\\Includes\\' => array(0 => __DIR__ . '/../..' . '/includes'), 'NinjaForms\\Blocks\\' => array(0 => __DIR__ . '/../..' . '/blocks/views/includes'));
