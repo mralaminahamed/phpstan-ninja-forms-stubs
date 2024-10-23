@@ -1861,13 +1861,11 @@ class NF_Subs
     {
     }
 }
-// uncomment this line for testing
-//set_site_transient( 'update_plugins', null );
 /**
  * Allows plugins to use their own update API.
  *
  * @author Pippin Williamson
- * @version 1.6
+ * @version 1.6.5
  */
 class EDD_SL_Plugin_Updater
 {
@@ -1875,6 +1873,8 @@ class EDD_SL_Plugin_Updater
     private $api_data = array();
     private $name = '';
     private $slug = '';
+    private $version = '';
+    private $wp_override = \false;
     /**
      * Class constructor.
      *
@@ -1884,9 +1884,8 @@ class EDD_SL_Plugin_Updater
      * @param string  $_api_url     The URL pointing to the custom API endpoint.
      * @param string  $_plugin_file Path to the plugin file.
      * @param array   $_api_data    Optional data to send with API calls.
-     * @return void
      */
-    function __construct($_api_url, $_plugin_file, $_api_data = \null)
+    public function __construct($_api_url, $_plugin_file, $_api_data = \null)
     {
     }
     /**
@@ -1912,7 +1911,7 @@ class EDD_SL_Plugin_Updater
      * @param array   $_transient_data Update array build by WordPress.
      * @return array Modified update array with custom plugin data.
      */
-    function check_update($_transient_data)
+    public function check_update($_transient_data)
     {
     }
     /**
@@ -1934,7 +1933,7 @@ class EDD_SL_Plugin_Updater
      * @param object  $_args
      * @return object $_data
      */
-    function plugins_api_filter($_data, $_action = '', $_args = \null)
+    public function plugins_api_filter($_data, $_action = '', $_args = \null)
     {
     }
     /**
@@ -1944,7 +1943,7 @@ class EDD_SL_Plugin_Updater
      * @param string  $url
      * @return object $array
      */
-    function http_request_args($args, $url)
+    public function http_request_args($args, $url)
     {
     }
     /**
@@ -1956,7 +1955,7 @@ class EDD_SL_Plugin_Updater
      *
      * @param string  $_action The requested action.
      * @param array   $_data   Parameters for the API action.
-     * @return false||object
+     * @return false|object
      */
     private function api_request($_action, $_data)
     {
@@ -2546,7 +2545,7 @@ class NF_Extension_Updater
     public $product_nice_name = '';
     public $product_name = '';
     public $version = '';
-    public $store_url = 'https://ninjaforms.com';
+    public $store_url = 'https://ninjaforms.com/update-check/';
     public $file = '';
     public $author = '';
     public $error = '';
@@ -4419,7 +4418,7 @@ class NF_THREE_Submenu
      *
      * @var string
      */
-    public $parent_slug = 'ninja-forms';
+    public $parent_slug = '';
     /**
      * (required) The text to be displayed in the title tags of the page when the menu is selected
      *
@@ -4477,6 +4476,12 @@ class NF_THREE_Submenu
     private function respond($response = array())
     {
     }
+    public function settings_upgrade_button($settings)
+    {
+    }
+    public function settings_upgrade_button_display()
+    {
+    }
 }
 abstract class NF_Abstracts_Controller
 {
@@ -4521,13 +4526,47 @@ abstract class NF_Abstracts_Controller
 }
 class NF_AJAX_Controllers_Form extends \NF_Abstracts_Controller
 {
+    private $publish_processing;
     public function __construct()
+    {
+    }
+    public function plugins_loaded()
     {
     }
     public function save()
     {
     }
     public function delete()
+    {
+    }
+}
+class NF_AJAX_Controllers_FormEndpoints extends \NF_Abstracts_Controller
+{
+    /*
+     * Constructor
+     */
+    public function __construct()
+    {
+    }
+    /*
+     *
+     */
+    public function get_forms()
+    {
+    }
+    /*
+     *
+     */
+    public function get_new_form_templates()
+    {
+    }
+    /*
+     *
+     */
+    public function delete()
+    {
+    }
+    public function duplicate()
     {
     }
 }
@@ -4568,6 +4607,7 @@ class NF_AJAX_Controllers_SavedFields extends \NF_Abstracts_Controller
 class NF_AJAX_Controllers_Submission extends \NF_Abstracts_Controller
 {
     protected $_form_data = array();
+    protected $_form_cache = array();
     protected $_preview_data = array();
     protected $_form_id = '';
     public function __construct()
@@ -4582,34 +4622,506 @@ class NF_AJAX_Controllers_Submission extends \NF_Abstracts_Controller
     protected function process()
     {
     }
-    protected function populate_field_merge_tags($fields, $field_merge_tags)
+    protected function validate_field($field_settings)
     {
     }
-    protected function populate_calcs_merge_tags($calcs, $calcs_merge_tags)
-    {
-    }
-    protected function validate_fields()
-    {
-    }
-    protected function validate_field($field, $data)
-    {
-    }
-    protected function process_fields()
-    {
-    }
-    protected function process_field($field, $data)
-    {
-    }
-    protected function run_actions()
-    {
-    }
-    protected function run_actions_preview()
+    protected function process_field($field_settings)
     {
     }
     protected function maybe_halt($action_id)
     {
     }
     protected function sort_form_actions($a, $b)
+    {
+    }
+    public function shutdown()
+    {
+    }
+    protected function form_data_check()
+    {
+    }
+    protected function is_preview()
+    {
+    }
+}
+/**
+ * Abstract WP_Async_Request class.
+ *
+ * @abstract
+ */
+abstract class WP_Async_Request
+{
+    /**
+     * Prefix
+     *
+     * (default value: 'wp')
+     *
+     * @var string
+     * @access protected
+     */
+    protected $prefix = 'wp';
+    /**
+     * Action
+     *
+     * (default value: 'async_request')
+     *
+     * @var string
+     * @access protected
+     */
+    protected $action = 'async_request';
+    /**
+     * Identifier
+     *
+     * @var mixed
+     * @access protected
+     */
+    protected $identifier;
+    /**
+     * Data
+     *
+     * (default value: array())
+     *
+     * @var array
+     * @access protected
+     */
+    protected $data = array();
+    /**
+     * Initiate new async request
+     */
+    public function __construct()
+    {
+    }
+    /**
+     * Set data used during the request
+     *
+     * @param array $data Data.
+     *
+     * @return $this
+     */
+    public function data($data)
+    {
+    }
+    /**
+     * Dispatch the async request
+     *
+     * @return array|WP_Error
+     */
+    public function dispatch()
+    {
+    }
+    /**
+     * Get query args
+     *
+     * @return array
+     */
+    protected function get_query_args()
+    {
+    }
+    /**
+     * Get query URL
+     *
+     * @return string
+     */
+    protected function get_query_url()
+    {
+    }
+    /**
+     * Get post args
+     *
+     * @return array
+     */
+    protected function get_post_args()
+    {
+    }
+    /**
+     * Maybe handle
+     *
+     * Check for correct nonce and pass to handler.
+     */
+    public function maybe_handle()
+    {
+    }
+    /**
+     * Handle
+     *
+     * Override this method to perform any actions required
+     * during the async request.
+     */
+    protected abstract function handle();
+}
+/**
+ * Abstract WP_Background_Process class.
+ *
+ * @abstract
+ * @extends WP_Async_Request
+ */
+abstract class WP_Background_Process extends \WP_Async_Request
+{
+    /**
+     * Action
+     *
+     * (default value: 'background_process')
+     *
+     * @var string
+     * @access protected
+     */
+    protected $action = 'background_process';
+    /**
+     * Start time of current process.
+     *
+     * (default value: 0)
+     *
+     * @var int
+     * @access protected
+     */
+    protected $start_time = 0;
+    /**
+     * Cron_hook_identifier
+     *
+     * @var mixed
+     * @access protected
+     */
+    protected $cron_hook_identifier;
+    /**
+     * Cron_interval_identifier
+     *
+     * @var mixed
+     * @access protected
+     */
+    protected $cron_interval_identifier;
+    /**
+     * Initiate new background process
+     */
+    public function __construct()
+    {
+    }
+    /**
+     * Dispatch
+     *
+     * @access public
+     * @return void
+     */
+    public function dispatch()
+    {
+    }
+    /**
+     * Push to queue
+     *
+     * @param mixed $data Data.
+     *
+     * @return $this
+     */
+    public function push_to_queue($data)
+    {
+    }
+    /**
+     * Save queue
+     *
+     * @return $this
+     */
+    public function save()
+    {
+    }
+    /**
+     * Update queue
+     *
+     * @param string $key Key.
+     * @param array  $data Data.
+     *
+     * @return $this
+     */
+    public function update($key, $data)
+    {
+    }
+    /**
+     * Delete queue
+     *
+     * @param string $key Key.
+     *
+     * @return $this
+     */
+    public function delete($key)
+    {
+    }
+    /**
+     * Generate key
+     *
+     * Generates a unique key based on microtime. Queue items are
+     * given a unique key so that they can be merged upon save.
+     *
+     * @param int $length Length.
+     *
+     * @return string
+     */
+    protected function generate_key($length = 64)
+    {
+    }
+    /**
+     * Maybe process queue
+     *
+     * Checks whether data exists within the queue and that
+     * the process is not already running.
+     */
+    public function maybe_handle()
+    {
+    }
+    /**
+     * Is queue empty
+     *
+     * @return bool
+     */
+    protected function is_queue_empty()
+    {
+    }
+    /**
+     * Is process running
+     *
+     * Check whether the current process is already running
+     * in a background process.
+     */
+    protected function is_process_running()
+    {
+    }
+    /**
+     * Lock process
+     *
+     * Lock the process so that multiple instances can't run simultaneously.
+     * Override if applicable, but the duration should be greater than that
+     * defined in the time_exceeded() method.
+     */
+    protected function lock_process()
+    {
+    }
+    /**
+     * Unlock process
+     *
+     * Unlock the process so that other instances can spawn.
+     *
+     * @return $this
+     */
+    protected function unlock_process()
+    {
+    }
+    /**
+     * Get batch
+     *
+     * @return stdClass Return the first batch from the queue
+     */
+    protected function get_batch()
+    {
+    }
+    /**
+     * Handle
+     *
+     * Pass each queue item to the task handler, while remaining
+     * within server memory and time limit constraints.
+     */
+    protected function handle()
+    {
+    }
+    /**
+     * Memory exceeded
+     *
+     * Ensures the batch process never exceeds 90%
+     * of the maximum WordPress memory.
+     *
+     * @return bool
+     */
+    protected function memory_exceeded()
+    {
+    }
+    /**
+     * Get memory limit
+     *
+     * @return int
+     */
+    protected function get_memory_limit()
+    {
+    }
+    /**
+     * Time exceeded.
+     *
+     * Ensures the batch never exceeds a sensible time limit.
+     * A timeout limit of 30s is common on shared hosting.
+     *
+     * @return bool
+     */
+    protected function time_exceeded()
+    {
+    }
+    /**
+     * Complete.
+     *
+     * Override if applicable, but ensure that the below actions are
+     * performed, or, call parent::complete().
+     */
+    protected function complete()
+    {
+    }
+    /**
+     * Schedule cron healthcheck
+     *
+     * @access public
+     * @param mixed $schedules Schedules.
+     * @return mixed
+     */
+    public function schedule_cron_healthcheck($schedules)
+    {
+    }
+    /**
+     * Handle cron healthcheck
+     *
+     * Restart the background process if not already running
+     * and data exists in the queue.
+     */
+    public function handle_cron_healthcheck()
+    {
+    }
+    /**
+     * Schedule event
+     */
+    protected function schedule_event()
+    {
+    }
+    /**
+     * Clear scheduled event
+     */
+    protected function clear_scheduled_event()
+    {
+    }
+    /**
+     * Cancel Process
+     *
+     * Stop processing queue items, clear cronjob and delete batch.
+     *
+     */
+    public function cancel_process()
+    {
+    }
+    /**
+     * Task
+     *
+     * Override this method to perform any actions required on each
+     * queue item. Return the modified item for further processing
+     * in the next pass through. Or, return false to remove the
+     * item from the queue.
+     *
+     * @param mixed $item Queue item to iterate over.
+     *
+     * @return mixed
+     */
+    protected abstract function task($item);
+}
+final class NF_AJAX_Processes_NullProcess extends \WP_Background_Process
+{
+    protected $action = 'nf_null_process';
+    protected function task($item)
+    {
+    }
+}
+final class NF_AJAX_Processes_UpdateFields extends \WP_Background_Process
+{
+    protected $action = 'nf_update_fields';
+    protected function task($item)
+    {
+    }
+}
+/**
+ * A controller extensions for mapping REST requests to an admin-ajax action.
+ */
+abstract class NF_AJAX_REST_Controller extends \NF_Abstracts_Controller
+{
+    /**
+     * The name of the admin-ajax action.
+     * @var string
+     */
+    protected $action;
+    /**
+     * Setup admin-ajax to access the endpoint router.
+     */
+    public function __construct()
+    {
+    }
+    /**
+     * Map admin-ajax requests to the corresponding method callback.
+     */
+    public function route()
+    {
+    }
+    /**
+     * [OVERRIDE THIS] Get sanitized request data for use in method callbacks.
+     * @return array
+     */
+    protected function get_request_data()
+    {
+    }
+    /**
+     * Returns debugging data when a fatal error is triggered.
+     */
+    public function shutdown()
+    {
+    }
+}
+class NF_AJAX_REST_Forms extends \NF_AJAX_REST_Controller
+{
+    protected $action = 'nf_forms';
+    private $forms_controller;
+    public function __construct()
+    {
+    }
+    /**
+     * POST /forms/<id>/
+     * @param array $request_data [ int $clone_id ]
+     * @return array $data [ int $new_form_id ]
+     */
+    public function post($request_data)
+    {
+    }
+    /**
+     * GET forms/
+     * @return array [ $forms ]
+     */
+    public function get()
+    {
+    }
+    /**
+     * DELETE forms/<id>/
+     * @param array $request_data => [ form_id ]
+     * @return array $data => [ delete => null ]
+     */
+    public function delete($request_data)
+    {
+    }
+    /**
+     * Form ID, Clone ID
+     * @return array $request_data
+     */
+    protected function get_request_data()
+    {
+    }
+}
+class NF_AJAX_REST_NewFormTemplates extends \NF_AJAX_REST_Controller
+{
+    protected $action = 'nf_new_form_templates';
+    /**
+     * GET new-form-templates/
+     * @return array [ $new_form_templates ]
+     */
+    public function get()
+    {
+    }
+}
+final class NF_AJAX_Requests_DeleteField extends \WP_Async_Request
+{
+    protected $action = 'nf_delete_field';
+    protected function handle()
+    {
+    }
+}
+final class NF_AJAX_Requests_NullRequest extends \WP_Async_Request
+{
+    protected $action = 'nf_null_request';
+    protected function handle()
     {
     }
 }
@@ -5061,7 +5573,7 @@ abstract class NF_Abstracts_Input extends \NF_Abstracts_Field
     protected $_name = 'input';
     protected $_section = 'common';
     protected $_type = 'text';
-    protected $_settings_all_fields = array('key', 'label', 'label_pos', 'required', 'placeholder', 'default', 'classes', 'input_limit_set', 'manual_key', 'disable_input', 'admin_label', 'help', 'description');
+    protected $_settings_all_fields = array('key', 'label', 'label_pos', 'required', 'default', 'placeholder', 'classes', 'input_limit_set', 'manual_key', 'disable_input', 'admin_label', 'help', 'description');
     public function __construct()
     {
     }
@@ -5132,7 +5644,7 @@ abstract class NF_Abstracts_List extends \NF_Abstracts_Field
 /**
 * Describes log levels
 */
-class LogLevel
+class NF_Abstracts_LogLevel
 {
     const EMERGENCY = 'emergency';
     const ALERT = 'alert';
@@ -5158,7 +5670,7 @@ class LogLevel
 * See https://github.com/php-fig/fig-standards/blob/master/accepted/PSR-3-logger-interface.md
 * for the full interface specification.
 */
-interface LoggerInterface
+interface NF_Abstracts_LoggerInterface
 {
     /**
      * System is unusable.
@@ -5252,7 +5764,7 @@ interface LoggerInterface
  * reduce boilerplate code that a simple Logger that does the same thing with
  * messages regardless of the error level has to implement.
  */
-abstract class NF_Abstracts_Logger implements \LoggerInterface
+abstract class NF_Abstracts_Logger implements \NF_Abstracts_LoggerInterface
 {
     /**
      * System is unusable.
@@ -5415,7 +5927,16 @@ abstract class NF_Abstracts_Menu
     public function register()
     {
     }
-    public function body_class($classes)
+    public function get_page_title()
+    {
+    }
+    public function get_menu_title()
+    {
+    }
+    public function get_menu_slug()
+    {
+    }
+    public function get_capability()
     {
     }
     /**
@@ -5485,10 +6006,22 @@ abstract class NF_Abstracts_Migration
     public function __construct($table_name, $flag)
     {
     }
+    public function table_name()
+    {
+    }
+    public function charset_collate()
+    {
+    }
     public function _run()
     {
     }
     protected abstract function run();
+    public function _drop()
+    {
+    }
+    protected function drop()
+    {
+    }
 }
 /**
  * Class NF_Abstracts_Model
@@ -5706,7 +6239,7 @@ class NF_Abstracts_Model
     }
     /**
      * Cache Flag
-     * 
+     *
      * @param string $cache
      * @return $this
      */
@@ -5787,6 +6320,10 @@ class NF_Abstracts_ModelFactory
      * @var object
      */
     protected $_object;
+    /**
+     * Form
+     */
+    protected $_form;
     /**
      * Fields
      *
@@ -6000,7 +6537,7 @@ class NF_Abstracts_ModelFactory
      * @param bool|FALSE $fresh
      * @return array
      */
-    public function get_subs($where = array(), $fresh = \FALSE)
+    public function get_subs($where = array(), $fresh = \FALSE, $sub_ids = array())
     {
     }
     /**
@@ -6112,7 +6649,16 @@ abstract class NF_Abstracts_Submenu
     public function register()
     {
     }
-    public function body_class($classes)
+    public function get_page_title()
+    {
+    }
+    public function get_menu_title()
+    {
+    }
+    public function get_menu_slug()
+    {
+    }
+    public function get_capability()
     {
     }
     /**
@@ -6279,6 +6825,9 @@ final class NF_Actions_Email extends \NF_Abstracts_Action
     public function process($action_settings, $form_id, $data)
     {
     }
+    protected function check_for_errors($action_settings)
+    {
+    }
     private function _get_headers($settings)
     {
     }
@@ -6295,6 +6844,12 @@ final class NF_Actions_Email extends \NF_Abstracts_Action
     {
     }
     private function _create_csv($fields)
+    {
+    }
+    /**
+     * Function to delete csv file from temp directory after Email Action has completed.
+     */
+    private function _drop_csv()
     {
     }
     /*
@@ -6562,6 +7117,7 @@ class NF_Admin_CPT_DownloadAllSubmissions extends \NF_Step_Processing
 class NF_Admin_CPT_Submission
 {
     protected $cpt_slug = 'nf_sub';
+    public $screen_options;
     /**
      * Constructor
      */
@@ -6574,7 +7130,10 @@ class NF_Admin_CPT_Submission
     function custom_post_type()
     {
     }
-    public function post_row_actions($actions)
+    public function enqueue_scripts()
+    {
+    }
+    public function post_row_actions($actions, $sub)
     {
     }
     public function change_columns($columns)
@@ -6589,7 +7148,7 @@ class NF_Admin_CPT_Submission
     /**
      * Meta Boxes
      */
-    public function add_meta_boxes($post_type, $post)
+    public function add_meta_boxes($post_type)
     {
     }
     /**
@@ -6598,6 +7157,9 @@ class NF_Admin_CPT_Submission
      * @param $post
      */
     public function fields_meta_box($post)
+    {
+    }
+    public static function sort_fields($a, $b)
     {
     }
     /**
@@ -6614,6 +7176,39 @@ class NF_Admin_CPT_Submission
     public function remove_meta_boxes()
     {
     }
+    public function cap_filter($allcaps, $cap, $args)
+    {
+    }
+    /**
+     * Filter our hidden columns so that they are handled on a per-form basis.
+     *
+     * @access public
+     * @since 2.7
+     * @return void
+     */
+    public function filter_hidden_columns()
+    {
+    }
+    /**
+     * Convert Hidden Columns
+     * Looks for 2.9.x hidden columns formatting and converts it to the formatting 3.0 expects.
+     * @param $form_id
+     * @param $hidden_columns
+     * @return mixed
+     */
+    private function convert_hidden_columns($form_id, $hidden_columns)
+    {
+    }
+    /**
+     * Save our hidden columns per form id.
+     *
+     * @access public
+     * @since 2.7
+     * @return void
+     */
+    public function hide_columns()
+    {
+    }
     /*
      * PRIVATE METHODS
      */
@@ -6625,9 +7220,15 @@ final class NF_Admin_Menus_AddNew extends \NF_Abstracts_Submenu
 {
     public $parent_slug = 'ninja-forms';
     public $page_title = 'Add New';
-    public $menu_slug = 'admin.php?page=ninja-forms&form_id=new';
+    public $menu_slug = 'admin.php?page=ninja-forms#new-form';
     public $priority = 2;
     public function __construct()
+    {
+    }
+    public function get_page_title()
+    {
+    }
+    public function get_capability()
     {
     }
     public function display()
@@ -6637,22 +7238,34 @@ final class NF_Admin_Menus_AddNew extends \NF_Abstracts_Submenu
 final class NF_Admin_Menus_Addons extends \NF_Abstracts_Submenu
 {
     public $parent_slug = 'ninja-forms';
-    public $page_title = 'Add-Ons';
+    public $menu_slug = 'ninja-forms#apps';
     public $priority = 13;
     public function __construct()
+    {
+    }
+    public function get_page_title()
+    {
+    }
+    public function get_capability()
     {
     }
     public function display()
     {
     }
 }
-final class NF_Admin_Menus_AllForms extends \NF_Abstracts_Submenu
+final class NF_Admin_Menus_Dashboard extends \NF_Abstracts_Submenu
 {
     public $parent_slug = 'ninja-forms';
-    public $page_title = 'All Forms';
-    public $menu_slug = 'admin.php?page=ninja-forms';
+    public $page_title = 'Dashboard';
+    public $menu_slug = 'ninja-forms';
     public $priority = 1;
     public function __construct()
+    {
+    }
+    public function get_page_title()
+    {
+    }
+    public function get_capability()
     {
     }
     public function display()
@@ -6675,11 +7288,17 @@ final class NF_Admin_Menus_Divider extends \NF_Abstracts_Submenu
 }
 final class NF_Admin_Menus_Forms extends \NF_Abstracts_Menu
 {
-    public $page_title = 'Forms';
+    public $page_title = 'Ninja Forms';
     public $menu_slug = 'ninja-forms';
     public $icon_url = 'dashicons-feedback';
     public $position = '35.1337';
     public function __construct()
+    {
+    }
+    public function body_class($classes)
+    {
+    }
+    public function get_page_title()
     {
     }
     public function admin_init()
@@ -6727,12 +7346,18 @@ final class NF_Admin_Menus_Forms extends \NF_Abstracts_Menu
     protected function setting_group_priority($a, $b)
     {
     }
+    public function get_capability()
+    {
+    }
 }
 final class NF_Admin_Menus_ImportExport extends \NF_Abstracts_Submenu
 {
     public $parent_slug = 'ninja-forms';
-    public $page_title = 'Import / Export';
+    public $menu_slug = 'nf-import-export';
     public function __construct()
+    {
+    }
+    public function get_page_title()
     {
     }
     public function import_form_listener()
@@ -6774,6 +7399,9 @@ final class NF_Admin_Menus_ImportExport extends \NF_Abstracts_Submenu
     {
     }
     private function upload_error_check($file)
+    {
+    }
+    public function get_capability()
     {
     }
 }
@@ -6829,10 +7457,30 @@ final class NF_Admin_Menus_MockData extends \NF_Abstracts_Submenu
 final class NF_Admin_Menus_Settings extends \NF_Abstracts_Submenu
 {
     public $parent_slug = 'ninja-forms';
-    public $page_title = 'Settings';
+    public $menu_slug = 'nf-settings';
     public $priority = 11;
     protected $_prefix = 'ninja_forms';
     public function __construct()
+    {
+    }
+    public function body_class($classes)
+    {
+    }
+    /**
+     * Function to notify users of CF7 conflict
+     * 
+     * Since 3.0
+     *
+     * @param (array) $notices
+     * @return (array) $notices
+     */
+    public function ninja_forms_cf7_notice($notices)
+    {
+    }
+    public function get_page_title()
+    {
+    }
+    public function get_capability()
     {
     }
     public function display()
@@ -6873,6 +7521,9 @@ final class NF_Admin_Menus_Submissions extends \NF_Abstracts_Submenu
      * Constructor
      */
     public function __construct()
+    {
+    }
+    public function get_page_title()
     {
     }
     /**
@@ -6970,13 +7621,22 @@ final class NF_Admin_Menus_Submissions extends \NF_Abstracts_Submenu
     private function table_filter_by_date($vars)
     {
     }
+    public function get_capability()
+    {
+    }
 }
 final class NF_Admin_Menus_SystemStatus extends \NF_Abstracts_Submenu
 {
     public $parent_slug = 'ninja-forms';
-    public $page_title = 'Get Help';
+    public $menu_slug = 'nf-system-status';
     public $priority = 12;
     public function __construct()
+    {
+    }
+    public function get_page_title()
+    {
+    }
+    public function get_capability()
     {
     }
     public function display()
@@ -6993,6 +7653,15 @@ final class NF_Admin_Metaboxes_AppendAForm extends \NF_Abstracts_Metabox
     {
     }
     public function save_post($post_id)
+    {
+    }
+    public function render_metabox($post, $metabox)
+    {
+    }
+}
+final class NF_Admin_Metaboxes_Calculations extends \NF_Abstracts_SubmissionMetabox
+{
+    public function __construct()
     {
     }
     public function render_metabox($post, $metabox)
@@ -7069,6 +7738,102 @@ class NF_Admin_Notices
     {
     }
 }
+final class NF_Database_FieldsController
+{
+    private $db;
+    private $factory;
+    private $fields_data;
+    private $new_field_ids;
+    private $insert_fields;
+    private $insert_field_meta = array();
+    private $insert_field_meta_chunk = 0;
+    private $update_fields = array('key' => '', 'label' => '', 'type' => '');
+    private $update_field_meta = array();
+    private $update_field_meta_chunk = 0;
+    public function __construct($form_id, $fields_data)
+    {
+    }
+    public function run()
+    {
+    }
+    public function get_updated_fields_data()
+    {
+    }
+    private function parse_fields()
+    {
+    }
+    private function parse_field_meta()
+    {
+    }
+    private function get_existing_meta()
+    {
+    }
+    private function update_new_field_ids()
+    {
+    }
+    public function get_new_field_ids()
+    {
+    }
+    /*
+    |--------------------------------------------------------------------------
+    | INSERT (NEW) FIELDS
+    |--------------------------------------------------------------------------
+    */
+    private function insert_field($settings)
+    {
+    }
+    public function get_insert_fields_query()
+    {
+    }
+    /*
+    |--------------------------------------------------------------------------
+    | UPDATE (EXISTING) FIELDS
+    |--------------------------------------------------------------------------
+    */
+    private function update_field($field_id, $settings)
+    {
+    }
+    public function get_update_fields_query()
+    {
+    }
+    /*
+    |--------------------------------------------------------------------------
+    | INSERT (NEW) META
+    |--------------------------------------------------------------------------
+    */
+    private function insert_field_meta($field_id, $key, $value)
+    {
+    }
+    public function run_insert_field_meta_query()
+    {
+    }
+    /*
+    |--------------------------------------------------------------------------
+    | UPDATE (EXISTING) META
+    |--------------------------------------------------------------------------
+    */
+    private function update_field_meta($field_id, $key, $value)
+    {
+    }
+    public function run_update_field_meta_query()
+    {
+    }
+}
+final class NF_Database_FormsController
+{
+    private $db;
+    private $factory;
+    private $forms_data = array();
+    public function __construct()
+    {
+    }
+    public function setFormsData()
+    {
+    }
+    public function getFormsData()
+    {
+    }
+}
 /**
  * Class NF_Abstracts_logger
  *
@@ -7120,6 +7885,21 @@ class NF_Database_Migrations
     {
     }
     public function nuke($areYouSure = \FALSE, $areYouReallySure = \FALSE)
+    {
+    }
+    private function _nuke()
+    {
+    }
+    public function nuke_settings($areYouSure = \FALSE, $areYouReallySure = \FALSE)
+    {
+    }
+    private function _nuke_settings()
+    {
+    }
+    public function nuke_deprecated($areYouSure = \FALSE, $areYouReallySure = \FALSE)
+    {
+    }
+    private function _nuke_deprecated()
     {
     }
 }
@@ -7459,7 +8239,7 @@ final class NF_Database_Models_Submission
      * @param array $where
      * @return array
      */
-    public function find($form_id, array $where = array())
+    public function find($form_id, array $where = array(), array $ids = array())
     {
     }
     /**
@@ -7524,6 +8304,16 @@ final class NF_Database_Models_Submission
     protected function get_field_id_by_key($field_key)
     {
     }
+    public static function sort_fields($a, $b)
+    {
+    }
+}
+final class NF_Database_PublishProcessing extends \WP_Background_Process
+{
+    protected $action = 'ninja-forms-publish';
+    protected function task($item)
+    {
+    }
 }
 /**
  * Class NF_Display_Preview
@@ -7555,18 +8345,36 @@ final class NF_Display_Preview
     function template_include()
     {
     }
+    function post_thumbnail_html()
+    {
+    }
 }
 final class NF_Display_Render
 {
-    protected static $loaded_templates = array('app-layout', 'app-before-form', 'app-after-form', 'app-before-fields', 'app-after-fields', 'app-before-field', 'app-after-field', 'form-layout', 'form-hp', 'field-layout', 'field-before', 'field-after', 'fields-wrap', 'fields-wrap-no-label', 'fields-wrap-no-container', 'fields-label', 'fields-error', 'form-error', 'field-input-limit');
+    protected static $loaded_templates = array('app-layout', 'app-before-form', 'app-after-form', 'app-before-fields', 'app-after-fields', 'app-before-field', 'app-after-field', 'form-layout', 'form-hp', 'field-layout', 'field-before', 'field-after', 'fields-wrap', 'fields-wrap-no-label', 'fields-wrap-no-container', 'fields-label', 'fields-error', 'form-error', 'field-input-limit', 'field-null');
     protected static $use_test_values = \FALSE;
+    protected static $form_uses_recaptcha = array();
+    protected static $form_uses_datepicker = array();
+    protected static $form_uses_inputmask = array();
+    protected static $form_uses_rte = array();
+    protected static $form_uses_textarea_media = array();
+    protected static $form_uses_helptext = array();
+    protected static $form_uses_starrating = array();
     public static function localize($form_id)
     {
     }
     public static function localize_preview($form_id)
     {
     }
-    public static function enqueue_scripts($form_id)
+    public static function enqueue_scripts($form_id, $is_preview = \false)
+    {
+    }
+    /**
+     * Enqueue NF frontend basic display styles.
+     *
+     * @param string $css_dir
+     */
+    public static function enqueue_styles_display($css_dir)
     {
     }
     protected static function load_template($file_name = '')
@@ -7579,24 +8387,6 @@ final class NF_Display_Render
      * UTILITY
      */
     protected static function is_template_loaded($template_name)
-    {
-    }
-    protected static function form_uses_recaptcha($form_id)
-    {
-    }
-    protected static function form_uses_datepicker($form_id)
-    {
-    }
-    protected static function form_uses_inputmask($form_id)
-    {
-    }
-    protected static function form_uses_rte($form_id)
-    {
-    }
-    protected static function form_uses_helptext($form_id)
-    {
-    }
-    protected static function form_uses_starrating($form_id)
     {
     }
 }
@@ -7689,6 +8479,12 @@ class NF_Fields_Checkbox extends \NF_Abstracts_Input
     {
     }
     public function filter_merge_tag_value($value, $field)
+    {
+    }
+    public function filter_merge_tag_value_calc($value, $field)
+    {
+    }
+    public function export_value($value)
     {
     }
 }
@@ -7846,7 +8642,7 @@ class NF_Fields_Date extends \NF_Fields_Textbox
     protected $_type = 'date';
     protected $_templates = 'date';
     protected $_test_value = '12/12/2022';
-    protected $_settings = array('date_default', 'date_format');
+    protected $_settings = array('date_default', 'date_format', 'year_range');
     protected $_settings_exclude = array('default', 'placeholder', 'input_limit_set', 'disable_input');
     public function __construct()
     {
@@ -7912,6 +8708,9 @@ class NF_Fields_HTML extends \NF_Abstracts_Input
     public function __construct()
     {
     }
+    function hide_field_type($field_types)
+    {
+    }
 }
 /**
  * Class NF_Fields_Hidden
@@ -7928,25 +8727,6 @@ class NF_Fields_Hidden extends \NF_Abstracts_Input
     protected $_settings_only = array('key', 'label', 'default', 'admin_label');
     protected $_use_merge_tags_include = array('calculations');
     public function __construct()
-    {
-    }
-}
-/**
- * Class NF_Fields_ListState
- */
-class NF_Fields_ListState extends \NF_Abstracts_List
-{
-    protected $_name = 'liststate';
-    protected $_type = 'liststate';
-    protected $_nicename = 'State';
-    protected $_section = 'userinfo';
-    protected $_icon = 'map-marker';
-    protected $_templates = array('liststate', 'listselect');
-    protected $_old_classname = 'list-select';
-    public function __construct()
-    {
-    }
-    private function get_options()
     {
     }
 }
@@ -7987,6 +8767,9 @@ class NF_Fields_ListCheckbox extends \NF_Abstracts_List
     public function admin_form_element($id, $value)
     {
     }
+    public function get_calc_value($value, $field)
+    {
+    }
 }
 /**
  * Class NF_Fields_CountryList
@@ -8004,7 +8787,7 @@ class NF_Fields_ListCountry extends \NF_Abstracts_List
     public function custom_columns($value, $field)
     {
     }
-    public function filter_options($field)
+    public function filter_options($options, $settings)
     {
     }
     public function filter_options_preview($field_settings)
@@ -8017,6 +8800,9 @@ class NF_Fields_ListCountry extends \NF_Abstracts_List
     {
     }
     private function get_options()
+    {
+    }
+    public function filter_csv_value($field_value)
     {
     }
 }
@@ -8037,6 +8823,9 @@ class NF_Fields_ListMultiselect extends \NF_Abstracts_List
     public function admin_form_element($id, $value)
     {
     }
+    public function get_calc_value($value, $field)
+    {
+    }
 }
 /**
  * Class NF_Fields_RadioList
@@ -8050,6 +8839,9 @@ class NF_Fields_ListRadio extends \NF_Abstracts_List
     protected $_templates = 'listradio';
     protected $_old_classname = 'list-radio';
     public function __construct()
+    {
+    }
+    public function get_calc_value($value, $field)
     {
     }
 }
@@ -8068,6 +8860,28 @@ class NF_Fields_ListSelect extends \NF_Abstracts_List
     public function __construct()
     {
     }
+    public function get_calc_value($value, $field)
+    {
+    }
+}
+/**
+ * Class NF_Fields_ListState
+ */
+class NF_Fields_ListState extends \NF_Abstracts_List
+{
+    protected $_name = 'liststate';
+    protected $_type = 'liststate';
+    protected $_nicename = 'US States';
+    protected $_section = 'userinfo';
+    protected $_icon = 'map-marker';
+    protected $_templates = array('liststate', 'listselect');
+    protected $_old_classname = 'list-select';
+    public function __construct()
+    {
+    }
+    private function get_options()
+    {
+    }
 }
 /**
  * Class NF_Fields_Note
@@ -8079,6 +8893,7 @@ class NF_Fields_Note extends \NF_Fields_Hidden
     protected $_nicename = 'Note';
     protected $_section = '';
     protected $_icon = 'sticky-note-o';
+    protected $_templates = 'null';
     protected $_aliases = array('notes', 'info');
     protected $_settings_only = array('label', 'default');
     public function __construct()
@@ -8121,6 +8936,9 @@ class NF_Fields_Password extends \NF_Abstracts_Input
     public function __construct()
     {
     }
+    function hide_field_type($field_types)
+    {
+    }
 }
 /**
  * Class NF_Fields_PasswordConfirm
@@ -8134,6 +8952,9 @@ class NF_Fields_PasswordConfirm extends \NF_Fields_Password
     protected $_error_message = '';
     protected $_settings = array('confirm_field');
     public function __construct()
+    {
+    }
+    function hide_field_type($field_types)
     {
     }
     public function validate($field, $data)
@@ -8198,9 +9019,6 @@ class NF_Fields_Product extends \NF_Abstracts_Input
     public function filter_required_setting($field)
     {
     }
-    public function filter_required_setting_preview($field)
-    {
-    }
     public function merge_tag_value($value, $field)
     {
     }
@@ -8234,6 +9052,7 @@ class NF_Fields_Recaptcha extends \NF_Abstracts_Field
     protected $_icon = 'filter';
     protected $_templates = 'recaptcha';
     protected $_test_value = '';
+    protected $_settings = array('label', 'classes');
     public function __construct()
     {
     }
@@ -8316,7 +9135,7 @@ class NF_Fields_StarRating extends \NF_Abstracts_Input
     protected $_aliases = array('rating');
     protected $_type = 'starrating';
     protected $_templates = 'starrating';
-    protected $_settings_only = array('label', 'label_pos', 'default', 'required', 'classes');
+    protected $_settings_only = array('label', 'label_pos', 'default', 'required', 'classes', 'key', 'admin_label');
     public function __construct()
     {
     }
@@ -8369,6 +9188,9 @@ class NF_Fields_Terms extends \NF_Fields_ListCheckbox
     public function add_term_options($field)
     {
     }
+    public function merge_tag_value($value, $field)
+    {
+    }
     public function get_parent_type()
     {
     }
@@ -8413,6 +9235,31 @@ class NF_Fields_Total extends \NF_Abstracts_Input
     }
 }
 /**
+ * Class NF_Fields_Unknown
+ */
+class NF_Fields_Unknown extends \NF_Fields_Hidden
+{
+    protected $_name = 'unknown';
+    protected $_type = 'unknown';
+    protected $_section = '';
+    protected $_icon = 'question';
+    protected $_templates = 'null';
+    protected $_aliases = array();
+    protected $_settings_only = array('label', 'default');
+    public function __construct()
+    {
+    }
+    public function validate($field, $data)
+    {
+    }
+    function hide_field_type($field_types)
+    {
+    }
+    public static function create($field)
+    {
+    }
+}
+/**
  * Class NF_Fields_Hr
  */
 class NF_Fields_Hr extends \NF_Abstracts_Input
@@ -8452,6 +9299,13 @@ final class WPN_Helper
      * @return array|string
      */
     public static function utf8_encode($input)
+    {
+    }
+    /**
+     * @param $input
+     * @return array|string
+     */
+    public static function utf8_decode($input)
     {
     }
     /**
@@ -8526,6 +9380,28 @@ final class WPN_Helper
     public static function sanitize_text_field($data)
     {
     }
+    public static function get_plugin_version($plugin)
+    {
+    }
+    public static function is_func_disabled($function)
+    {
+    }
+    public static function maybe_unserialize($original)
+    {
+    }
+    /**
+     * Function to get this installation's TLS version
+     * 
+     * Since 3.0
+     * 
+     * @return float OR false
+     */
+    public static function get_tls()
+    {
+    }
+    private static function parse_utf8_serialized($matches)
+    {
+    }
 }
 /**
  * Equation Operating System (EOS) Parser
@@ -8543,7 +9419,7 @@ final class WPN_Helper
  * @subpackage EOS
  * @version 2.2.1
  */
-class Parser
+class NF_EOS_Parser
 {
     /**
      * No matching Open/Close pair
@@ -8719,6 +9595,10 @@ class Parser
     {
     }
 }
+/*
+ * MODIFICATIONS
+ * - Renamed with prefix to avoid naming collisions.
+ */
 /**
  * Basic Stack Class.
  *
@@ -8732,7 +9612,7 @@ class Parser
  * @subpackage EOS
  * @version 2.0
  */
-class Stack
+class NF_EOS_Stack
 {
     private $index;
     private $locArray;
@@ -8818,7 +9698,79 @@ final class NF_MergeTags_Calcs extends \NF_Abstracts_MergeTags
     public function __call($name, $arguments)
     {
     }
-    public function set_merge_tags($key, $value)
+    public function set_merge_tags($key, $value, $round = 2, $dec = '.', $sep = ',')
+    {
+    }
+    public function get_calc_value($key)
+    {
+    }
+    public function get_formatted_calc_value($key, $round = 2, $dec = '.', $sep = ',')
+    {
+    }
+}
+/**
+ * Class NF_MergeTags_WordPress
+ */
+final class NF_MergeTags_Deprecated extends \NF_Abstracts_MergeTags
+{
+    protected $id = 'deprecated';
+    /**
+     * @var array
+     * $post_meta[ $meta_key ] = $meta_value;
+     */
+    protected $post_meta = array();
+    public function __construct()
+    {
+    }
+    public function init()
+    {
+    }
+    protected function post_id()
+    {
+    }
+    protected function post_title()
+    {
+    }
+    protected function post_url()
+    {
+    }
+    protected function post_author()
+    {
+    }
+    protected function post_author_email()
+    {
+    }
+    public function setup_post_meta($post_id)
+    {
+    }
+    protected function user_id()
+    {
+    }
+    protected function user_first_name()
+    {
+    }
+    protected function user_last_name()
+    {
+    }
+    protected function user_display_name()
+    {
+    }
+    protected function user_email()
+    {
+    }
+    protected function admin_email()
+    {
+    }
+    protected function site_title()
+    {
+    }
+    protected function site_url()
+    {
+    }
+    protected function system_date()
+    {
+    }
+    protected function system_ip()
     {
     }
 }
@@ -8828,6 +9780,7 @@ final class NF_MergeTags_Calcs extends \NF_Abstracts_MergeTags
 final class NF_MergeTags_Fields extends \NF_Abstracts_MergeTags
 {
     protected $id = 'fields';
+    protected $form_id;
     public function __construct()
     {
     }
@@ -8837,10 +9790,47 @@ final class NF_MergeTags_Fields extends \NF_Abstracts_MergeTags
     public function all_fields()
     {
     }
+    public function all_fields_table()
+    {
+    }
+    public function fields_table()
+    {
+    }
+    // TODO: Is this being used?
     public function all_field_plain()
     {
     }
     public function add_field($field)
+    {
+    }
+    public function add($callback, $id, $tag, $value, $calc_value = \false)
+    {
+    }
+    public function set_form_id($form_id)
+    {
+    }
+    private function get_fields_sorted()
+    {
+    }
+    public static function sort_fields($a, $b)
+    {
+    }
+    public function calc_replace($subject)
+    {
+    }
+    /*
+    |--------------------------------------------------------------------------
+    | Calculations
+    |--------------------------------------------------------------------------
+    | Force {field:...:calc} in this context of calculations.
+    |      Example: {field:list} -> {field:list:calc}
+    | When parsing the {field:...:calc} tag, if no calc value is found then the value will be used.
+    | TODO: This makes explicit list field "values" inaccessible in calculations.
+    */
+    public function pre_parse_calc_settings($eq)
+    {
+    }
+    private function force_field_calc_tags($matches)
     {
     }
 }
@@ -8868,37 +9858,30 @@ final class NF_MergeTags_Form extends \NF_Abstracts_MergeTags
     }
 }
 /**
- * Class NF_MergeTags_Post
+ * Class NF_MergeTags_Other
  */
-final class NF_MergeTags_Post extends \NF_Abstracts_MergeTags
+final class NF_MergeTags_Other extends \NF_Abstracts_MergeTags
 {
-    protected $id = 'post';
+    protected $id = 'other';
     public function __construct()
     {
     }
-    protected function post_id()
+    public function replace($subject)
     {
     }
-    protected function post_title()
-    {
-    }
-    protected function post_url()
-    {
-    }
-}
-/**
- * Class NF_MergeTags_QueryStrings
- */
-final class NF_MergeTags_QueryStrings extends \NF_Abstracts_MergeTags
-{
-    protected $id = 'querystrings';
-    public function __construct()
+    public function init()
     {
     }
     public function __call($name, $arguments)
     {
     }
     public function set_merge_tags($key, $value)
+    {
+    }
+    protected function system_date()
+    {
+    }
+    protected function user_ip()
     {
     }
 }
@@ -8911,23 +9894,52 @@ final class NF_MergeTags_System extends \NF_Abstracts_MergeTags
     public function __construct()
     {
     }
-    protected function system_date()
-    {
-    }
-    protected function system_ip()
-    {
-    }
     protected function admin_email()
+    {
+    }
+    protected function site_title()
+    {
+    }
+    protected function site_url()
     {
     }
 }
 /**
- * Class NF_MergeTags_User
+ * Class NF_MergeTags_WordPress
  */
-final class NF_MergeTags_User extends \NF_Abstracts_MergeTags
+final class NF_MergeTags_WP extends \NF_Abstracts_MergeTags
 {
-    protected $id = 'user';
+    protected $id = 'wp';
+    /**
+     * @var array
+     * $post_meta[ $meta_key ] = $meta_value;
+     */
+    protected $post_meta = array();
     public function __construct()
+    {
+    }
+    public function init()
+    {
+    }
+    public function replace($subject)
+    {
+    }
+    protected function post_id()
+    {
+    }
+    protected function post_title()
+    {
+    }
+    protected function post_url()
+    {
+    }
+    protected function post_author()
+    {
+    }
+    protected function post_author_email()
+    {
+    }
+    public function setup_post_meta($post_id)
     {
     }
     protected function user_id()
@@ -8943,6 +9955,18 @@ final class NF_MergeTags_User extends \NF_Abstracts_MergeTags
     {
     }
     protected function user_email()
+    {
+    }
+    protected function user_url()
+    {
+    }
+    protected function admin_email()
+    {
+    }
+    protected function site_title()
+    {
+    }
+    protected function site_url()
     {
     }
 }
@@ -9086,6 +10110,20 @@ final class NF_AddonChecker
     }
 }
 /**
+ * Adds a global exception handler for reporting on form rendering issues.
+ *
+ * Note: Exceptions before `document.ready` do not break scripts inside of `document.ready`.
+ */
+final class NF_ExceptionHandlerJS
+{
+    public function __construct()
+    {
+    }
+    public function wp_head()
+    {
+    }
+}
+/**
  * Class NF_Tracking
  */
 final class NF_Tracking
@@ -9130,10 +10168,10 @@ final class NF_Tracking
     /**
      * Check if a site is opted in
      *
-     * @access private
+     * @access public
      * @return bool
      */
-    private function is_opted_in()
+    public function is_opted_in()
     {
     }
     private function is_freemius_opted_in()
@@ -9161,10 +10199,10 @@ final class NF_Tracking
     /**
      * Check if a site is opted out
      *
-     * @access private
+     * @access public
      * @return bool
      */
-    private function is_opted_out()
+    public function is_opted_out()
     {
     }
     private function is_freemius_opted_out()
@@ -9207,6 +10245,15 @@ final class NF_VersionSwitcher
     public function admin_bar_menu($wp_admin_bar)
     {
     }
+    public function rollback_activation()
+    {
+    }
+    public function upgrade_complete_notice($notices)
+    {
+    }
+}
+function nf_is_func_disabled($function)
+{
 }
 /**
  * Hooks NF actions, when present in the $_GET superglobal. Every nf_action
@@ -11260,17 +12307,6 @@ function nf_get_end_date($end_date)
 {
 }
 /**
- * Checks whether function is disabled.
- *
- * @since 2.7
- *
- * @param string  $function Name of the function.
- * @return bool Whether or not function is disabled.
- */
-function nf_is_func_disabled($function)
-{
-}
-/**
  * Acts as a wrapper/alias for nf_get_objects_by_type that is specific to notifications.
  *
  * @since 2.8
@@ -11686,6 +12722,7 @@ function nfThreeUpgrade_GetSerializedForm()
 function nfThreeUpgrade_GetSerializedFields()
 {
 }
+// Register before general settings.
 function ninja_forms_three_submenu()
 {
 }
@@ -11720,6 +12757,16 @@ function ninja_forms_uninstall()
  * @return Plugin Highlander Instance
  */
 function NF_Abstracts_Extension()
+{
+}
+function _nf_get_actions()
+{
+}
+function _nf_post_actions()
+{
+}
+// add_action( 'shutdown', '_nf_removed_hooks' );
+function _nf_removed_hooks()
 {
 }
 function ninja_forms_conversion_calculations($form_data)
