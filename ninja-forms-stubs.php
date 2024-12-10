@@ -255,25 +255,9 @@ namespace {
     class NF_AJAX_Controllers_DispatchPoints
     {
         /*
-         * Constructor method
+         * Call dispatcher with AJAX dispatch requests
          */
         public function __construct()
-        {
-        }
-        /*
-         * Function called when the undo manager is used in the builder.
-         * 
-         * @since 3.2
-         */
-        public function undo_click()
-        {
-        }
-        /*
-         * Function to startup our form data telemtry.
-         * 
-         * @since 3.2
-         */
-        public function form_telemetry()
         {
         }
     }
@@ -1015,13 +999,6 @@ namespace {
         {
         }
     }
-    final class NF_AJAX_Requests_DeleteField extends \WP_Async_Request
-    {
-        protected $action = 'nf_delete_field';
-        protected function handle()
-        {
-        }
-    }
     final class NF_AJAX_Requests_NullRequest extends \WP_Async_Request
     {
         protected $action = 'nf_null_request';
@@ -1049,7 +1026,15 @@ namespace {
         /**
          * @var string
          */
+        protected $_group = '';
+        /**
+         * @var string
+         */
         protected $_image = '';
+        /**
+         * @var string
+         */
+        protected $_documentation_url = '';
         /**
          * @var array
          */
@@ -1152,6 +1137,16 @@ namespace {
         {
         }
         /**
+         * Get Group
+         *
+         * Returns the drawer group for an action.
+         *
+         * @return string
+         */
+        public function get_group()
+        {
+        }
+        /**
          * Get Image
          *
          * Returns the url of a branded action's image.
@@ -1159,6 +1154,16 @@ namespace {
          * @return string
          */
         public function get_image()
+        {
+        }
+        /**
+         * Get Documentation URL
+         *
+         * Returns the action's documentation URL.
+         *
+         * @return string
+         */
+        public function get_doc_url()
         {
         }
         /**
@@ -2044,7 +2049,7 @@ namespace {
         protected $_id = '';
         // Dynamically set in constructor using the class name.
         protected $_title = '';
-        // Should be set (and translated) in the constructor.
+        // Should be set (and translated) at action hook init-10
         protected $_callback = 'render_metabox';
         protected $_post_types = array();
         protected $_context = 'side';
@@ -2052,6 +2057,16 @@ namespace {
         protected $_callback_args = array();
         protected $_capability = 'edit_post';
         public function __construct()
+        {
+        }
+        /**
+         * Initialize properties at WP `init-5` action hook
+         *
+         * Set translatable properties - _title
+         * 
+         * @return void
+         */
+        public function abstractInit() : void
         {
         }
         public function add_meta_boxes()
@@ -2888,6 +2903,212 @@ namespace {
          */
         public abstract function register_routes();
     }
+}
+namespace NinjaForms\Includes\Interfaces {
+    /**
+     * Requirements for NF3 actions on WP 6.7+
+     */
+    interface SotAction
+    {
+        /**
+         * Steps to perform when the action/form is saved
+         *
+         * @param array $actionSettings
+         * @return array|void
+         */
+        public function save(array $actionSettings);
+        /**
+         * Steps to perform when the action is processed
+         *
+         * @param array $actionSettings
+         * @param int $formId
+         * @param array $data
+         * @return array
+         */
+        public function process(array $actionSettings, int $formId, array $data) : array;
+        /**
+         * Return the programmatic name  
+         *
+         * @return string
+         */
+        public function get_name() : string;
+        /**
+         * Return the human readable nicename  
+         *
+         * @return string
+         */
+        public function get_nicename() : string;
+        /**
+         * Return the drawer section
+         *
+         * @return string
+         */
+        public function get_section() : string;
+        /**
+         * Return the drawer group
+         *
+         * @return string
+         */
+        public function get_group() : string;
+        /**
+         * Return url of action's image
+         *
+         * @return string
+         */
+        public function get_image() : string;
+        /**
+         * Return url of documentation
+         *
+         * @return string
+         */
+        public function get_doc_url() : string;
+        /**
+         * Return settings
+         *
+         * Expected array
+         * @return array
+         */
+        public function get_settings();
+        /**
+         * Return the timing position
+         * 
+         * Early = -1, Normal = 0, Late = 1
+         * 
+         * @return integer
+         */
+        public function get_timing() : int;
+        /**
+         * Return the priority for the action.
+         *
+         * @return integer
+         */
+        public function get_priority() : int;
+    }
+}
+namespace NinjaForms\Includes\Abstracts {
+    /**
+     * Class 
+     */
+    abstract class SotAction implements \NinjaForms\Includes\Interfaces\SotAction
+    {
+        /**
+         * @var array
+         */
+        protected $_tags = array();
+        /** @var int */
+        public $timing;
+        /** @var int */
+        public $priority;
+        /**
+         * @var array
+         */
+        protected $_settings = array();
+        /**
+         * @var array
+         */
+        protected $_settings_all = array('label', 'active');
+        /**
+         * @var array
+         */
+        protected $_settings_exclude = array();
+        /**
+         * @var array
+         */
+        protected $_settings_only = array();
+        /**
+         * Constructor
+         */
+        public function __construct()
+        {
+        }
+        public function abstractInitHook() : void
+        {
+        }
+        //-----------------------------------------------------
+        // Public Methods
+        //-----------------------------------------------------
+        /**
+         * Save
+         */
+        /** @inheritDoc */
+        public function save(array $action_settings)
+        {
+        }
+        /**
+         * Process
+         */
+        /** @inheritDoc */
+        public abstract function process(array $action_id, int $form_id, array $data) : array;
+        /**
+         * Get Settings
+         *
+         * Returns the settings for an action.
+         *
+         * @return array|mixed
+         */
+        public function get_settings() : array
+        {
+        }
+        /**
+         * Sort Actions
+         *
+         * A static method for sorting two actions by timing, then priority.
+         *
+         * @param $a
+         * @param $b
+         * @return int
+         */
+        public static function sort_actions($a, $b)
+        {
+        }
+        protected function load_settings($only_settings = array())
+        {
+        }
+    }
+    /**
+     * Class SotActionNewsletter
+     */
+    abstract class SotActionNewsletter extends \NinjaForms\Includes\Abstracts\SotAction implements \NinjaForms\Includes\Interfaces\SotAction
+    {
+        /**
+         * @var array
+         */
+        protected $_tags = array('newsletter');
+        protected $_settings = array();
+        protected $_transient = '';
+        protected $_transient_expiration = '';
+        protected $_setting_labels = array('list' => 'List', 'fields' => 'List Field Mapping', 'groups' => 'Interest Groups');
+        /**
+         * Constructor
+         */
+        public function __construct()
+        {
+        }
+        public function newsletterAbstractInit() : void
+        {
+        }
+        /*
+         * PUBLIC METHODS
+         */
+        public function _get_lists()
+        {
+        }
+        /*
+         * PROTECTED METHODS
+         */
+        protected abstract function get_lists();
+        /*
+         * PRIVATE METHODS
+         */
+        private function get_list_settings()
+        {
+        }
+        private function cache_lists($lists)
+        {
+        }
+    }
+}
+namespace {
     /**
      * WordPress Menu Page Base Class
      */
@@ -3153,6 +3374,16 @@ namespace {
         public function __construct()
         {
         }
+        /**
+         * Initialize properties at WP `init-8` action hook
+         *
+         * Set translatable properties - _title
+         * 
+         * @return void
+         */
+        public function abstractSubmissionInit() : void
+        {
+        }
     }
     /**
      * Class NF_Field_Textbox
@@ -3188,19 +3419,37 @@ namespace {
         }
         public abstract function filter_default_value($default_value, $field_class, $settings);
     }
+}
+namespace NinjaForms\Includes\Traits {
     /**
-     * Class NF_Actions_Akismet
+     * Declare/provide action properties
      */
-    final class NF_Actions_Akismet extends \NF_Abstracts_Action
+    trait SotGetActionProperties
     {
         /**
          * @var string
          */
-        protected $_name = 'akismet';
+        protected $_name = '';
         /**
-         * @var array
+         * @var string
          */
-        protected $_tags = array('spam', 'filtering', 'akismet');
+        protected $_nicename = '';
+        /**
+         * @var string
+         */
+        protected $_section = 'installed';
+        /**
+         * @var string
+         */
+        protected $_group = '';
+        /**
+         * @var string
+         */
+        protected $_image = '';
+        /**
+         * @var string
+         */
+        protected $_documentation_url = '';
         /**
          * @var string
          */
@@ -3208,11 +3457,107 @@ namespace {
         /**
          * @var int
          */
-        protected $_priority = '10';
+        protected $_priority = 10;
+        /**
+         * Get Name
+         *
+         * Returns the name
+         *
+         * @return string
+         */
+        public function get_name() : string
+        {
+        }
+        /**
+         * Get Nicename
+         *
+         * Returns the nicename
+         *
+         * @return string
+         */
+        public function get_nicename() : string
+        {
+        }
+        /**
+         * Get Section
+         *
+         * Returns the drawer section for an action.
+         *
+         * @return string
+         */
+        public function get_section() : string
+        {
+        }
+        /**
+         * Get Group
+         *
+         * Returns the drawer group for an action.
+         *
+         * @return string
+         */
+        public function get_group() : string
+        {
+        }
+        /**
+         * Get Image
+         *
+         * Returns the url of a branded action's image.
+         *
+         * @return string
+         */
+        public function get_image() : string
+        {
+        }
+        /**
+         * Get Documentation URL
+         *
+         * Returns the action's documentation URL.
+         *
+         * @return string
+         */
+        public function get_doc_url() : string
+        {
+        }
+        /**
+         * Get Timing
+         *
+         * Returns the timing for an action.
+         *
+         * @return mixed
+         */
+        public function get_timing() : int
+        {
+        }
+        /**
+         * Get Priority
+         *
+         * Returns the priority
+         *
+         * @return int
+         */
+        public function get_priority() : int
+        {
+        }
+    }
+}
+namespace {
+    /**
+     * Class NF_Actions_Akismet
+     */
+    final class NF_Actions_Akismet extends \NinjaForms\Includes\Abstracts\SotAction implements \NinjaForms\Includes\Interfaces\SotAction
+    {
+        use \NinjaForms\Includes\Traits\SotGetActionProperties;
+        /**
+         * @var array
+         */
+        protected $_tags = array('spam', 'filtering', 'akismet');
         /**
          * Constructor
          */
         public function __construct()
+        {
+        }
+        public function initHook() : void
         {
         }
         /**
@@ -3242,7 +3587,7 @@ namespace {
          *
          * @return array
          */
-        public function process($action_settings, $form_id, $data)
+        public function process(array $action_settings, int $form_id, array $data) : array
         {
         }
         /**
@@ -3262,28 +3607,19 @@ namespace {
     /**
      * Class NF_Action_CollectPayment
      */
-    final class NF_Actions_CollectPayment extends \NF_Abstracts_Action
+    final class NF_Actions_CollectPayment extends \NinjaForms\Includes\Abstracts\SotAction implements \NinjaForms\Includes\Interfaces\SotAction
     {
-        /**
-         * @var string
-         */
-        protected $_name = 'collectpayment';
+        use \NinjaForms\Includes\Traits\SotGetActionProperties;
         /**
          * @var array
          */
         protected $_tags = array();
         /**
-         * @var string
-         */
-        protected $_timing = 'late';
-        /**
-         * @var int
-         */
-        protected $_priority = 0;
-        /**
          * @var array
          */
         protected $payment_gateways = array();
+        protected $tempCpNiceName;
+        protected $tempCpName;
         /**
          * Constructor
          *
@@ -3293,13 +3629,27 @@ namespace {
         public function __construct($cp_nice_name = 'Collect Payment', $cp_name = 'collectpayment')
         {
         }
-        public function save($action_settings)
+        public function initHook() : void
         {
         }
-        public function process($action_settings, $form_id, $data)
+        function initializeSettings() : void
+        {
+        }
+        /** @inheritDoc */
+        public function process(array $action_settings, int $form_id, array $data) : array
         {
         }
         public function register_payment_gateways()
+        {
+        }
+        /**
+         * Build gateway options for CollectPayment dropdown
+         *
+         * Done at `init-15` to ensure that object can populate translations
+         * 
+         * @return void
+         */
+        public function buildPaymentGatewayOptions() : void
         {
         }
         public function maybe_remove_action($action_type_settings)
@@ -3309,73 +3659,52 @@ namespace {
     /**
      * Class NF_Action_Custom
      */
-    final class NF_Actions_Custom extends \NF_Abstracts_Action
+    final class NF_Actions_Custom extends \NinjaForms\Includes\Abstracts\SotAction implements \NinjaForms\Includes\Interfaces\SotAction
     {
-        /**
-         * @var string
-         */
-        protected $_name = 'custom';
+        use \NinjaForms\Includes\Traits\SotGetActionProperties;
         /**
          * @var array
          */
         protected $_tags = array();
-        /**
-         * @var string
-         */
-        protected $_timing = 'normal';
-        /**
-         * @var int
-         */
-        protected $_priority = 10;
         /**
          * Constructor
          */
         public function __construct()
         {
         }
+        public function initHook()
+        {
+        }
         /*
          * PUBLIC METHODS
          */
-        public function save($action_settings)
-        {
-        }
-        public function process($action_settings, $form_id, $data)
+        /** @inheritDoc */
+        public function process(array $action_settings, int $form_id, array $data) : array
         {
         }
     }
     /**
      * Class NF_Actions_DataRemoval
      */
-    final class NF_Actions_DeleteDataRequest extends \NF_Abstracts_Action
+    final class NF_Actions_DeleteDataRequest extends \NinjaForms\Includes\Abstracts\SotAction implements \NinjaForms\Includes\Interfaces\SotAction
     {
-        /**
-         * @var string
-         */
-        protected $_name = 'deletedatarequest';
+        use \NinjaForms\Includes\Traits\SotGetActionProperties;
         /**
          * @var array
          */
         protected $_tags = array();
-        /**
-         * @var string
-         */
-        protected $_timing = 'late';
-        /**
-         * @var int
-         */
-        protected $_priority = 10;
         /**
          * Constructor
          */
         public function __construct()
         {
         }
+        public function initHook()
+        {
+        }
         /*
          * PUBLIC METHODS
          */
-        public function save($action_settings)
-        {
-        }
         /**
          * Creates a Erase Personal Data request for the user with the email
          * provided
@@ -3386,41 +3715,34 @@ namespace {
          *
          * @return array
          */
-        public function process($action_settings, $form_id, $data)
+        public function process(array $action_settings, int $form_id, array $data) : array
         {
         }
     }
     /**
      * Class NF_Action_Email
      */
-    final class NF_Actions_Email extends \NF_Abstracts_Action
+    final class NF_Actions_Email extends \NinjaForms\Includes\Abstracts\SotAction implements \NinjaForms\Includes\Interfaces\SotAction
     {
-        /**
-         * @var string
-         */
-        protected $_name = 'email';
+        use \NinjaForms\Includes\Traits\SotGetActionProperties;
         /**
          * @var array
          */
         protected $_tags = array();
-        /**
-         * @var string
-         */
-        protected $_timing = 'late';
-        /**
-         * @var int
-         */
-        protected $_priority = 10;
         /**
          * Constructor
          */
         public function __construct()
         {
         }
+        public function initHook()
+        {
+        }
         /*
          * PUBLIC METHODS
          */
-        public function process($action_settings, $form_id, $data)
+        /** @inheritDoc */
+        public function process(array $action_settings, int $form_id, array $data) : array
         {
         }
         /**
@@ -3485,36 +3807,25 @@ namespace {
     /**
      * Class NF_Actions_ExportPersonalData
      */
-    final class NF_Actions_ExportDataRequest extends \NF_Abstracts_Action
+    final class NF_Actions_ExportDataRequest extends \NinjaForms\Includes\Abstracts\SotAction implements \NinjaForms\Includes\Interfaces\SotAction
     {
-        /**
-         * @var string
-         */
-        protected $_name = 'exportdatarequest';
+        use \NinjaForms\Includes\Traits\SotGetActionProperties;
         /**
          * @var array
          */
         protected $_tags = array();
-        /**
-         * @var string
-         */
-        protected $_timing = 'late';
-        /**
-         * @var int
-         */
-        protected $_priority = 10;
         /**
          * Constructor
          */
         public function __construct()
         {
         }
+        public function initHook()
+        {
+        }
         /*
          * PUBLIC METHODS
          */
-        public function save($action_settings)
-        {
-        }
         /**
          * Creates a Export Personal Data request for the user with the email
          * provided
@@ -3525,31 +3836,20 @@ namespace {
          *
          * @return array
          */
-        public function process($action_settings, $form_id, $data)
+        public function process(array $action_settings, int $form_id, array $data) : array
         {
         }
     }
     /**
      * Class NF_Actions_Recaptcha
      */
-    final class NF_Actions_Recaptcha extends \NF_Abstracts_Action
+    final class NF_Actions_Recaptcha extends \NinjaForms\Includes\Abstracts\SotAction implements \NinjaForms\Includes\Interfaces\SotAction
     {
-        /**
-         * @var string
-         */
-        protected $_name = 'recaptcha';
+        use \NinjaForms\Includes\Traits\SotGetActionProperties;
         /**
          * @var array
          */
         protected $_tags = array('spam', 'filtering', 'recaptcha');
-        /**
-         * @var string
-         */
-        protected $_timing = 'normal';
-        /**
-         * @var int
-         */
-        protected $_priority = '10';
         /**
          * @var string
          */
@@ -3574,6 +3874,9 @@ namespace {
          * Constructor
          */
         public function __construct()
+        {
+        }
+        public function initHook()
         {
         }
         /**
@@ -3683,7 +3986,7 @@ namespace {
          *
          * @return array
          */
-        public function process($action_settings, $form_id, $data)
+        public function process(array $action_settings, int $form_id, array $data) : array
         {
         }
         protected function is_submission_human($token, $score_threshold)
@@ -3693,71 +3996,54 @@ namespace {
     /**
      * Class NF_Action_Redirect
      */
-    final class NF_Actions_Redirect extends \NF_Abstracts_Action
+    final class NF_Actions_Redirect extends \NinjaForms\Includes\Abstracts\SotAction implements \NinjaForms\Includes\Interfaces\SotAction
     {
-        /**
-         * @var string
-         */
-        protected $_name = 'redirect';
+        use \NinjaForms\Includes\Traits\SotGetActionProperties;
         /**
          * @var array
          */
         protected $_tags = array();
-        /**
-         * @var string
-         */
-        protected $_timing = 'late';
-        /**
-         * @var int
-         */
-        protected $_priority = 20;
         /**
          * Constructor
          */
         public function __construct()
         {
         }
+        public function initHook()
+        {
+        }
         /*
          * PUBLIC METHODS
          */
-        public function save($action_settings)
-        {
-        }
-        public function process($action_settings, $form_id, $data)
+        /** @inheritDoc */
+        public function process(array $action_settings, int $form_id, array $data) : array
         {
         }
     }
     /**
      * Class NF_Action_Save
      */
-    class NF_Actions_Save extends \NF_Abstracts_Action
+    class NF_Actions_Save extends \NinjaForms\Includes\Abstracts\SotAction implements \NinjaForms\Includes\Interfaces\SotAction
     {
-        /**
-         * @var string
-         */
-        protected $_name = 'save';
+        use \NinjaForms\Includes\Traits\SotGetActionProperties;
         /**
          * @var array
          */
         protected $_tags = array();
-        /**
-         * @var string
-         */
-        protected $_timing = 'late';
-        /**
-         * @var int
-         */
-        protected $_priority = '-1';
         /**
          * Constructor
          */
         public function __construct()
         {
         }
+        public function initHook()
+        {
+        }
         /*
          * PUBLIC METHODS
          */
-        public function save($action_settings)
+        /** @inheritDoc */
+        public function save(array $action_settings)
         {
         }
         /**
@@ -3809,7 +4095,8 @@ namespace {
         public function clean_form_option($expiration_value, $expiration_option)
         {
         }
-        public function process($action_settings, $form_id, $data)
+        /** @inheritDoc */
+        public function process(array $action_settings, int $form_id, array $data) : array
         {
         }
         /**
@@ -3832,37 +4119,27 @@ namespace {
     /**
      * Class NF_Action_SuccessMessage
      */
-    final class NF_Actions_SuccessMessage extends \NF_Abstracts_Action
+    final class NF_Actions_SuccessMessage extends \NinjaForms\Includes\Abstracts\SotAction implements \NinjaForms\Includes\Interfaces\SotAction
     {
-        /**
-         * @var string
-         */
-        protected $_name = 'successmessage';
+        use \NinjaForms\Includes\Traits\SotGetActionProperties;
         /**
          * @var array
          */
         protected $_tags = array();
-        /**
-         * @var string
-         */
-        protected $_timing = 'late';
-        /**
-         * @var int
-         */
-        protected $_priority = 10;
         /**
          * Constructor
          */
         public function __construct()
         {
         }
+        public function initHook()
+        {
+        }
         /*
          * PUBLIC METHODS
          */
-        public function save($action_settings)
-        {
-        }
-        public function process($action_settings, $form_id, $data)
+        /** @inheritDoc */
+        public function process(array $action_settings, int $form_id, array $data) : array
         {
         }
         public function import_form_action_success_message($import)
@@ -4425,7 +4702,7 @@ namespace {
     final class NF_Admin_Menus_Addons extends \NF_Abstracts_Submenu
     {
         public $parent_slug = 'ninja-forms';
-        public $menu_slug = 'ninja-forms#apps';
+        public $menu_slug = 'ninja-forms#add-ons';
         public $position = 7;
         public function __construct()
         {
@@ -4446,6 +4723,9 @@ namespace {
         {
         }
         public static function filterItemsByCategroy($items, $category)
+        {
+        }
+        public static function getItemStatus($item)
         {
         }
     }
@@ -4471,6 +4751,9 @@ namespace {
          * Enqueue dashboard page elements
          */
         public function enqueue_dashboard_script($page)
+        {
+        }
+        public function enqueue_telemetry_script($page)
         {
         }
     }
@@ -5657,6 +5940,54 @@ namespace {
          * @return Void
          */
         public function setTransient()
+        {
+        }
+        /**
+         * Echo the html for the notice
+         *
+         * @return Void
+         */
+        public function getNoticeHtml()
+        {
+        }
+    }
+    /**
+     * NF_Survey_Promo Class
+     *
+     * @since 3.6
+     */
+    class NF_Admin_SurveyPromo
+    {
+        public $isDashboard = \false;
+        /**
+         *
+         */
+        public function __construct()
+        {
+        }
+        public function show()
+        {
+        }
+        public function isTargetPage()
+        {
+        }
+        /**
+         * Check if we should show the survey promo
+         *
+         * @return bool
+         */
+        public function shouldShow()
+        {
+        }
+        public function isDashboard()
+        {
+        }
+        /**
+         * Set the ninja_forms_disable_survey_promo transient
+         *
+         * @return Void
+         */
+        public function dismiss()
         {
         }
         /**
@@ -7396,9 +7727,9 @@ namespace {
      *
      * @since  3.2
      */
-    final class NF_Dispatcher
+    class NF_Dispatcher
     {
-        private $api_url = 'http://api.ninjaforms.com/';
+        private $api_url = 'https://api.ninjaforms.com/';
         /**
          * Returns bool true if we are opted-in or have a premium add-on.
          * If a premium add-on is installed, then users have opted into tracked via our terms and conditions.
@@ -7411,23 +7742,30 @@ namespace {
         {
         }
         /**
-         * Package up our environment variables and send those to our API endpoint.
+         * Send consolidated telemetry data
          * 
          * @since  3.2
          * @return void
          * 
          * @updated 3.3.17
          */
-        public function update_environment_vars()
+        public function sendTelemetryData()
         {
         }
         /**
-         * Package up our form data and send it to our API endpoint.
-         * 
-         * @since 3.2
-         * @return void
+         * Construct environment variable
+         *
+         * @return NfSiteEnvironment
          */
-        public function form_data()
+        protected function constructNfSiteEnvironment() : \NinjaForms\Includes\Entities\NfSiteEnvironment
+        {
+        }
+        /**
+         * Construct usage array
+         *
+         * @return Usage
+         */
+        protected function constructUsage() : \NinjaForms\Includes\Entities\Usage
         {
         }
         /**
@@ -7665,6 +8003,30 @@ namespace {
         public static function localize_preview($form_id)
         {
         }
+        /**
+         * Set root element that will insert the WP element
+         * 
+         * @since 3.7.4
+         * 
+         * @param string Form ID
+         * 
+         * @return void
+         */
+        public static function localize_iframe($form_id)
+        {
+        }
+        /**
+         * Enqueue scripts and localize data needed to insert the iFrame
+         * 
+         * @since 3.7.4
+         * 
+         * @param string Form ID
+         * 
+         * @return void
+         */
+        public static function enqueue_iframe_scripts($form_id)
+        {
+        }
         protected static function ensureProductRelatedCostPreviewFormats(array $field, string $currencySymbol) : array
         {
         }
@@ -7716,43 +8078,6 @@ namespace {
          * @return string
          */
         private function display_no_id()
-        {
-        }
-    }
-    /**
-     * Measure email throughput to determine the potential scale of email related issues.
-     * @TODO: Remove this entire file at a later date.
-     */
-    class NF_EmailTelemetry
-    {
-        private $is_opted_in = \false;
-        /**
-         * Constructor which takes in a paremeter to tell the class whether the site is opted 
-         * in for telemetry or not
-         * 
-         * @param $opted_in
-         * 
-         * @since 3.3.21
-         */
-        public function __construct($opted_in = \false)
-        {
-        }
-        /**
-         * @hook phpmailer_init The last action before the email is sent.
-         */
-        public function setup()
-        {
-        }
-        /** 
-         * @NOTE No need to return $phpmailer as it is passed in by reference (aka Output Parameter). 
-         */
-        public function update_metrics(&$phpmailer)
-        {
-        }
-        public function maybe_schedule_push()
-        {
-        }
-        public function push_telemetry()
         {
         }
     }
@@ -7875,6 +8200,71 @@ namespace NinjaForms\Includes\Entities {
          * @return  MetaboxOutputEntity
          */
         public function setLabelValueCollection($labelValueCollection) : \NinjaForms\Includes\Entities\MetaboxOutputEntity
+        {
+        }
+    }
+    class NfSite implements \JsonSerializable
+    {
+        const STRUCTURE = ['url' => 'string', 'ip_address' => 'string'];
+        public string $url = '';
+        public string $ip_address = '';
+        /**
+         * Construct entity from array
+         *
+         * @param array $array
+         * @return NfSite
+         */
+        public static function fromArray(array $array) : \NinjaForms\Includes\Entities\NfSite
+        {
+        }
+        /** @inheritDoc */
+        public function toArray()
+        {
+        }
+        /** @inheritDoc */
+        #[\ReturnTypeWillChange]
+        public function jsonSerialize()
+        {
+        }
+    }
+    class NfSiteEnvironment implements \JsonSerializable
+    {
+        const STRUCTURE = ['site_id' => 'int', 'nf_version' => 'string', 'nf_db_version' => 'string', 'wp_version' => 'string', 'multisite_enabled' => 'int', 'server_type' => 'string', 'tls_version' => 'string', 'php_version' => 'string', 'mysql_version' => 'string', 'wp_debug_mode' => 'int', 'wp_lang' => 'string', 'wp_max_upload_size' => 'string', 'php_max_post_size' => 'string', 'hostname' => 'string', 'smtp' => 'string', 'smtp_port' => 'string', 'active_plugins' => 'array', 'wp_memory_limit' => 'string', 'deprecated_loaded' => 'bool'];
+        public int $site_id = 0;
+        public string $nf_version = '';
+        public string $nf_db_version = '';
+        public string $wp_version = '';
+        public int $multisite_enabled = 0;
+        public string $server_type = '';
+        public string $tls_version = '';
+        public string $php_version = '';
+        public string $mysql_version = '';
+        public int $wp_debug_mode = 0;
+        public string $wp_lang = '';
+        public string $wp_max_upload_size = '';
+        public string $php_max_post_size = '';
+        public string $hostname = '';
+        public string $smtp = '';
+        public string $smtp_port = '';
+        public array $active_plugins = [];
+        public string $wp_memory_limit = '';
+        public bool $deprecated_loaded = false;
+        /**
+         * Construct entity from array
+         *
+         * @param array $array
+         * @return NfSiteEnvironment
+         */
+        public static function fromArray(array $array) : \NinjaForms\Includes\Entities\NfSiteEnvironment
+        {
+        }
+        /** @inheritDoc */
+        public function toArray()
+        {
+        }
+        /** @inheritDoc */
+        #[\ReturnTypeWillChange]
+        public function jsonSerialize()
         {
         }
     }
@@ -8676,6 +9066,64 @@ namespace NinjaForms\Includes\Entities {
          * @return  SubmissionFilter
          */
         public function setSubmissionsIDs(array $submissionsIDs) : \NinjaForms\Includes\Entities\SubmissionFilter
+        {
+        }
+    }
+    class TelemetryLegacyRequest implements \JsonSerializable
+    {
+        const STRUCTURE = ['slug' => 'string', 'data' => 'array', 'site_data' => 'array'];
+        public string $slug = '';
+        public array $data = [];
+        public array $site_data = [];
+        /**
+         * Construct entity from array
+         *
+         * @param array $array
+         * @return TelemetryLegacyRequest
+         */
+        public static function fromArray(array $array) : \NinjaForms\Includes\Entities\TelemetryLegacyRequest
+        {
+        }
+        /** @inheritDoc */
+        public function toArray()
+        {
+        }
+        /** @inheritDoc */
+        #[\ReturnTypeWillChange]
+        public function jsonSerialize()
+        {
+        }
+    }
+    class Usage implements \JsonSerializable
+    {
+        const STRUCTURE = ['site_id' => 'int', 'plugin' => 'array', 'forms' => 'array', 'fields' => 'array', 'field_settings' => 'array', 'actions' => 'array', 'display_settings' => 'array', 'restrictions' => 'array', 'calculations' => 'array', 'submissions' => 'array', 'settings' => 'array'];
+        public int $site_id = 0;
+        public array $plugin = [];
+        public array $forms = [];
+        public array $fields = [];
+        public array $field_settings = [];
+        public array $actions = [];
+        public array $display_settings = [];
+        public array $restrictions = [];
+        public array $calculations = [];
+        public array $submissions = [];
+        public array $settings = [];
+        /**
+         * Construct entity from array
+         *
+         * @param array $array
+         * @return Usage
+         */
+        public static function fromArray(array $array) : \NinjaForms\Includes\Entities\Usage
+        {
+        }
+        /** @inheritDoc */
+        public function toArray()
+        {
+        }
+        /** @inheritDoc */
+        #[\ReturnTypeWillChange]
+        public function jsonSerialize()
         {
         }
     }
@@ -10172,6 +10620,572 @@ namespace {
     }
 }
 namespace NinjaForms\Includes\Factories {
+    class ConstructNfSiteEntity
+    {
+        /**
+         * Return constructed site entity
+         *
+         * @return NfSite
+         */
+        public function handle() : \NinjaForms\Includes\Entities\NfSite
+        {
+        }
+        /**
+         * Construct site variable array
+         *
+         * @return array
+         */
+        protected function constructSiteVariableArray() : array
+        {
+        }
+    }
+    class ConstructNfSiteEnvironmentEntity
+    {
+        /**
+         * Return constructed site environment entity
+         *
+         * @return NfSiteEnvironment
+         */
+        public function handle() : \NinjaForms\Includes\Entities\NfSiteEnvironment
+        {
+        }
+        /**
+         * Construct environment variable array
+         *
+         * @return array
+         */
+        protected function constructEnvironmentVariableArray() : array
+        {
+        }
+        /**
+         * Get NinjaForms VERSION constant
+         *
+         * @return string
+         */
+        protected function getNinjaFormsVersion() : string
+        {
+        }
+        /**
+         * Get NF DB version
+         *
+         * @return string
+         */
+        protected function getNfDbVersion() : string
+        {
+        }
+        /**
+         * Get WP version as defined by get_bloginfo
+         *
+         * @return string
+         */
+        protected function getWpVersion() : string
+        {
+        }
+        /**
+         * Return value of WP's is_multisite() function
+         *
+         * Default is 0
+         * 
+         * @return boolean
+         */
+        protected function isMultisiteEnabled() : int
+        {
+        }
+        /**
+         * Get server type as defined by SERVER superglobal
+         *
+         * @return string
+         */
+        protected function getServerType() : string
+        {
+        }
+        /**
+         * Get PHP version
+         *
+         * @return string
+         */
+        protected function getPhpVersion() : string
+        {
+        }
+        /**
+         * Get SQL version
+         *
+         * @return string
+         */
+        protected function getSqlVersion() : string
+        {
+        }
+        /**
+         * Get WP_MEMORY_LIMIT constant
+         *
+         * @return string
+         */
+        protected function getWpMemoryLimit() : string
+        {
+        }
+        /**
+         * Is WP debug set to true
+         *
+         * @return integer
+         */
+        protected function isWpDebugOn() : int
+        {
+        }
+        /**
+         * Get WP's LANG constant
+         *
+         * @return string
+         */
+        protected function getWpLang() : string
+        {
+        }
+        /**
+         * Get max upload size defined by WP
+         *
+         * @return string
+         */
+        protected function getMaxUploadSize() : string
+        {
+        }
+        /**
+         * Get PHP post_max_size configuration value
+         *
+         * @return string
+         */
+        protected function getPhpPostMaxSize() : string
+        {
+        }
+        /**
+         * Construct HostName
+         *
+         * @return string
+         */
+        protected function getHostName() : string
+        {
+        }
+        /**
+         * Get PHP SMTP configuration value
+         *
+         * @return string
+         */
+        protected function getPhpSmtp() : string
+        {
+        }
+        /**
+         * Get PHP SMTP PORT configuration value
+         *
+         * @return string
+         */
+        protected function getPhpSmtpPort() : string
+        {
+        }
+        /**
+         * Active plugins as defined by WP's stored option
+         *
+         * @return array
+         */
+        protected function getActivePlugins() : array
+        {
+        }
+    }
+    class ConstructUsageEntity
+    {
+        /**
+         * Ninja Forms database version
+         *
+         * @var string
+         */
+        protected $nFdBVersion;
+        /**
+         * Indexed array of stored forms
+         *
+         * keys: id, title
+         * 
+         * @var array
+         */
+        protected $forms = [];
+        /**
+         * Time spent making NF Forms request in microseconds
+         *
+         * @var integer
+         */
+        protected $formsRequestTime = 0;
+        /**
+         * Total number of forms
+         *
+         * @var integer
+         */
+        protected $countForms = 1;
+        /**
+         * Indexed array of form settings
+         *
+         * keys: 
+         * @var array
+         */
+        protected $formMeta = [];
+        /**
+         * Time spent making NF form settings request in microseconds
+         *
+         * @var integer
+         */
+        protected $formMetaRequestTime = 0;
+        /**
+         * Indexed array of fields
+         *
+         * keys: id, type, parent_id
+         * 
+         * @var array
+         */
+        protected $fields = [];
+        /**
+         * Time spent making NF fields request in microseconds
+         *
+         * @var integer
+         */
+        protected $fieldsRequestTime = 0;
+        /**
+         * Indexed array of field settings
+         *
+         * keys: 
+         * @var array
+         */
+        protected $fieldMeta = [];
+        /**
+         * Time spent making NF field settings request in microseconds
+         *
+         * @var integer
+         */
+        protected $fieldMetaRequestTime = 0;
+        /**
+         * Indexed array of active stored actions
+         *
+         * keys: id, type, parent_id
+         * @var array
+         */
+        protected $actions = [];
+        /**
+         * Time spent making NF actions request in microseconds
+         *
+         * @var integer
+         */
+        protected $actionsRequestTime = 0;
+        /**
+         * 
+         *
+         * @var array
+         */
+        protected $calculations = [];
+        /**
+         * Array of stored NF settings
+         *
+         * key-value pairs of all Ninja Forms settings stored in options table
+         *
+         * @var array
+         */
+        protected $ninjaFormsSettings = [];
+        /**
+         * Time spent making NF settings request in microseconds
+         *
+         * @var integer
+         */
+        protected $ninjaFormsSettingsRequestTime = 0;
+        /**
+         * Wordpress global DB object
+         *
+         * @var object
+         */
+        protected $wpdb;
+        /**
+         * Construct with NF database version
+         *
+         * @param string|null $nFdBVersion
+         */
+        public function __construct(?string $nFdBVersion = '1.4')
+        {
+        }
+        /**
+         * Return constructed site environment entity
+         *
+         * @return Usage
+         */
+        public function handle() : \NinjaForms\Includes\Entities\Usage
+        {
+        }
+        /**
+         * Construct usage data
+         *
+         * @return array
+         */
+        protected function constructUsageArray() : array
+        {
+        }
+        /**
+         * Construct array of plugin usage
+         *
+         * Activation, deactivation, time between activation and deactivation
+         * @return array
+         */
+        protected function constructPluginUsage() : array
+        {
+        }
+        /**
+         * Construct array of forms usage
+         *
+         * Number of forms, forms appended to a post or page, forms with public link
+         * enabled
+         * 
+         * @return array
+         */
+        protected function constructFormsUsage() : array
+        {
+        }
+        /**
+         * Construct array of fields usage
+         *
+         * Data, current and planned:
+         * - mean fields per form
+         * - mean each field type per form
+         * 
+         * @return array
+         */
+        protected function constructFieldsUsage() : array
+        {
+        }
+        /**
+         * Calculate fields per form
+         *
+         * @return float
+         */
+        protected function calculateFieldsPerForm() : float
+        {
+        }
+        /**
+         * Calculate count of each field type per form
+         *
+         * key-value pairs fieldType:countOfFieldTypePerForm
+         * 
+         * @return array
+         */
+        protected function calculateFieldTypesCountPerForm() : array
+        {
+        }
+        /**
+         * Construct array of field settings usage
+         *
+         * Data, current and planned:
+         * - custom class name wrapper - empty/not empty
+         * - custom class name element - empty/not empty
+         * - label position - default/not default
+         * - custom name attribute - empty/not empty
+         * - field key - default/not default
+         * - admin label - empty/not empty
+         * 
+         * @return array
+         */
+        protected function constructFieldMetaUsage() : array
+        {
+        }
+        /**
+         * Construct array of actions usage
+         * 
+         * Data, current and planned:
+         * - active actions per form
+         * - active action types per form
+         * - reCaptcha action active on at least one form - true/false
+         * - Akisment action active on at least one - true/false
+         * - Delete Data action active on at least one - true/false
+         * - Export Data action active on at least one - true/false
+         * - WP Hook action active on at least one - true/false
+         * - Record Submissions action active on at least one form - true/false
+         * - - Designated submitter's email address value set
+         * - - Save All or Save None
+         * - - Except - empty/not empty
+         * - - Set Submissions to Expire - true/false
+         * 
+         * @return array
+         */
+        protected function constructActionsUsage() : array
+        {
+        }
+        /**
+         * Calculate actions per form
+         *
+         * @return float
+         */
+        protected function calculateActionsPerForm() : float
+        {
+        }
+        /**
+         * Calculate count of each action type per form
+         *
+         * key-value pairs actionType:countOfActionTypePerForm
+         * 
+         * @return array
+         */
+        protected function calculateActionTypesCountPerForm() : array
+        {
+        }
+        /**
+         * Construct array of display settings usage
+         * 
+         * Data, current and planned:
+         * - Display form title - count true
+         * - Clear successfully completed form - count true
+         * - Hide successfully completed form - count true
+         * - Default label position - count each position
+         * - Wrapper class - count custom
+         * - Element class - count custom
+         * - Form title heading level - count each value
+         * - Email error message - count custom
+         * - Date error message - count custom
+         * - Field error message - count custom
+         * - Num Min error message - count custom
+         * - Num Max error message - count custom
+         * - Num IncrementBy error message - count custom
+         * - Correct Errors error message - count custom
+         * - Validate Required Field error message - count custom
+         * - Honeypot error message - count custom
+         * - Field Marked Required error message - count custom
+         * 
+         * @return array
+         */
+        protected function constructDisplaySettingsUsage() : array
+        {
+        }
+        /**
+         * Construct array of restrictions usage
+         *
+         * Data, current and planned:
+         * - Unique field usage count
+         * - Non-default unique field error message count
+         * - Require users to be logged in count
+         * - Non-default must-be-logged-in message count
+         * - Submission limit usage count
+         * - Non-default submission limit message count
+         * 
+         * @return array
+         */
+        protected function constructRestrictionsUsage() : array
+        {
+        }
+        /**
+         * Construct array of calculations usage
+         *
+         * @return array
+         */
+        protected function constructCalculationsUsage() : array
+        {
+        }
+        /**
+         * Construct array of submissions usage
+         *
+         * @return array
+         */
+        protected function constructSubmissionsUsage() : array
+        {
+        }
+        /**
+         * Construct array of settings usage
+         *
+         * @return array
+         */
+        protected function constructSettingsUsage() : array
+        {
+        }
+        /**
+         * Get ninja_forms_settings by key
+         *
+         * @param string $key
+         * @param string $fallback
+         * @return mixed
+         */
+        protected function getNfSettingByKey(string $key, $fallback = '')
+        {
+        }
+        /**
+         * Calculate elapsed time from given start time in microseconds
+         *
+         * @param float $startTime
+         * @return integer
+         */
+        protected function calculateElapsedTime(float $startTime) : int
+        {
+        }
+        /**
+         * Populate $wpdb with global WordPress DB object
+         *
+         * @return void
+         */
+        protected function populateWpdb() : void
+        {
+        }
+        /**
+         * Populate Forms data
+         *
+         * @return void
+         */
+        protected function populateForms() : void
+        {
+        }
+        /**
+         * Populate Form Meta data
+         *
+         * @return void
+         */
+        protected function populateFormMeta() : void
+        {
+        }
+        /**
+         * SQL for form meta data
+         *
+         * @return string
+         */
+        protected function constructFormMetaSql() : string
+        {
+        }
+        /**
+         * Populate Fields 
+         *
+         * @return void
+         */
+        protected function populateFields() : void
+        {
+        }
+        /**
+         * Populate Field Settings
+         *
+         * @return void
+         */
+        protected function populateFieldMeta() : void
+        {
+        }
+        /**
+         * SQL for field meta data
+         * 
+         * Modify for NF DB Version < 1.3
+         *
+         * @return string
+         */
+        protected function constructFieldMetaSql() : string
+        {
+        }
+        /**
+         * Populate NfActions 
+         *
+         * @return void
+         */
+        protected function populateActions() : void
+        {
+        }
+        /**
+         * Populate ninja_forms_settings $ninjaFormsSettings
+         *
+         * @return void
+         */
+        protected function populateNinjaFormsSettings() : void
+        {
+        }
+    }
     class SubmissionAggregateFactory
     {
         /**
@@ -10690,7 +11704,7 @@ namespace {
         protected $_aliases = array('html');
         protected $_type = 'html';
         protected $_templates = 'html';
-        protected $_settings_only = array('label', 'default', 'classes');
+        protected $_settings_only = array('label', 'default', 'classes', 'admin_label', 'key');
         protected $_use_merge_tags_include = array('calculations');
         public function __construct()
         {
@@ -11269,7 +12283,7 @@ namespace {
         protected $_type = 'submit';
         protected $_templates = 'submit';
         protected $_wrap_template = 'wrap-no-label';
-        protected $_settings = array('label', 'timed_submit', 'processing_label', 'classes', 'key');
+        protected $_settings = array('label', 'timed_submit', 'processing_label', 'classes', 'key', 'admin_label');
         public function __construct()
         {
         }
@@ -11391,7 +12405,7 @@ namespace {
         protected $_aliases = array('html');
         protected $_type = 'hr';
         protected $_templates = 'hr';
-        protected $_settings_only = array('classes');
+        protected $_settings_only = array('classes', 'admin_label');
         public function __construct()
         {
         }
@@ -13833,6 +14847,21 @@ namespace {
         protected function user_ip()
         {
         }
+        protected function referer_url()
+        {
+        }
+        protected function mergetag_random($length = 5)
+        {
+        }
+        protected function mergetag_year()
+        {
+        }
+        protected function mergetag_month()
+        {
+        }
+        protected function mergetag_day()
+        {
+        }
     }
     /**
      * Class NF_MergeTags_System
@@ -14239,6 +15268,30 @@ namespace {
          * @return object with string of responseType, blob of PDF download and string of blobType
          */
         public function handle_extra_submission(\WP_REST_Request $request)
+        {
+        }
+    }
+    /**
+     * Class NF_Routes_SubmissionsActions
+     */
+    final class NF_Routes_Telemetry extends \NF_Abstracts_Routes
+    {
+        /**
+         * Register REST API routes related to Telemetry
+         * 
+         * @since 3.8.18
+         * 
+         * @route "nf-be-data/store"
+         */
+        function register_routes()
+        {
+        }
+        // Security check for the rest route
+        function nf_be_store_data_permission_callback()
+        {
+        }
+        // Action for the REST route
+        function nf_be_store_data($request)
         {
         }
     }
@@ -15381,12 +16434,12 @@ namespace {
         /**
          * @since 3.0
          */
-        const VERSION = '3.7.3';
+        const VERSION = '3.8.22';
         /**
          * @since 3.4.0
          */
         const DB_VERSION = '1.4';
-        const WP_MIN_VERSION = '5.0';
+        const WP_MIN_VERSION = '6.4';
         /**
          * @var Ninja_Forms
          * @since 2.7
@@ -15472,7 +16525,7 @@ namespace {
         /**
          * Dispatcher
          *
-         * @var string
+         * @var NF_Dispatcher
          */
         protected $_dispatcher = '';
         /**
@@ -15523,6 +16576,9 @@ namespace {
         {
         }
         public function flush_rewrite_rules()
+        {
+        }
+        public function instantiateTranslatableObjects() : void
         {
         }
         public function register_rewrite_rules()
@@ -15646,6 +16702,11 @@ namespace {
         public function logger()
         {
         }
+        /**
+         * Return dispatcher
+         *
+         * @return NF_Dispatcher
+         */
         public function dispatcher()
         {
         }
@@ -15854,7 +16915,7 @@ namespace NinjaForms {
 }
 namespace {
     // autoload_real.php @generated by Composer
-    class ComposerAutoloaderInit18de4977af396231a18c52861016d1c6
+    class ComposerAutoloaderInitc1727ece9ae31354dd060e0674bdca21
     {
         private static $loader;
         public static function loadClassLoader($class)
@@ -15869,7 +16930,7 @@ namespace {
     }
 }
 namespace Composer\Autoload {
-    class ComposerStaticInit18de4977af396231a18c52861016d1c6
+    class ComposerStaticInitc1727ece9ae31354dd060e0674bdca21
     {
         public static $prefixLengthsPsr4 = array('N' => array('NinjaForms\\NinjaForms\\' => 22, 'NinjaForms\\Includes\\' => 20, 'NinjaForms\\Blocks\\' => 18));
         public static $prefixDirsPsr4 = array('NinjaForms\\NinjaForms\\' => array(0 => __DIR__ . '/../..' . '/'), 'NinjaForms\\Includes\\' => array(0 => __DIR__ . '/../..' . '/includes'), 'NinjaForms\\Blocks\\' => array(0 => __DIR__ . '/../..' . '/blocks/views/includes'));
