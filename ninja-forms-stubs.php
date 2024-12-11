@@ -255,25 +255,9 @@ namespace {
     class NF_AJAX_Controllers_DispatchPoints
     {
         /*
-         * Constructor method
+         * Call dispatcher with AJAX dispatch requests
          */
         public function __construct()
-        {
-        }
-        /*
-         * Function called when the undo manager is used in the builder.
-         * 
-         * @since 3.2
-         */
-        public function undo_click()
-        {
-        }
-        /*
-         * Function to startup our form data telemtry.
-         * 
-         * @since 3.2
-         */
-        public function form_telemetry()
         {
         }
     }
@@ -7541,7 +7525,7 @@ namespace {
      */
     class NF_Dispatcher
     {
-        private $api_url = 'http://api.ninjaforms.com/';
+        private $api_url = 'https://api.ninjaforms.com/';
         /**
          * Returns bool true if we are opted-in or have a premium add-on.
          * If a premium add-on is installed, then users have opted into tracked via our terms and conditions.
@@ -7554,161 +7538,30 @@ namespace {
         {
         }
         /**
-         * Package up our environment variables and send those to our API endpoint.
+         * Send consolidated telemetry data
          * 
          * @since  3.2
          * @return void
          * 
          * @updated 3.3.17
          */
-        public function update_environment_vars()
+        public function sendTelemetryData()
         {
         }
         /**
-         * Construct environment variable array
+         * Construct environment variable
          *
-         * @return array
+         * @return NfSiteEnvironment
          */
-        protected function constructEnvironmentVariableArray() : array
+        protected function constructNfSiteEnvironment() : \NinjaForms\Includes\Entities\NfSiteEnvironment
         {
         }
         /**
-         * Get NinjaForms VERSION constant
+         * Construct usage array
          *
-         * @return string
+         * @return Usage
          */
-        protected function getNinjaFormsVersion() : string
-        {
-        }
-        /**
-         * Get NF DB version
-         *
-         * @return string
-         */
-        protected function getNfDbVersion() : string
-        {
-        }
-        /**
-         * Get WP version as defined by get_bloginfo
-         *
-         * @return string
-         */
-        protected function getWpVersion() : string
-        {
-        }
-        /**
-         * Return value of WP's is_multisite() function
-         *
-         * Default is 0
-         * 
-         * @return boolean
-         */
-        protected function isMultisiteEnabled() : int
-        {
-        }
-        /**
-         * Get server type as defined by SERVER superglobal
-         *
-         * @return string
-         */
-        protected function getServerType() : string
-        {
-        }
-        /**
-         * Get PHP version
-         *
-         * @return string
-         */
-        protected function getPhpVersion() : string
-        {
-        }
-        /**
-         * Get SQL version
-         *
-         * @return string
-         */
-        protected function getSqlVersion() : string
-        {
-        }
-        /**
-         * Get WP_MEMORY_LIMIT constant
-         *
-         * @return string
-         */
-        protected function getWpMemoryLimit() : string
-        {
-        }
-        /**
-         * Is WP debug set to true
-         *
-         * @return integer
-         */
-        protected function isWpDebugOn() : int
-        {
-        }
-        /**
-         * Get WP's LANG constant
-         *
-         * @return string
-         */
-        protected function getWpLang() : string
-        {
-        }
-        /**
-         * Get max upload size defined by WP
-         *
-         * @return string
-         */
-        protected function getMaxUploadSize() : string
-        {
-        }
-        /**
-         * Get PHP post_max_size configuration value
-         *
-         * @return string
-         */
-        protected function getPhpPostMaxSize() : string
-        {
-        }
-        /**
-         * Construct HostName
-         *
-         * @return string
-         */
-        protected function getHostName() : string
-        {
-        }
-        /**
-         * Get PHP SMTP configuration value
-         *
-         * @return string
-         */
-        protected function getPhpSmtp() : string
-        {
-        }
-        /**
-         * Get PHP SMTP PORT configuration value
-         *
-         * @return string
-         */
-        protected function getPhpSmtpPort() : string
-        {
-        }
-        /**
-         * Active plugins as defined by WP's stored option
-         *
-         * @return array
-         */
-        protected function getActivePlugins() : array
-        {
-        }
-        /**
-         * Package up our form data and send it to our API endpoint.
-         * 
-         * @since 3.2
-         * @return void
-         */
-        public function form_data()
+        protected function constructUsage() : \NinjaForms\Includes\Entities\Usage
         {
         }
         /**
@@ -8024,43 +7877,6 @@ namespace {
         {
         }
     }
-    /**
-     * Measure email throughput to determine the potential scale of email related issues.
-     * @TODO: Remove this entire file at a later date.
-     */
-    class NF_EmailTelemetry
-    {
-        private $is_opted_in = \false;
-        /**
-         * Constructor which takes in a paremeter to tell the class whether the site is opted 
-         * in for telemetry or not
-         * 
-         * @param $opted_in
-         * 
-         * @since 3.3.21
-         */
-        public function __construct($opted_in = \false)
-        {
-        }
-        /**
-         * @hook phpmailer_init The last action before the email is sent.
-         */
-        public function setup()
-        {
-        }
-        /** 
-         * @NOTE No need to return $phpmailer as it is passed in by reference (aka Output Parameter). 
-         */
-        public function update_metrics(&$phpmailer)
-        {
-        }
-        public function maybe_schedule_push()
-        {
-        }
-        public function push_telemetry()
-        {
-        }
-    }
 }
 namespace NinjaForms\Includes\Entities {
     /**
@@ -8180,6 +7996,71 @@ namespace NinjaForms\Includes\Entities {
          * @return  MetaboxOutputEntity
          */
         public function setLabelValueCollection($labelValueCollection) : \NinjaForms\Includes\Entities\MetaboxOutputEntity
+        {
+        }
+    }
+    class NfSite implements \JsonSerializable
+    {
+        const STRUCTURE = ['url' => 'string', 'ip_address' => 'string'];
+        public string $url = '';
+        public string $ip_address = '';
+        /**
+         * Construct entity from array
+         *
+         * @param array $array
+         * @return NfSite
+         */
+        public static function fromArray(array $array) : \NinjaForms\Includes\Entities\NfSite
+        {
+        }
+        /** @inheritDoc */
+        public function toArray()
+        {
+        }
+        /** @inheritDoc */
+        #[\ReturnTypeWillChange]
+        public function jsonSerialize()
+        {
+        }
+    }
+    class NfSiteEnvironment implements \JsonSerializable
+    {
+        const STRUCTURE = ['site_id' => 'int', 'nf_version' => 'string', 'nf_db_version' => 'string', 'wp_version' => 'string', 'multisite_enabled' => 'int', 'server_type' => 'string', 'tls_version' => 'string', 'php_version' => 'string', 'mysql_version' => 'string', 'wp_debug_mode' => 'int', 'wp_lang' => 'string', 'wp_max_upload_size' => 'string', 'php_max_post_size' => 'string', 'hostname' => 'string', 'smtp' => 'string', 'smtp_port' => 'string', 'active_plugins' => 'array', 'wp_memory_limit' => 'string', 'deprecated_loaded' => 'bool'];
+        public int $site_id = 0;
+        public string $nf_version = '';
+        public string $nf_db_version = '';
+        public string $wp_version = '';
+        public int $multisite_enabled = 0;
+        public string $server_type = '';
+        public string $tls_version = '';
+        public string $php_version = '';
+        public string $mysql_version = '';
+        public int $wp_debug_mode = 0;
+        public string $wp_lang = '';
+        public string $wp_max_upload_size = '';
+        public string $php_max_post_size = '';
+        public string $hostname = '';
+        public string $smtp = '';
+        public string $smtp_port = '';
+        public array $active_plugins = [];
+        public string $wp_memory_limit = '';
+        public bool $deprecated_loaded = false;
+        /**
+         * Construct entity from array
+         *
+         * @param array $array
+         * @return NfSiteEnvironment
+         */
+        public static function fromArray(array $array) : \NinjaForms\Includes\Entities\NfSiteEnvironment
+        {
+        }
+        /** @inheritDoc */
+        public function toArray()
+        {
+        }
+        /** @inheritDoc */
+        #[\ReturnTypeWillChange]
+        public function jsonSerialize()
         {
         }
     }
@@ -8981,6 +8862,64 @@ namespace NinjaForms\Includes\Entities {
          * @return  SubmissionFilter
          */
         public function setSubmissionsIDs(array $submissionsIDs) : \NinjaForms\Includes\Entities\SubmissionFilter
+        {
+        }
+    }
+    class TelemetryLegacyRequest implements \JsonSerializable
+    {
+        const STRUCTURE = ['slug' => 'string', 'data' => 'array', 'site_data' => 'array'];
+        public string $slug = '';
+        public array $data = [];
+        public array $site_data = [];
+        /**
+         * Construct entity from array
+         *
+         * @param array $array
+         * @return TelemetryLegacyRequest
+         */
+        public static function fromArray(array $array) : \NinjaForms\Includes\Entities\TelemetryLegacyRequest
+        {
+        }
+        /** @inheritDoc */
+        public function toArray()
+        {
+        }
+        /** @inheritDoc */
+        #[\ReturnTypeWillChange]
+        public function jsonSerialize()
+        {
+        }
+    }
+    class Usage implements \JsonSerializable
+    {
+        const STRUCTURE = ['site_id' => 'int', 'plugin' => 'array', 'forms' => 'array', 'fields' => 'array', 'field_settings' => 'array', 'actions' => 'array', 'display_settings' => 'array', 'restrictions' => 'array', 'calculations' => 'array', 'submissions' => 'array', 'settings' => 'array'];
+        public int $site_id = 0;
+        public array $plugin = [];
+        public array $forms = [];
+        public array $fields = [];
+        public array $field_settings = [];
+        public array $actions = [];
+        public array $display_settings = [];
+        public array $restrictions = [];
+        public array $calculations = [];
+        public array $submissions = [];
+        public array $settings = [];
+        /**
+         * Construct entity from array
+         *
+         * @param array $array
+         * @return Usage
+         */
+        public static function fromArray(array $array) : \NinjaForms\Includes\Entities\Usage
+        {
+        }
+        /** @inheritDoc */
+        public function toArray()
+        {
+        }
+        /** @inheritDoc */
+        #[\ReturnTypeWillChange]
+        public function jsonSerialize()
         {
         }
     }
@@ -10477,6 +10416,572 @@ namespace {
     }
 }
 namespace NinjaForms\Includes\Factories {
+    class ConstructNfSiteEntity
+    {
+        /**
+         * Return constructed site entity
+         *
+         * @return NfSite
+         */
+        public function handle() : \NinjaForms\Includes\Entities\NfSite
+        {
+        }
+        /**
+         * Construct site variable array
+         *
+         * @return array
+         */
+        protected function constructSiteVariableArray() : array
+        {
+        }
+    }
+    class ConstructNfSiteEnvironmentEntity
+    {
+        /**
+         * Return constructed site environment entity
+         *
+         * @return NfSiteEnvironment
+         */
+        public function handle() : \NinjaForms\Includes\Entities\NfSiteEnvironment
+        {
+        }
+        /**
+         * Construct environment variable array
+         *
+         * @return array
+         */
+        protected function constructEnvironmentVariableArray() : array
+        {
+        }
+        /**
+         * Get NinjaForms VERSION constant
+         *
+         * @return string
+         */
+        protected function getNinjaFormsVersion() : string
+        {
+        }
+        /**
+         * Get NF DB version
+         *
+         * @return string
+         */
+        protected function getNfDbVersion() : string
+        {
+        }
+        /**
+         * Get WP version as defined by get_bloginfo
+         *
+         * @return string
+         */
+        protected function getWpVersion() : string
+        {
+        }
+        /**
+         * Return value of WP's is_multisite() function
+         *
+         * Default is 0
+         * 
+         * @return boolean
+         */
+        protected function isMultisiteEnabled() : int
+        {
+        }
+        /**
+         * Get server type as defined by SERVER superglobal
+         *
+         * @return string
+         */
+        protected function getServerType() : string
+        {
+        }
+        /**
+         * Get PHP version
+         *
+         * @return string
+         */
+        protected function getPhpVersion() : string
+        {
+        }
+        /**
+         * Get SQL version
+         *
+         * @return string
+         */
+        protected function getSqlVersion() : string
+        {
+        }
+        /**
+         * Get WP_MEMORY_LIMIT constant
+         *
+         * @return string
+         */
+        protected function getWpMemoryLimit() : string
+        {
+        }
+        /**
+         * Is WP debug set to true
+         *
+         * @return integer
+         */
+        protected function isWpDebugOn() : int
+        {
+        }
+        /**
+         * Get WP's LANG constant
+         *
+         * @return string
+         */
+        protected function getWpLang() : string
+        {
+        }
+        /**
+         * Get max upload size defined by WP
+         *
+         * @return string
+         */
+        protected function getMaxUploadSize() : string
+        {
+        }
+        /**
+         * Get PHP post_max_size configuration value
+         *
+         * @return string
+         */
+        protected function getPhpPostMaxSize() : string
+        {
+        }
+        /**
+         * Construct HostName
+         *
+         * @return string
+         */
+        protected function getHostName() : string
+        {
+        }
+        /**
+         * Get PHP SMTP configuration value
+         *
+         * @return string
+         */
+        protected function getPhpSmtp() : string
+        {
+        }
+        /**
+         * Get PHP SMTP PORT configuration value
+         *
+         * @return string
+         */
+        protected function getPhpSmtpPort() : string
+        {
+        }
+        /**
+         * Active plugins as defined by WP's stored option
+         *
+         * @return array
+         */
+        protected function getActivePlugins() : array
+        {
+        }
+    }
+    class ConstructUsageEntity
+    {
+        /**
+         * Ninja Forms database version
+         *
+         * @var string
+         */
+        protected $nFdBVersion;
+        /**
+         * Indexed array of stored forms
+         *
+         * keys: id, title
+         * 
+         * @var array
+         */
+        protected $forms = [];
+        /**
+         * Time spent making NF Forms request in microseconds
+         *
+         * @var integer
+         */
+        protected $formsRequestTime = 0;
+        /**
+         * Total number of forms
+         *
+         * @var integer
+         */
+        protected $countForms = 1;
+        /**
+         * Indexed array of form settings
+         *
+         * keys: 
+         * @var array
+         */
+        protected $formMeta = [];
+        /**
+         * Time spent making NF form settings request in microseconds
+         *
+         * @var integer
+         */
+        protected $formMetaRequestTime = 0;
+        /**
+         * Indexed array of fields
+         *
+         * keys: id, type, parent_id
+         * 
+         * @var array
+         */
+        protected $fields = [];
+        /**
+         * Time spent making NF fields request in microseconds
+         *
+         * @var integer
+         */
+        protected $fieldsRequestTime = 0;
+        /**
+         * Indexed array of field settings
+         *
+         * keys: 
+         * @var array
+         */
+        protected $fieldMeta = [];
+        /**
+         * Time spent making NF field settings request in microseconds
+         *
+         * @var integer
+         */
+        protected $fieldMetaRequestTime = 0;
+        /**
+         * Indexed array of active stored actions
+         *
+         * keys: id, type, parent_id
+         * @var array
+         */
+        protected $actions = [];
+        /**
+         * Time spent making NF actions request in microseconds
+         *
+         * @var integer
+         */
+        protected $actionsRequestTime = 0;
+        /**
+         * 
+         *
+         * @var array
+         */
+        protected $calculations = [];
+        /**
+         * Array of stored NF settings
+         *
+         * key-value pairs of all Ninja Forms settings stored in options table
+         *
+         * @var array
+         */
+        protected $ninjaFormsSettings = [];
+        /**
+         * Time spent making NF settings request in microseconds
+         *
+         * @var integer
+         */
+        protected $ninjaFormsSettingsRequestTime = 0;
+        /**
+         * Wordpress global DB object
+         *
+         * @var object
+         */
+        protected $wpdb;
+        /**
+         * Construct with NF database version
+         *
+         * @param string|null $nFdBVersion
+         */
+        public function __construct(?string $nFdBVersion = '1.4')
+        {
+        }
+        /**
+         * Return constructed site environment entity
+         *
+         * @return Usage
+         */
+        public function handle() : \NinjaForms\Includes\Entities\Usage
+        {
+        }
+        /**
+         * Construct usage data
+         *
+         * @return array
+         */
+        protected function constructUsageArray() : array
+        {
+        }
+        /**
+         * Construct array of plugin usage
+         *
+         * Activation, deactivation, time between activation and deactivation
+         * @return array
+         */
+        protected function constructPluginUsage() : array
+        {
+        }
+        /**
+         * Construct array of forms usage
+         *
+         * Number of forms, forms appended to a post or page, forms with public link
+         * enabled
+         * 
+         * @return array
+         */
+        protected function constructFormsUsage() : array
+        {
+        }
+        /**
+         * Construct array of fields usage
+         *
+         * Data, current and planned:
+         * - mean fields per form
+         * - mean each field type per form
+         * 
+         * @return array
+         */
+        protected function constructFieldsUsage() : array
+        {
+        }
+        /**
+         * Calculate fields per form
+         *
+         * @return float
+         */
+        protected function calculateFieldsPerForm() : float
+        {
+        }
+        /**
+         * Calculate count of each field type per form
+         *
+         * key-value pairs fieldType:countOfFieldTypePerForm
+         * 
+         * @return array
+         */
+        protected function calculateFieldTypesCountPerForm() : array
+        {
+        }
+        /**
+         * Construct array of field settings usage
+         *
+         * Data, current and planned:
+         * - custom class name wrapper - empty/not empty
+         * - custom class name element - empty/not empty
+         * - label position - default/not default
+         * - custom name attribute - empty/not empty
+         * - field key - default/not default
+         * - admin label - empty/not empty
+         * 
+         * @return array
+         */
+        protected function constructFieldMetaUsage() : array
+        {
+        }
+        /**
+         * Construct array of actions usage
+         * 
+         * Data, current and planned:
+         * - active actions per form
+         * - active action types per form
+         * - reCaptcha action active on at least one form - true/false
+         * - Akisment action active on at least one - true/false
+         * - Delete Data action active on at least one - true/false
+         * - Export Data action active on at least one - true/false
+         * - WP Hook action active on at least one - true/false
+         * - Record Submissions action active on at least one form - true/false
+         * - - Designated submitter's email address value set
+         * - - Save All or Save None
+         * - - Except - empty/not empty
+         * - - Set Submissions to Expire - true/false
+         * 
+         * @return array
+         */
+        protected function constructActionsUsage() : array
+        {
+        }
+        /**
+         * Calculate actions per form
+         *
+         * @return float
+         */
+        protected function calculateActionsPerForm() : float
+        {
+        }
+        /**
+         * Calculate count of each action type per form
+         *
+         * key-value pairs actionType:countOfActionTypePerForm
+         * 
+         * @return array
+         */
+        protected function calculateActionTypesCountPerForm() : array
+        {
+        }
+        /**
+         * Construct array of display settings usage
+         * 
+         * Data, current and planned:
+         * - Display form title - count true
+         * - Clear successfully completed form - count true
+         * - Hide successfully completed form - count true
+         * - Default label position - count each position
+         * - Wrapper class - count custom
+         * - Element class - count custom
+         * - Form title heading level - count each value
+         * - Email error message - count custom
+         * - Date error message - count custom
+         * - Field error message - count custom
+         * - Num Min error message - count custom
+         * - Num Max error message - count custom
+         * - Num IncrementBy error message - count custom
+         * - Correct Errors error message - count custom
+         * - Validate Required Field error message - count custom
+         * - Honeypot error message - count custom
+         * - Field Marked Required error message - count custom
+         * 
+         * @return array
+         */
+        protected function constructDisplaySettingsUsage() : array
+        {
+        }
+        /**
+         * Construct array of restrictions usage
+         *
+         * Data, current and planned:
+         * - Unique field usage count
+         * - Non-default unique field error message count
+         * - Require users to be logged in count
+         * - Non-default must-be-logged-in message count
+         * - Submission limit usage count
+         * - Non-default submission limit message count
+         * 
+         * @return array
+         */
+        protected function constructRestrictionsUsage() : array
+        {
+        }
+        /**
+         * Construct array of calculations usage
+         *
+         * @return array
+         */
+        protected function constructCalculationsUsage() : array
+        {
+        }
+        /**
+         * Construct array of submissions usage
+         *
+         * @return array
+         */
+        protected function constructSubmissionsUsage() : array
+        {
+        }
+        /**
+         * Construct array of settings usage
+         *
+         * @return array
+         */
+        protected function constructSettingsUsage() : array
+        {
+        }
+        /**
+         * Get ninja_forms_settings by key
+         *
+         * @param string $key
+         * @param string $fallback
+         * @return mixed
+         */
+        protected function getNfSettingByKey(string $key, $fallback = '')
+        {
+        }
+        /**
+         * Calculate elapsed time from given start time in microseconds
+         *
+         * @param float $startTime
+         * @return integer
+         */
+        protected function calculateElapsedTime(float $startTime) : int
+        {
+        }
+        /**
+         * Populate $wpdb with global WordPress DB object
+         *
+         * @return void
+         */
+        protected function populateWpdb() : void
+        {
+        }
+        /**
+         * Populate Forms data
+         *
+         * @return void
+         */
+        protected function populateForms() : void
+        {
+        }
+        /**
+         * Populate Form Meta data
+         *
+         * @return void
+         */
+        protected function populateFormMeta() : void
+        {
+        }
+        /**
+         * SQL for form meta data
+         *
+         * @return string
+         */
+        protected function constructFormMetaSql() : string
+        {
+        }
+        /**
+         * Populate Fields 
+         *
+         * @return void
+         */
+        protected function populateFields() : void
+        {
+        }
+        /**
+         * Populate Field Settings
+         *
+         * @return void
+         */
+        protected function populateFieldMeta() : void
+        {
+        }
+        /**
+         * SQL for field meta data
+         * 
+         * Modify for NF DB Version < 1.3
+         *
+         * @return string
+         */
+        protected function constructFieldMetaSql() : string
+        {
+        }
+        /**
+         * Populate NfActions 
+         *
+         * @return void
+         */
+        protected function populateActions() : void
+        {
+        }
+        /**
+         * Populate ninja_forms_settings $ninjaFormsSettings
+         *
+         * @return void
+         */
+        protected function populateNinjaFormsSettings() : void
+        {
+        }
+    }
     class SubmissionAggregateFactory
     {
         /**
@@ -15701,7 +16206,7 @@ namespace {
         /**
          * @since 3.0
          */
-        const VERSION = '3.8.9';
+        const VERSION = '3.8.16';
         /**
          * @since 3.4.0
          */
@@ -15792,7 +16297,7 @@ namespace {
         /**
          * Dispatcher
          *
-         * @var string
+         * @var NF_Dispatcher
          */
         protected $_dispatcher = '';
         /**
@@ -15966,6 +16471,11 @@ namespace {
         public function logger()
         {
         }
+        /**
+         * Return dispatcher
+         *
+         * @return NF_Dispatcher
+         */
         public function dispatcher()
         {
         }
@@ -16174,7 +16684,7 @@ namespace NinjaForms {
 }
 namespace {
     // autoload_real.php @generated by Composer
-    class ComposerAutoloaderInite9b8b4150496273fa661dc8e0462d223
+    class ComposerAutoloaderInit18f2a846da5e0265e7af58121389e9a1
     {
         private static $loader;
         public static function loadClassLoader($class)
@@ -16189,7 +16699,7 @@ namespace {
     }
 }
 namespace Composer\Autoload {
-    class ComposerStaticInite9b8b4150496273fa661dc8e0462d223
+    class ComposerStaticInit18f2a846da5e0265e7af58121389e9a1
     {
         public static $prefixLengthsPsr4 = array('N' => array('NinjaForms\\NinjaForms\\' => 22, 'NinjaForms\\Includes\\' => 20, 'NinjaForms\\Blocks\\' => 18));
         public static $prefixDirsPsr4 = array('NinjaForms\\NinjaForms\\' => array(0 => __DIR__ . '/../..' . '/'), 'NinjaForms\\Includes\\' => array(0 => __DIR__ . '/../..' . '/includes'), 'NinjaForms\\Blocks\\' => array(0 => __DIR__ . '/../..' . '/blocks/views/includes'));
