@@ -2049,7 +2049,7 @@ namespace {
         protected $_id = '';
         // Dynamically set in constructor using the class name.
         protected $_title = '';
-        // Should be set (and translated) in the constructor.
+        // Should be set (and translated) at action hook init-10
         protected $_callback = 'render_metabox';
         protected $_post_types = array();
         protected $_context = 'side';
@@ -2057,6 +2057,16 @@ namespace {
         protected $_callback_args = array();
         protected $_capability = 'edit_post';
         public function __construct()
+        {
+        }
+        /**
+         * Initialize properties at WP `init-5` action hook
+         *
+         * Set translatable properties - _title
+         * 
+         * @return void
+         */
+        public function abstractInit() : void
         {
         }
         public function add_meta_boxes()
@@ -2893,6 +2903,212 @@ namespace {
          */
         public abstract function register_routes();
     }
+}
+namespace NinjaForms\Includes\Interfaces {
+    /**
+     * Requirements for NF3 actions on WP 6.7+
+     */
+    interface SotAction
+    {
+        /**
+         * Steps to perform when the action/form is saved
+         *
+         * @param array $actionSettings
+         * @return array|void
+         */
+        public function save(array $actionSettings);
+        /**
+         * Steps to perform when the action is processed
+         *
+         * @param array $actionSettings
+         * @param int $formId
+         * @param array $data
+         * @return array
+         */
+        public function process(array $actionSettings, int $formId, array $data) : array;
+        /**
+         * Return the programmatic name  
+         *
+         * @return string
+         */
+        public function get_name() : string;
+        /**
+         * Return the human readable nicename  
+         *
+         * @return string
+         */
+        public function get_nicename() : string;
+        /**
+         * Return the drawer section
+         *
+         * @return string
+         */
+        public function get_section() : string;
+        /**
+         * Return the drawer group
+         *
+         * @return string
+         */
+        public function get_group() : string;
+        /**
+         * Return url of action's image
+         *
+         * @return string
+         */
+        public function get_image() : string;
+        /**
+         * Return url of documentation
+         *
+         * @return string
+         */
+        public function get_doc_url() : string;
+        /**
+         * Return settings
+         *
+         * Expected array
+         * @return array
+         */
+        public function get_settings();
+        /**
+         * Return the timing position
+         * 
+         * Early = -1, Normal = 0, Late = 1
+         * 
+         * @return integer
+         */
+        public function get_timing() : int;
+        /**
+         * Return the priority for the action.
+         *
+         * @return integer
+         */
+        public function get_priority() : int;
+    }
+}
+namespace NinjaForms\Includes\Abstracts {
+    /**
+     * Class 
+     */
+    abstract class SotAction implements \NinjaForms\Includes\Interfaces\SotAction
+    {
+        /**
+         * @var array
+         */
+        protected $_tags = array();
+        /** @var int */
+        public $timing;
+        /** @var int */
+        public $priority;
+        /**
+         * @var array
+         */
+        protected $_settings = array();
+        /**
+         * @var array
+         */
+        protected $_settings_all = array('label', 'active');
+        /**
+         * @var array
+         */
+        protected $_settings_exclude = array();
+        /**
+         * @var array
+         */
+        protected $_settings_only = array();
+        /**
+         * Constructor
+         */
+        public function __construct()
+        {
+        }
+        public function abstractInitHook() : void
+        {
+        }
+        //-----------------------------------------------------
+        // Public Methods
+        //-----------------------------------------------------
+        /**
+         * Save
+         */
+        /** @inheritDoc */
+        public function save(array $action_settings)
+        {
+        }
+        /**
+         * Process
+         */
+        /** @inheritDoc */
+        public abstract function process(array $action_id, int $form_id, array $data) : array;
+        /**
+         * Get Settings
+         *
+         * Returns the settings for an action.
+         *
+         * @return array|mixed
+         */
+        public function get_settings() : array
+        {
+        }
+        /**
+         * Sort Actions
+         *
+         * A static method for sorting two actions by timing, then priority.
+         *
+         * @param $a
+         * @param $b
+         * @return int
+         */
+        public static function sort_actions($a, $b)
+        {
+        }
+        protected function load_settings($only_settings = array())
+        {
+        }
+    }
+    /**
+     * Class SotActionNewsletter
+     */
+    abstract class SotActionNewsletter extends \NinjaForms\Includes\Abstracts\SotAction implements \NinjaForms\Includes\Interfaces\SotAction
+    {
+        /**
+         * @var array
+         */
+        protected $_tags = array('newsletter');
+        protected $_settings = array();
+        protected $_transient = '';
+        protected $_transient_expiration = '';
+        protected $_setting_labels = array('list' => 'List', 'fields' => 'List Field Mapping', 'groups' => 'Interest Groups');
+        /**
+         * Constructor
+         */
+        public function __construct()
+        {
+        }
+        public function newsletterAbstractInit() : void
+        {
+        }
+        /*
+         * PUBLIC METHODS
+         */
+        public function _get_lists()
+        {
+        }
+        /*
+         * PROTECTED METHODS
+         */
+        protected abstract function get_lists();
+        /*
+         * PRIVATE METHODS
+         */
+        private function get_list_settings()
+        {
+        }
+        private function cache_lists($lists)
+        {
+        }
+    }
+}
+namespace {
     /**
      * WordPress Menu Page Base Class
      */
@@ -3158,6 +3374,16 @@ namespace {
         public function __construct()
         {
         }
+        /**
+         * Initialize properties at WP `init-8` action hook
+         *
+         * Set translatable properties - _title
+         * 
+         * @return void
+         */
+        public function abstractSubmissionInit() : void
+        {
+        }
     }
     /**
      * Class NF_Field_Textbox
@@ -3193,19 +3419,37 @@ namespace {
         }
         public abstract function filter_default_value($default_value, $field_class, $settings);
     }
+}
+namespace NinjaForms\Includes\Traits {
     /**
-     * Class NF_Actions_Akismet
+     * Declare/provide action properties
      */
-    final class NF_Actions_Akismet extends \NF_Abstracts_Action
+    trait SotGetActionProperties
     {
         /**
          * @var string
          */
-        protected $_name = 'akismet';
+        protected $_name = '';
         /**
-         * @var array
+         * @var string
          */
-        protected $_tags = array('spam', 'filtering', 'akismet');
+        protected $_nicename = '';
+        /**
+         * @var string
+         */
+        protected $_section = 'installed';
+        /**
+         * @var string
+         */
+        protected $_group = '';
+        /**
+         * @var string
+         */
+        protected $_image = '';
+        /**
+         * @var string
+         */
+        protected $_documentation_url = '';
         /**
          * @var string
          */
@@ -3213,15 +3457,107 @@ namespace {
         /**
          * @var int
          */
-        protected $_priority = '10';
+        protected $_priority = 10;
         /**
-         * @var string
+         * Get Name
+         *
+         * Returns the name
+         *
+         * @return string
          */
-        protected $_group = 'core';
+        public function get_name() : string
+        {
+        }
+        /**
+         * Get Nicename
+         *
+         * Returns the nicename
+         *
+         * @return string
+         */
+        public function get_nicename() : string
+        {
+        }
+        /**
+         * Get Section
+         *
+         * Returns the drawer section for an action.
+         *
+         * @return string
+         */
+        public function get_section() : string
+        {
+        }
+        /**
+         * Get Group
+         *
+         * Returns the drawer group for an action.
+         *
+         * @return string
+         */
+        public function get_group() : string
+        {
+        }
+        /**
+         * Get Image
+         *
+         * Returns the url of a branded action's image.
+         *
+         * @return string
+         */
+        public function get_image() : string
+        {
+        }
+        /**
+         * Get Documentation URL
+         *
+         * Returns the action's documentation URL.
+         *
+         * @return string
+         */
+        public function get_doc_url() : string
+        {
+        }
+        /**
+         * Get Timing
+         *
+         * Returns the timing for an action.
+         *
+         * @return mixed
+         */
+        public function get_timing() : int
+        {
+        }
+        /**
+         * Get Priority
+         *
+         * Returns the priority
+         *
+         * @return int
+         */
+        public function get_priority() : int
+        {
+        }
+    }
+}
+namespace {
+    /**
+     * Class NF_Actions_Akismet
+     */
+    final class NF_Actions_Akismet extends \NinjaForms\Includes\Abstracts\SotAction implements \NinjaForms\Includes\Interfaces\SotAction
+    {
+        use \NinjaForms\Includes\Traits\SotGetActionProperties;
+        /**
+         * @var array
+         */
+        protected $_tags = array('spam', 'filtering', 'akismet');
         /**
          * Constructor
          */
         public function __construct()
+        {
+        }
+        public function initHook() : void
         {
         }
         /**
@@ -3251,7 +3587,7 @@ namespace {
          *
          * @return array
          */
-        public function process($action_settings, $form_id, $data)
+        public function process(array $action_settings, int $form_id, array $data) : array
         {
         }
         /**
@@ -3271,28 +3607,19 @@ namespace {
     /**
      * Class NF_Action_CollectPayment
      */
-    final class NF_Actions_CollectPayment extends \NF_Abstracts_Action
+    final class NF_Actions_CollectPayment extends \NinjaForms\Includes\Abstracts\SotAction implements \NinjaForms\Includes\Interfaces\SotAction
     {
-        /**
-         * @var string
-         */
-        protected $_name = 'collectpayment';
+        use \NinjaForms\Includes\Traits\SotGetActionProperties;
         /**
          * @var array
          */
         protected $_tags = array();
         /**
-         * @var string
-         */
-        protected $_timing = 'late';
-        /**
-         * @var int
-         */
-        protected $_priority = 0;
-        /**
          * @var array
          */
         protected $payment_gateways = array();
+        protected $tempCpNiceName;
+        protected $tempCpName;
         /**
          * Constructor
          *
@@ -3302,13 +3629,27 @@ namespace {
         public function __construct($cp_nice_name = 'Collect Payment', $cp_name = 'collectpayment')
         {
         }
-        public function save($action_settings)
+        public function initHook() : void
         {
         }
-        public function process($action_settings, $form_id, $data)
+        function initializeSettings() : void
+        {
+        }
+        /** @inheritDoc */
+        public function process(array $action_settings, int $form_id, array $data) : array
         {
         }
         public function register_payment_gateways()
+        {
+        }
+        /**
+         * Build gateway options for CollectPayment dropdown
+         *
+         * Done at `init-15` to ensure that object can populate translations
+         * 
+         * @return void
+         */
+        public function buildPaymentGatewayOptions() : void
         {
         }
         public function maybe_remove_action($action_type_settings)
@@ -3318,89 +3659,52 @@ namespace {
     /**
      * Class NF_Action_Custom
      */
-    final class NF_Actions_Custom extends \NF_Abstracts_Action
+    final class NF_Actions_Custom extends \NinjaForms\Includes\Abstracts\SotAction implements \NinjaForms\Includes\Interfaces\SotAction
     {
-        /**
-         * @var string
-         */
-        protected $_name = 'custom';
+        use \NinjaForms\Includes\Traits\SotGetActionProperties;
         /**
          * @var array
          */
         protected $_tags = array();
-        /**
-         * @var string
-         */
-        protected $_documentation_url = 'https://ninjaforms.com/docs/wp-hook/';
-        /**
-         * @var string
-         */
-        protected $_timing = 'normal';
-        /**
-         * @var int
-         */
-        protected $_priority = 10;
-        /**
-         * @var string
-         */
-        protected $_group = 'core';
         /**
          * Constructor
          */
         public function __construct()
         {
         }
+        public function initHook()
+        {
+        }
         /*
          * PUBLIC METHODS
          */
-        public function save($action_settings)
-        {
-        }
-        public function process($action_settings, $form_id, $data)
+        /** @inheritDoc */
+        public function process(array $action_settings, int $form_id, array $data) : array
         {
         }
     }
     /**
      * Class NF_Actions_DataRemoval
      */
-    final class NF_Actions_DeleteDataRequest extends \NF_Abstracts_Action
+    final class NF_Actions_DeleteDataRequest extends \NinjaForms\Includes\Abstracts\SotAction implements \NinjaForms\Includes\Interfaces\SotAction
     {
-        /**
-         * @var string
-         */
-        protected $_name = 'deletedatarequest';
+        use \NinjaForms\Includes\Traits\SotGetActionProperties;
         /**
          * @var array
          */
         protected $_tags = array();
-        /**
-         * @var string
-         */
-        protected $_documentation_url = 'https://ninjaforms.com/docs/delete-data-request-action/';
-        /**
-         * @var string
-         */
-        protected $_timing = 'late';
-        /**
-         * @var int
-         */
-        protected $_priority = 10;
-        /**
-         * @var string
-         */
-        protected $_group = 'core';
         /**
          * Constructor
          */
         public function __construct()
         {
         }
+        public function initHook()
+        {
+        }
         /*
          * PUBLIC METHODS
          */
-        public function save($action_settings)
-        {
-        }
         /**
          * Creates a Erase Personal Data request for the user with the email
          * provided
@@ -3411,49 +3715,34 @@ namespace {
          *
          * @return array
          */
-        public function process($action_settings, $form_id, $data)
+        public function process(array $action_settings, int $form_id, array $data) : array
         {
         }
     }
     /**
      * Class NF_Action_Email
      */
-    final class NF_Actions_Email extends \NF_Abstracts_Action
+    final class NF_Actions_Email extends \NinjaForms\Includes\Abstracts\SotAction implements \NinjaForms\Includes\Interfaces\SotAction
     {
-        /**
-         * @var string
-         */
-        protected $_name = 'email';
+        use \NinjaForms\Includes\Traits\SotGetActionProperties;
         /**
          * @var array
          */
         protected $_tags = array();
-        /**
-         * @var string
-         */
-        protected $_documentation_url = 'https://ninjaforms.com/docs/email/';
-        /**
-         * @var string
-         */
-        protected $_timing = 'late';
-        /**
-         * @var int
-         */
-        protected $_priority = 10;
-        /**
-         * @var string
-         */
-        protected $_group = 'core';
         /**
          * Constructor
          */
         public function __construct()
         {
         }
+        public function initHook()
+        {
+        }
         /*
          * PUBLIC METHODS
          */
-        public function process($action_settings, $form_id, $data)
+        /** @inheritDoc */
+        public function process(array $action_settings, int $form_id, array $data) : array
         {
         }
         /**
@@ -3518,44 +3807,25 @@ namespace {
     /**
      * Class NF_Actions_ExportPersonalData
      */
-    final class NF_Actions_ExportDataRequest extends \NF_Abstracts_Action
+    final class NF_Actions_ExportDataRequest extends \NinjaForms\Includes\Abstracts\SotAction implements \NinjaForms\Includes\Interfaces\SotAction
     {
-        /**
-         * @var string
-         */
-        protected $_name = 'exportdatarequest';
+        use \NinjaForms\Includes\Traits\SotGetActionProperties;
         /**
          * @var array
          */
         protected $_tags = array();
-        /**
-         * @var string
-         */
-        protected $_documentation_url = 'https://ninjaforms.com/docs/export-data-request-action/';
-        /**
-         * @var string
-         */
-        protected $_timing = 'late';
-        /**
-         * @var int
-         */
-        protected $_priority = 10;
-        /**
-         * @var string
-         */
-        protected $_group = 'core';
         /**
          * Constructor
          */
         public function __construct()
         {
         }
+        public function initHook()
+        {
+        }
         /*
          * PUBLIC METHODS
          */
-        public function save($action_settings)
-        {
-        }
         /**
          * Creates a Export Personal Data request for the user with the email
          * provided
@@ -3566,35 +3836,20 @@ namespace {
          *
          * @return array
          */
-        public function process($action_settings, $form_id, $data)
+        public function process(array $action_settings, int $form_id, array $data) : array
         {
         }
     }
     /**
      * Class NF_Actions_Recaptcha
      */
-    final class NF_Actions_Recaptcha extends \NF_Abstracts_Action
+    final class NF_Actions_Recaptcha extends \NinjaForms\Includes\Abstracts\SotAction implements \NinjaForms\Includes\Interfaces\SotAction
     {
-        /**
-         * @var string
-         */
-        protected $_name = 'recaptcha';
+        use \NinjaForms\Includes\Traits\SotGetActionProperties;
         /**
          * @var array
          */
         protected $_tags = array('spam', 'filtering', 'recaptcha');
-        /**
-         * @var string
-         */
-        protected $_timing = 'normal';
-        /**
-         * @var int
-         */
-        protected $_priority = '10';
-        /**
-         * @var string
-         */
-        protected $_group = 'core';
         /**
          * @var string
          */
@@ -3619,6 +3874,9 @@ namespace {
          * Constructor
          */
         public function __construct()
+        {
+        }
+        public function initHook()
         {
         }
         /**
@@ -3728,7 +3986,7 @@ namespace {
          *
          * @return array
          */
-        public function process($action_settings, $form_id, $data)
+        public function process(array $action_settings, int $form_id, array $data) : array
         {
         }
         protected function is_submission_human($token, $score_threshold)
@@ -3738,87 +3996,54 @@ namespace {
     /**
      * Class NF_Action_Redirect
      */
-    final class NF_Actions_Redirect extends \NF_Abstracts_Action
+    final class NF_Actions_Redirect extends \NinjaForms\Includes\Abstracts\SotAction implements \NinjaForms\Includes\Interfaces\SotAction
     {
-        /**
-         * @var string
-         */
-        protected $_name = 'redirect';
+        use \NinjaForms\Includes\Traits\SotGetActionProperties;
         /**
          * @var array
          */
         protected $_tags = array();
-        /**
-         * @var string
-         */
-        protected $_documentation_url = 'https://ninjaforms.com/docs/redirect-action/';
-        /**
-         * @var string
-         */
-        protected $_timing = 'late';
-        /**
-         * @var int
-         */
-        protected $_priority = 20;
-        /**
-         * @var string
-         */
-        protected $_group = 'core';
         /**
          * Constructor
          */
         public function __construct()
         {
         }
+        public function initHook()
+        {
+        }
         /*
          * PUBLIC METHODS
          */
-        public function save($action_settings)
-        {
-        }
-        public function process($action_settings, $form_id, $data)
+        /** @inheritDoc */
+        public function process(array $action_settings, int $form_id, array $data) : array
         {
         }
     }
     /**
      * Class NF_Action_Save
      */
-    class NF_Actions_Save extends \NF_Abstracts_Action
+    class NF_Actions_Save extends \NinjaForms\Includes\Abstracts\SotAction implements \NinjaForms\Includes\Interfaces\SotAction
     {
-        /**
-         * @var string
-         */
-        protected $_name = 'save';
+        use \NinjaForms\Includes\Traits\SotGetActionProperties;
         /**
          * @var array
          */
         protected $_tags = array();
-        /**
-         * @var string
-         */
-        protected $_documentation_url = 'https://ninjaforms.com/docs/record-submission-action/';
-        /**
-         * @var string
-         */
-        protected $_timing = 'late';
-        /**
-         * @var int
-         */
-        protected $_priority = '-1';
-        /**
-         * @var string
-         */
-        protected $_group = 'core';
         /**
          * Constructor
          */
         public function __construct()
         {
         }
+        public function initHook()
+        {
+        }
         /*
          * PUBLIC METHODS
          */
-        public function save($action_settings)
+        /** @inheritDoc */
+        public function save(array $action_settings)
         {
         }
         /**
@@ -3870,7 +4095,8 @@ namespace {
         public function clean_form_option($expiration_value, $expiration_option)
         {
         }
-        public function process($action_settings, $form_id, $data)
+        /** @inheritDoc */
+        public function process(array $action_settings, int $form_id, array $data) : array
         {
         }
         /**
@@ -3893,45 +4119,27 @@ namespace {
     /**
      * Class NF_Action_SuccessMessage
      */
-    final class NF_Actions_SuccessMessage extends \NF_Abstracts_Action
+    final class NF_Actions_SuccessMessage extends \NinjaForms\Includes\Abstracts\SotAction implements \NinjaForms\Includes\Interfaces\SotAction
     {
-        /**
-         * @var string
-         */
-        protected $_name = 'successmessage';
+        use \NinjaForms\Includes\Traits\SotGetActionProperties;
         /**
          * @var array
          */
         protected $_tags = array();
-        /**
-         * @var string
-         */
-        protected $_documentation_url = 'https://ninjaforms.com/docs/success-message/';
-        /**
-         * @var string
-         */
-        protected $_timing = 'late';
-        /**
-         * @var int
-         */
-        protected $_priority = 10;
-        /**
-         * @var string
-         */
-        protected $_group = 'core';
         /**
          * Constructor
          */
         public function __construct()
         {
         }
+        public function initHook()
+        {
+        }
         /*
          * PUBLIC METHODS
          */
-        public function save($action_settings)
-        {
-        }
-        public function process($action_settings, $form_id, $data)
+        /** @inheritDoc */
+        public function process(array $action_settings, int $form_id, array $data) : array
         {
         }
         public function import_form_action_success_message($import)
@@ -16226,7 +16434,7 @@ namespace {
         /**
          * @since 3.0
          */
-        const VERSION = '3.8.20';
+        const VERSION = '3.8.21';
         /**
          * @since 3.4.0
          */
@@ -16368,6 +16576,9 @@ namespace {
         {
         }
         public function flush_rewrite_rules()
+        {
+        }
+        public function instantiateTranslatableObjects() : void
         {
         }
         public function register_rewrite_rules()
