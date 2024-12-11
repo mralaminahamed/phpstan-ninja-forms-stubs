@@ -16206,7 +16206,7 @@ namespace {
         /**
          * @since 3.0
          */
-        const VERSION = '3.8.17';
+        const VERSION = '3.8.18';
         /**
          * @since 3.4.0
          */
