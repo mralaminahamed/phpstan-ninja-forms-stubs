@@ -999,13 +999,6 @@ namespace {
         {
         }
     }
-    final class NF_AJAX_Requests_DeleteField extends \WP_Async_Request
-    {
-        protected $action = 'nf_delete_field';
-        protected function handle()
-        {
-        }
-    }
     final class NF_AJAX_Requests_NullRequest extends \WP_Async_Request
     {
         protected $action = 'nf_null_request';
@@ -4550,6 +4543,9 @@ namespace {
          * Enqueue dashboard page elements
          */
         public function enqueue_dashboard_script($page)
+        {
+        }
+        public function enqueue_telemetry_script($page)
         {
         }
     }
@@ -15068,6 +15064,30 @@ namespace {
         }
     }
     /**
+     * Class NF_Routes_SubmissionsActions
+     */
+    final class NF_Routes_Telemetry extends \NF_Abstracts_Routes
+    {
+        /**
+         * Register REST API routes related to Telemetry
+         * 
+         * @since 3.8.18
+         * 
+         * @route "nf-be-data/store"
+         */
+        function register_routes()
+        {
+        }
+        // Security check for the rest route
+        function nf_be_store_data_permission_callback()
+        {
+        }
+        // Action for the REST route
+        function nf_be_store_data($request)
+        {
+        }
+    }
+    /**
      * NF_Session Class
      *
      * @since 1.5
@@ -16206,12 +16226,12 @@ namespace {
         /**
          * @since 3.0
          */
-        const VERSION = '3.8.18';
+        const VERSION = '3.8.19';
         /**
          * @since 3.4.0
          */
         const DB_VERSION = '1.4';
-        const WP_MIN_VERSION = '5.0';
+        const WP_MIN_VERSION = '6.4';
         /**
          * @var Ninja_Forms
          * @since 2.7
