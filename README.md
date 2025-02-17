@@ -24,7 +24,7 @@ Require this package as a development dependency with [Composer](https://getcomp
 composer require --dev mralaminahamed/ninja-forms-stubs
 ```
 
-Alternatively you may download `ninja-forms-stubs.php` directly.
+Alternatively you may download `ninja-forms-stubs.stub` directly.
 
 ## Usage in PHPStan
 
@@ -33,6 +33,6 @@ Include stubs in PHPStan configuration file.
 ```yaml
 parameters:
     bootstrapFiles:
-        - vendor/mralaminahamed/ninja-forms-stubs/ninja-forms-constants-stubs.php
-        - vendor/mralaminahamed/ninja-forms-stubs/ninja-forms-stubs.php
+        - vendor/mralaminahamed/ninja-forms-stubs/ninja-forms-constants-stubs.stub
+        - vendor/mralaminahamed/ninja-forms-stubs/ninja-forms-stubs.stub
 ```

@@ -5,8 +5,8 @@
 
 HEADER=$'/**\n * Generated stub declarations for Ninja Forms.\n * @see https://ninjaforms.com/\n * @see https://github.com/mralaminahamed/phpstan-ninja-forms-stubs\n */'
 
-FILE="ninja-forms-stubs.php"
-FILE_CONSTANTS="ninja-forms-constants-stubs.php"
+FILE="ninja-forms-stubs.stub"
+FILE_CONSTANTS="ninja-forms-constants-stubs.stub"
 
 set -e
 

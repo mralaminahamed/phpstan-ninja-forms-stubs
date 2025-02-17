@@ -1,8 +1,8 @@
 parameters:
     paths:
-        - ninja-forms-stubs.php
+        - ninja-forms-stubs.stub
     scanFiles:
-        - ninja-forms-constants-stubs.php
+        - ninja-forms-constants-stubs.stub
     bootstrapFiles:
         - bootstrap.php
     level: 5
