@@ -2127,18 +2127,50 @@ namespace {
      */
     abstract class NF_Abstracts_MergeTags
     {
+        /**
+         * Merge Tag object id
+         *
+         * @var string
+         */
         protected $id = '';
+        /**
+         * Merge tag object title
+         *
+         * @var string
+         */
         protected $title = '';
+        /**
+         * Merge tag configuration array
+         *
+         * @var array
+         */
         protected $merge_tags = array();
+        /**
+         * Is Merge Tag object in default group?
+         *
+         * @var boolean
+         */
         protected $_default_group = \TRUE;
+        /**
+         * Should Merge Tag follow use_safe rules?
+         *
+         * @var boolean
+         */
         protected $use_safe = \FALSE;
         public function __construct()
         {
         }
+        /**
+         * Merge Tag replacement on an action
+         *
+         * @param mixed $subject
+         * @return string|array
+         */
         public function action_replace($subject)
         {
         }
         /**
+         * Replace incoming value with matched MergeTag value
          * 
          * @param string|array $subject
          * @return string
@@ -2146,15 +2178,63 @@ namespace {
         public function replace($subject)
         {
         }
+        /**
+         * Return matches for merge tag
+         *
+         * @param string $subject Expects string value, but not guaranteed
+         * @return array
+         */
+        protected function getMatches($subject) : array
+        {
+        }
+        /**
+         * Extract callable callback from merge tag configuration
+         *
+         * @param array $mergeTag
+         * @param array $matches
+         * @return string
+         */
+        protected function extractCallback(array $mergeTag, array $matches) : string
+        {
+        }
+        /**
+         * Call callable function for replacement value
+         *
+         * @param string $callback
+         * @return string
+         */
+        protected function getReplacement(string $callback)
+        {
+        }
+        /**
+         * Get Merge Tag id
+         *
+         * @return string
+         */
         public function get_id()
         {
         }
+        /**
+         * Get Merge Tag title
+         *
+         * @return string
+         */
         public function get_title()
         {
         }
+        /**
+         * Get Merge Tag configuration array
+         *
+         * @return array
+         */
         public function get_merge_tags()
         {
         }
+        /**
+         * Is MergeTag in default group?
+         *
+         * @return boolean
+         */
         public function is_default_group()
         {
         }
@@ -2399,7 +2479,7 @@ namespace {
          * 
          * @var boolean
          */
-        private $db_stage_1_complete = \TRUE;
+        protected $db_stage_1_complete = \TRUE;
         //-----------------------------------------------------
         // Public Methods
         //-----------------------------------------------------
@@ -13586,7 +13666,7 @@ namespace {
      *
      * Provides additional helper functionality to WordPress helper functions.
      */
-    final class WPN_Helper
+    class WPN_Helper
     {
         /**
          * @param $value
@@ -13759,6 +13839,14 @@ namespace {
          * @since 3.4.0
          */
         public static function get_stage()
+        {
+        }
+        /**
+         * Provide the current Ninja Forms database version.
+         *
+         * @return string
+         */
+        protected static function getNfDbVersion() : string
         {
         }
         /**
@@ -16752,7 +16840,7 @@ namespace {
         /**
          * @since 3.0
          */
-        const VERSION = '3.9.1';
+        const VERSION = '3.9.2';
         /**
          * @since 3.4.0
          */
