@@ -347,6 +347,121 @@ namespace {
         {
         }
     }
+    class NF_AJAX_Controllers_Onboarding extends \NF_Abstracts_Controller
+    {
+        private $session;
+        public function __construct()
+        {
+        }
+        /**
+         * Heartbeat API callback
+         * @param Array $response The response data to be filtered.
+         * @param Array $data The extra data registered to the heartbeat.
+         * @return Array
+         */
+        public function pulse($response, $data)
+        {
+        }
+        /**
+         * Determine if the current user has the welcome page enabled in settings.
+         */
+        public function show_welcome($response)
+        {
+        }
+        /**
+         * Toggle dismissal of onboarding.
+         */
+        public function toggle_show_welcome($reset)
+        {
+        }
+        /**
+         * Verify current user's onboarding status.
+         */
+        public function current_user_is_onboarding($status)
+        {
+        }
+        /**
+         * Verifies onboarding is in progress.
+         * @return Boolean
+         */
+        public function in_progress()
+        {
+        }
+        /**
+         * Initiates the session.
+         */
+        public function init_session()
+        {
+        }
+        /**
+         * Begins the onboarding process.
+         * @return Boolean
+         */
+        public function start()
+        {
+        }
+        /**
+         * Verifies our current target page.
+         * @return String
+         */
+        public function page_now()
+        {
+        }
+        /**
+         * Verifies our current step.
+         * @return Integer
+         */
+        public function step_now($request)
+        {
+        }
+        /**
+         * Moves the onboarding session to the next step.
+         * @return Boolean
+         */
+        public function next()
+        {
+        }
+        /**
+         * Complete the onboarding process.
+         * @return Boolean
+         */
+        public function complete()
+        {
+        }
+        /**
+         * Dismiss the onboarding process.
+         * @return Boolean
+         */
+        public function dismiss()
+        {
+        }
+        /**
+         * Determine if onboarding has been dismissed.
+         * @return Boolean
+         */
+        public function is_dismissed()
+        {
+        }
+        /**
+         * Updates user meta with our session data.
+         * @return Boolean
+         */
+        public function update()
+        {
+        }
+        /**
+         * AJAX request handler method.
+         */
+        public function handle()
+        {
+        }
+        /**
+         * Telemetry radio caller.
+         */
+        public function radio($action)
+        {
+        }
+    }
     class NF_AJAX_Controllers_Preview extends \NF_Abstracts_Controller
     {
         private static $transient_prefix = 'nf_form_preview_';
@@ -5255,6 +5370,40 @@ namespace {
         {
         }
     }
+    final class NF_Admin_Menus_Welcome extends \NF_Abstracts_Submenu
+    {
+        public $parent_slug = 'ninja-forms';
+        public $page_title = 'Welcome';
+        public $menu_slug = 'nf-welcome';
+        public $position = 0;
+        public function __construct()
+        {
+        }
+        /**
+         * If we have required updates, unregister the menu item
+         */
+        public function nf_upgrade_redirect()
+        {
+        }
+        /**
+         * If onboarding has already been completed, unregister the menu item
+         */
+        public function check_onboarding()
+        {
+        }
+        public function get_page_title()
+        {
+        }
+        public function get_capability()
+        {
+        }
+        public function enqueue_the_things()
+        {
+        }
+        public function display()
+        {
+        }
+    }
     final class NF_Admin_Metaboxes_AppendAForm extends \NF_Abstracts_Metabox
     {
         protected $_post_types = array('post', 'page');
@@ -8276,7 +8425,7 @@ namespace NinjaForms\Includes\Entities {
     }
     class NfSiteEnvironment implements \JsonSerializable
     {
-        const STRUCTURE = ['site_id' => 'int', 'nf_version' => 'string', 'nf_db_version' => 'string', 'wp_version' => 'string', 'multisite_enabled' => 'int', 'server_type' => 'string', 'tls_version' => 'string', 'php_version' => 'string', 'mysql_version' => 'string', 'wp_debug_mode' => 'int', 'wp_lang' => 'string', 'wp_max_upload_size' => 'string', 'php_max_post_size' => 'string', 'hostname' => 'string', 'smtp' => 'string', 'smtp_port' => 'string', 'active_plugins' => 'array', 'wp_memory_limit' => 'string', 'deprecated_loaded' => 'bool'];
+        const STRUCTURE = ['site_id' => 'int', 'nf_version' => 'string', 'nf_db_version' => 'string', 'wp_version' => 'string', 'multisite_enabled' => 'int', 'server_type' => 'string', 'tls_version' => 'string', 'php_version' => 'string', 'mysql_version' => 'string', 'wp_debug_mode' => 'int', 'wp_lang' => 'string', 'wp_max_upload_size' => 'string', 'php_max_post_size' => 'string', 'hostname' => 'string', 'smtp' => 'string', 'smtp_port' => 'string', 'active_plugins' => 'array', 'wp_memory_limit' => 'string', 'deprecated_loaded' => 'bool', 'site_timezone' => 'string', 'nf_gatekeeper' => 'int', 'siteTheme' => 'string'];
         public int $site_id = 0;
         public string $nf_version = '';
         public string $nf_db_version = '';
@@ -8296,6 +8445,9 @@ namespace NinjaForms\Includes\Entities {
         public array $active_plugins = [];
         public string $wp_memory_limit = '';
         public bool $deprecated_loaded = false;
+        public string $site_timezone = '';
+        public int $nf_gatekeeper = 100;
+        public string $siteTheme = '';
         /**
          * Construct entity from array
          *
@@ -9143,13 +9295,14 @@ namespace NinjaForms\Includes\Entities {
     }
     class Usage implements \JsonSerializable
     {
-        const STRUCTURE = ['site_id' => 'int', 'plugin' => 'array', 'forms' => 'array', 'fields' => 'array', 'field_settings' => 'array', 'actions' => 'array', 'display_settings' => 'array', 'restrictions' => 'array', 'calculations' => 'array', 'submissions' => 'array', 'settings' => 'array'];
+        const STRUCTURE = ['site_id' => 'int', 'plugin' => 'array', 'forms' => 'array', 'fields' => 'array', 'field_settings' => 'array', 'actions' => 'array', 'action_settings' => 'array', 'display_settings' => 'array', 'restrictions' => 'array', 'calculations' => 'array', 'submissions' => 'array', 'settings' => 'array'];
         public int $site_id = 0;
         public array $plugin = [];
         public array $forms = [];
         public array $fields = [];
         public array $field_settings = [];
         public array $actions = [];
+        public array $action_settings = [];
         public array $display_settings = [];
         public array $restrictions = [];
         public array $calculations = [];
@@ -10834,6 +10987,30 @@ namespace NinjaForms\Includes\Factories {
         protected function getActivePlugins() : array
         {
         }
+        /**
+         * Get Site Timezone
+         *
+         * @return string
+         */
+        protected function getSiteTimezone() : string
+        {
+        }
+        /**
+         * Get Site Theme Name
+         *
+         * @return string
+         */
+        protected function getSiteTheme() : string
+        {
+        }
+        /**
+         * Get NF Gatekeeper
+         *
+         * @return integer
+         */
+        protected function getNfGatekeeper() : int
+        {
+        }
     }
     class ConstructUsageEntity
     {
@@ -10911,6 +11088,19 @@ namespace NinjaForms\Includes\Factories {
          */
         protected $actions = [];
         /**
+         * Indexed array of action settings
+         *
+         * keys: 
+         * @var array
+         */
+        protected $actionMeta = [];
+        /**
+         * Time spent making NF Actions request in microseconds
+         *
+         * @var integer
+         */
+        protected $actionMetaRequestTime = 0;
+        /**
          * Time spent making NF actions request in microseconds
          *
          * @var integer
@@ -10936,6 +11126,30 @@ namespace NinjaForms\Includes\Factories {
          * @var integer
          */
         protected $ninjaFormsSettingsRequestTime = 0;
+        /**
+         * Array of NF Submission Posts
+         *
+         * @var array
+         */
+        protected $ninjaFormsSubmissionPosts = [];
+        /**
+         * Time spent making NF submissions request in microseconds
+         *
+         * @var integer
+         */
+        protected $submissionPostsRequestTime = 0;
+        /**
+         * Array of NF Submission Postmeta
+         *
+         * @var array
+         */
+        protected $ninjaFormsSubmissionPostmeta = [];
+        /**
+         * Time spent making NF submissions request in microseconds
+         *
+         * @var integer
+         */
+        protected $submissionPostmetaRequestTime = 0;
         /**
          * Wordpress global DB object
          *
@@ -11026,6 +11240,7 @@ namespace NinjaForms\Includes\Factories {
          * - custom name attribute - empty/not empty
          * - field key - default/not default
          * - admin label - empty/not empty
+         * - field keys - count non default
          * 
          * @return array
          */
@@ -11044,10 +11259,6 @@ namespace NinjaForms\Includes\Factories {
          * - Export Data action active on at least one - true/false
          * - WP Hook action active on at least one - true/false
          * - Record Submissions action active on at least one form - true/false
-         * - - Designated submitter's email address value set
-         * - - Save All or Save None
-         * - - Except - empty/not empty
-         * - - Set Submissions to Expire - true/false
          * 
          * @return array
          */
@@ -11093,6 +11304,8 @@ namespace NinjaForms\Includes\Factories {
          * - Validate Required Field error message - count custom
          * - Honeypot error message - count custom
          * - Field Marked Required error message - count custom
+         * - Form Currency - count custom
+         * - Public link - count enabled
          * 
          * @return array
          */
@@ -11125,6 +11338,11 @@ namespace NinjaForms\Includes\Factories {
         }
         /**
          * Construct array of submissions usage
+         *
+         * Data, current and planned:
+         * - Forms with Submissions - Count
+         * - Forms with only Recent Submissions (<90 days) - Count
+         * - Forms with Submissions - Average number of submissions
          *
          * @return array
          */
@@ -11222,6 +11440,44 @@ namespace NinjaForms\Includes\Factories {
          * @return void
          */
         protected function populateActions() : void
+        {
+        }
+        /**
+         * Populate Action Meta data
+         *
+         * @return void
+         */
+        protected function populateActionMeta() : void
+        {
+        }
+        /**
+         * SQL for Action meta data
+         *
+         * @return string
+         */
+        protected function constructActionMetaSql() : string
+        {
+        }
+        /**
+         * Populate Submission Postmeta data
+         *
+         * @return void
+         */
+        protected function populateSubmissionPostmeta() : void
+        {
+        }
+        /**
+         * Construct array of actions settings usage
+         *
+         * Data, current and planned:
+         * - Record Submission Action - Count Submitter Email set
+         * - Record Submission Action - Count Field Save toggle set to save_all
+         * - Record Submission Action - Count Submissions set to Expire enabled
+         * - Record Submission Action - Count Exception Fields set
+         * 
+         * @return array
+         */
+        protected function constructActionMetaUsage() : array
         {
         }
         /**
@@ -16324,6 +16580,21 @@ namespace {
         {
         }
         /**
+         * Delete function
+         * 
+         * @param $type first argument determine the type of data we want to delete
+         * @param $formID second argument determine the ID of the object we want to delete
+         */
+        public function delete($args, $assoc_args)
+        {
+        }
+        /**
+         * Delete all forms
+         */
+        public function delete_all_forms($args, $assoc_args)
+        {
+        }
+        /**
          * Installs mock form data
          */
         public function mock()
@@ -16481,7 +16752,7 @@ namespace {
         /**
          * @since 3.0
          */
-        const VERSION = '3.8.25';
+        const VERSION = '3.9.0';
         /**
          * @since 3.4.0
          */
@@ -16962,7 +17233,7 @@ namespace NinjaForms {
 }
 namespace {
     // autoload_real.php @generated by Composer
-    class ComposerAutoloaderInitc1727ece9ae31354dd060e0674bdca21
+    class ComposerAutoloaderInit8e0b40590fe534b0d17afd3dea3d71d3
     {
         private static $loader;
         public static function loadClassLoader($class)
@@ -16977,7 +17248,7 @@ namespace {
     }
 }
 namespace Composer\Autoload {
-    class ComposerStaticInitc1727ece9ae31354dd060e0674bdca21
+    class ComposerStaticInit8e0b40590fe534b0d17afd3dea3d71d3
     {
         public static $prefixLengthsPsr4 = array('N' => array('NinjaForms\\NinjaForms\\' => 22, 'NinjaForms\\Includes\\' => 20, 'NinjaForms\\Blocks\\' => 18));
         public static $prefixDirsPsr4 = array('NinjaForms\\NinjaForms\\' => array(0 => __DIR__ . '/../..' . '/'), 'NinjaForms\\Includes\\' => array(0 => __DIR__ . '/../..' . '/includes'), 'NinjaForms\\Blocks\\' => array(0 => __DIR__ . '/../..' . '/blocks/views/includes'));
