@@ -16752,7 +16752,7 @@ namespace {
         /**
          * @since 3.0
          */
-        const VERSION = '3.9.0';
+        const VERSION = '3.9.1';
         /**
          * @since 3.4.0
          */
