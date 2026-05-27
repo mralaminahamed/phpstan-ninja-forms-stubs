@@ -7,40 +7,172 @@
 
 namespace NinjaForms\Blocks\Authentication {
     /**
-     * Creats randomly generated strings for use as public and private keys.
+     * Creates cryptographically secure random strings for use as public and private keys.
      */
     class KeyFactory
     {
         /**
-         * @param int $length
-         * 
-         * @return string
+         * Generate a cryptographically secure random key using random_bytes().
+         *
+         * @param int $length Desired length of the output string (default 40)
+         *
+         * @return string Hex-encoded random string (actual length will be $length * 2)
          */
         public static function make($length = 40)
         {
         }
     }
     /**
-     * Manages a stored secret and guarentees that one is always available.
+     * Rate limiter for Views REST API endpoints.
+     *
+     * Prevents DoS attacks by limiting requests per IP address.
+     */
+    class RateLimiter
+    {
+        /** @var int Default rate limit (requests per window) */
+        const DEFAULT_LIMIT = 60;
+        /** @var int Default time window in seconds */
+        const DEFAULT_WINDOW = 60;
+        // 1 minute
+        /** @var string Transient key prefix */
+        const TRANSIENT_PREFIX = 'nf_views_rate_limit_';
+        /**
+         * Check if the current request should be rate limited.
+         *
+         * @param string $endpoint Endpoint identifier (e.g., 'submissions', 'forms')
+         * @param int    $limit    Maximum requests per window (default 60)
+         * @param int    $window   Time window in seconds (default 60)
+         *
+         * @return bool|\WP_Error True if allowed, WP_Error if rate limited
+         */
+        public static function check($endpoint, $limit = null, $window = null)
+        {
+        }
+        /**
+         * Get the client IP address.
+         *
+         * @return string IP address
+         */
+        protected static function getClientIp()
+        {
+        }
+        /**
+         * Generate transient key for IP + endpoint.
+         *
+         * @param string $ip       IP address
+         * @param string $endpoint Endpoint identifier
+         *
+         * @return string Transient key
+         */
+        protected static function getTransientKey($ip, $endpoint)
+        {
+        }
+        /**
+         * Clear rate limit for a specific IP and endpoint.
+         * Useful for testing or manual intervention.
+         *
+         * @param string $ip       IP address
+         * @param string $endpoint Endpoint identifier
+         *
+         * @return bool True on success
+         */
+        public static function clear($ip, $endpoint)
+        {
+        }
+        /**
+         * Get current request count for an IP + endpoint.
+         *
+         * @param string $ip       IP address (default: current client)
+         * @param string $endpoint Endpoint identifier
+         *
+         * @return int Current request count
+         */
+        public static function getCount($ip = null, $endpoint = 'default')
+        {
+        }
+        /**
+         * Get remaining requests for an IP + endpoint.
+         *
+         * @param string $endpoint Endpoint identifier
+         * @param int    $limit    Maximum requests per window
+         *
+         * @return int Remaining requests
+         */
+        public static function getRemaining($endpoint = 'default', $limit = null)
+        {
+        }
+    }
+    /**
+     * Manages a stored secret and guarantees that one is always available.
+     *
+     * Includes automatic secret rotation for enhanced security.
      */
     class SecretStore
     {
         /** @var string */
         const OPTION_KEY = 'ninja-forms-views-secret';
+        /** @var string */
+        const ROTATION_DATE_KEY = 'ninja-forms-views-secret-rotation-date';
+        /** @var int Default rotation interval in seconds (90 days) */
+        const DEFAULT_ROTATION_INTERVAL = 7776000;
+        // 90 * 24 * 60 * 60
         /**
          * Gets the SECRET or creates the SECRET if it does not exist.
-         * 
+         *
          * If defined, defaults to NINJA_FORMS_VIEWS_SECRET constant.
          * If a secret does not exist, then it creates a secret and stores the value.
          * If the secret is wrongly typed, then it self-corrects by creating a new secret.
-         * 
+         *
          * @return string
          */
         public static function getOrCreate()
         {
         }
         /**
+         * Rotate the secret (invalidates all existing tokens).
+         *
+         * Call this when:
+         * - Security is compromised
+         * - During scheduled rotation
+         * - Manually via admin action
+         *
+         * @return string New secret
+         */
+        public static function rotate()
+        {
+        }
+        /**
+         * Check if secret should be rotated based on age.
+         *
+         * @param int $maxAge Maximum age in seconds (default 90 days)
+         *
+         * @return bool True if rotation is needed
+         */
+        public static function shouldRotate($maxAge = null)
+        {
+        }
+        /**
+         * Get the last rotation date.
+         *
+         * @return int|false Unix timestamp of last rotation, or false if never rotated
+         */
+        public static function getLastRotationDate()
+        {
+        }
+        /**
+         * Get days until next rotation.
+         *
+         * @return int Days remaining, or -1 if overdue
+         */
+        public static function getDaysUntilRotation()
+        {
+        }
+        /**
+         * Validate secret format.
+         *
          * @param mixed $secret
+         *
+         * @return bool
          */
         public static function validate($secret)
         {
@@ -48,11 +180,19 @@ namespace NinjaForms\Blocks\Authentication {
     }
     /**
      * Creates an encoded public/private key hash and validates it.
+     *
+     * Security improvements:
+     * - Tokens are bound to specific form IDs
+     * - Tokens include expiration timestamps (15 minutes)
+     * - Validation checks both authenticity and authorization
      */
     class Token
     {
         /** @var string */
         protected $privateKey;
+        /** @var int Token expiration time in seconds */
+        const TOKEN_EXPIRATION = 900;
+        // 15 minutes
         /**
          * @param string $privateKey
          */
@@ -60,27 +200,50 @@ namespace NinjaForms\Blocks\Authentication {
         {
         }
         /**
+         * Create a token bound to specific form IDs with expiration.
+         *
          * @param string $publicKey
-         * 
+         * @param array $formIds Array of form IDs this token can access
+         *
          * @return string
          */
-        public function create($publicKey)
+        public function create($publicKey, $formIds = array())
         {
         }
         /**
+         * Validate token authenticity and check if it grants access to a specific form.
+         *
          * @param string $token
-         * 
+         * @param int|null $formId Form ID to check access for (null to only validate token structure)
+         *
          * @return bool
          */
-        public function validate($token)
+        public function validate($token, $formId = null)
         {
         }
         /**
+         * Extract form IDs from a token without full validation.
+         * Used for debugging/logging purposes only.
+         *
+         * @param string $token
+         *
+         * @return array|false Array of form IDs or false on failure
+         */
+        public function getFormIds($token)
+        {
+        }
+        /**
+         * Generate HMAC hash for token validation using hash_hmac().
+         *
+         * Uses HMAC-SHA256 which is cryptographically stronger than simple
+         * concatenation and prevents length extension attacks.
+         *
          * @param string $publicKey
-         * 
+         * @param string $payload
+         *
          * @return string
          */
-        protected function hash($publicKey)
+        protected function hash($publicKey, $payload = '')
         {
         }
     }
@@ -16935,7 +17098,7 @@ namespace {
         /**
          * @since 3.0
          */
-        const VERSION = '3.11.1';
+        const VERSION = '3.11.1.1';
         /**
          * @since 3.4.0
          */
@@ -17416,7 +17579,7 @@ namespace NinjaForms {
 }
 namespace {
     // autoload_real.php @generated by Composer
-    class ComposerAutoloaderInitaf27be64b3662be4e3224589588b6cf5
+    class ComposerAutoloaderInitc5b062f4cf88695b64e9b0875a598eef
     {
         private static $loader;
         public static function loadClassLoader($class)
@@ -17431,7 +17594,7 @@ namespace {
     }
 }
 namespace Composer\Autoload {
-    class ComposerStaticInitaf27be64b3662be4e3224589588b6cf5
+    class ComposerStaticInitc5b062f4cf88695b64e9b0875a598eef
     {
         public static $prefixLengthsPsr4 = array('N' => array('NinjaForms\NinjaForms\\' => 22, 'NinjaForms\Includes\\' => 20, 'NinjaForms\Blocks\\' => 18));
         public static $prefixDirsPsr4 = array('NinjaForms\NinjaForms\\' => array(0 => __DIR__ . '/../..' . '/'), 'NinjaForms\Includes\\' => array(0 => __DIR__ . '/../..' . '/includes'), 'NinjaForms\Blocks\\' => array(0 => __DIR__ . '/../..' . '/blocks/views/includes'));
