@@ -16700,11 +16700,29 @@ namespace {
         function register_routes()
         {
         }
-        // Security check for the rest route
+        /**
+         * Permission callback for telemetry data storage
+         *
+         * Requires manage_options capability to prevent unauthorized users
+         * from injecting arbitrary data into wp_options.
+         *
+         * @since 3.8.18
+         * @since 3.14.5 Changed from is_user_logged_in() to current_user_can('manage_options')
+         *
+         * @return bool
+         */
         function nf_be_store_data_permission_callback()
         {
         }
-        // Action for the REST route
+        /**
+         * Store telemetry data
+         *
+         * @since 3.8.18
+         * @since 3.14.5 Added input validation and sanitization
+         *
+         * @param WP_REST_Request $request The REST request object.
+         * @return WP_REST_Response
+         */
         function nf_be_store_data($request)
         {
         }
@@ -17866,7 +17884,7 @@ namespace {
         /**
          * @since 3.0
          */
-        const VERSION = '3.14.4';
+        const VERSION = '3.14.5';
         /**
          * @since 3.4.0
          */
