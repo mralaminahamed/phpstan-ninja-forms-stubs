@@ -193,6 +193,12 @@ namespace NinjaForms\Blocks\Authentication {
         /** @var int Token expiration time in seconds */
         const TOKEN_EXPIRATION = 900;
         // 15 minutes
+        /** @var int Maximum token length in bytes (security: prevent memory exhaustion DoS) */
+        const MAX_TOKEN_LENGTH = 8192;
+        // 8KB is generous for typical tokens
+        /** @var int Maximum age past expiration for token refresh (security: limit refresh window) */
+        const MAX_REFRESH_AGE = 86400;
+        // 24 hours - tokens older than this cannot be refreshed
         /**
          * @param string $privateKey
          */
@@ -219,6 +225,18 @@ namespace NinjaForms\Blocks\Authentication {
          * @return bool
          */
         public function validate($token, $formId = null)
+        {
+        }
+        /**
+         * Validate token signature and structure without checking expiration.
+         * Used for token refresh - allows refreshing expired but authentic tokens.
+         *
+         * @param string $token
+         * @param int|null $formId Form ID to check access for (null to only validate signature)
+         *
+         * @return bool True if token signature is valid (regardless of expiration)
+         */
+        public function validateSignatureOnly($token, $formId = null)
         {
         }
         /**
@@ -714,9 +732,12 @@ namespace {
         }
         /**
          * Process fields merge tags for fields inside a repeater fieldset
-         * 
+         *
          * @param object $field The Repeater Fieldset
-         * 
+         *
+         * @since 3.14.1 Disabled merge tag processing on user-submitted values
+         *               to prevent unauthenticated information disclosure.
+         *               See: https://github.com/Saturday-Drive/ninja-forms/issues/7838
          */
         protected function process_repeater_fields_merge_tags($field)
         {
@@ -17808,7 +17829,7 @@ namespace {
         /**
          * @since 3.0
          */
-        const VERSION = '3.14.0';
+        const VERSION = '3.14.1';
         /**
          * @since 3.4.0
          */
