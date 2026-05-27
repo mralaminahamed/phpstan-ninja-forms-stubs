@@ -940,6 +940,17 @@ namespace {
         {
         }
         /**
+         * Determine the interval
+         *
+         * Prefer filtered property `cron_interval`,  fallback to filtered
+         * hardcoded value
+         *
+         * @return integer
+         */
+        protected function determineInterval()
+        {
+        }
+        /**
          * Handle cron healthcheck
          *
          * Restart the background process if not already running
@@ -1202,10 +1213,14 @@ namespace {
          * @var string
          */
         protected $_timing = 'normal';
+        /** @var int */
+        public $timing;
         /**
          * @var int
          */
         protected $_priority = '10';
+        /** @var int */
+        public $priority;
         /**
          * @var array
          */
@@ -1386,6 +1401,7 @@ namespace {
     abstract class NF_Abstracts_BatchProcess
     {
         protected $_db;
+        protected $_flag;
         /**
          * Array that holds data we're sending back to the JS front-end.
          * @var array
@@ -1428,7 +1444,7 @@ namespace {
          * Function to run any setup steps necessary to begin processing for steps after the first.
          *
          * @since 3.4.0
-         * @return  void 
+         * @return  void
          */
         public function restart()
         {
@@ -1439,19 +1455,19 @@ namespace {
          * If this method isn't overwritten by a child, it defaults to 1.
          *
          * @since 3.4.0
-         * @return  int 
+         * @return  int
          */
         public function get_steps()
         {
         }
         /**
          * Adds an error to the response object.
-         * 
+         *
          * @param $slug (String) The slug for this error code.
          * @param $msg (String) The error message to be displayed.
          * @param $type (String) warning or fatal, depending on the error.
          *                       Defaults to warning.
-         * 
+         *
          * @since 3.4.11
          */
         public function add_error($slug, $msg, $type = 'warning')
@@ -1461,7 +1477,7 @@ namespace {
          * Function to cleanup any lingering temporary elements of a batch process after completion.
          *
          * @since 3.4.0
-         * @return  void 
+         * @return  void
          */
         public function cleanup()
         {
@@ -1475,7 +1491,7 @@ namespace {
          * Responds to the JS front-end.
          *
          * @since 3.4.0
-         * @return  void 
+         * @return  void
          */
         public function batch_complete()
         {
@@ -1486,19 +1502,30 @@ namespace {
          * Used in child methods to stop processing the current step an dmove to the next.
          *
          * @since 3.4.0
-         * @return  void 
+         * @return  void
          */
         public function next_step()
         {
         }
         /**
          * Method that encodes $this->response and sends the data to the front-end.
-         * 
+         *
          * @since 3.4.0
          * @updated 3.4.11
-         * @return  void 
+         * @return  void
          */
         public function respond()
+        {
+        }
+        /**
+         * Method to check or modify our processor flag.
+         *
+         * @since 3.5.0
+         * @param $flag (String) The flag to check
+         * @param $action (String) The type of interaction to be performed
+         * @return Mixed
+         */
+        public function flag($flag, $action)
         {
         }
     }
@@ -2146,6 +2173,11 @@ namespace {
         public function action_replace($subject)
         {
         }
+        /**
+         * 
+         * @param string|array $subject
+         * @return string
+         */
         public function replace($subject)
         {
         }
@@ -2998,6 +3030,18 @@ namespace {
      */
     abstract class NF_Abstracts_Routes
     {
+        /**
+         * Register the API routes
+         *
+         *  @since 3.4.33
+         */
+        public function __construct()
+        {
+        }
+        /**
+         * Register Routes
+         */
+        abstract public function register_routes();
     }
     /**
      * WordPress Menu Page Base Class
@@ -3084,6 +3128,173 @@ namespace {
          */
         abstract public function display();
     }
+}
+namespace NinjaForms\Includes\Contracts {
+    /**
+     * Contract to perform actions on a Single Submission
+     *
+     * Used on the Submissions Page, these handlers provide a standard means for
+     * registering additional actions to be performed on a single submission.  For
+     * example, PDF Submissions would register a handler that receives the
+     * submission and export a PDF
+     */
+    interface SubmissionHandler
+    {
+        /**
+         * Return an identifying slug for the handler
+         * @return string 
+         */
+        public function getSlug(): string;
+        /**
+         * Return a label for the handler
+         * @return string 
+         */
+        public function getLabel(): string;
+        /**
+         * Return class name of SubmissionHandler
+         * @return string 
+         */
+        public function getHandlerClassName(): string;
+        /**
+         * Perform action on a single submission
+         *
+         * @param SingleSubmission $singleSubmission
+         * @return void
+         */
+        public function handle(\NinjaForms\Includes\Entities\SingleSubmission $singleSubmission): array;
+        /**
+         * Returns downloadable
+         * 
+         * @return string 
+         */
+        public function getDownload(): string;
+    }
+}
+namespace NinjaForms\Includes\Abstracts {
+    /**
+     * Abstract class implementing SubmissionHandler
+     *
+     * Child class sets responseType, download, blobType, filename
+     *
+     * $this->responseType can be 'none' or 'download'.  'none' means that some
+     * action is performed but there is no returned data to be downloaded.
+     * 'download' means that there is data to be downloaded, such as a PDF or CSV.
+     *
+     * $this->download is the data that is to be downloaded
+     *
+     * $this->blobType is the application type of the download, instructing the
+     * fetch command the format of the downloadable data
+     *
+     * $this->result is a summary message for the request, usually 'ok'  or a
+     * failure message
+     */
+    abstract class SubmissionHandler implements \NinjaForms\Includes\Contracts\SubmissionHandler
+    {
+        /**
+         * camelCase slug of class
+         */
+        protected $slug = '';
+        /**
+         * Response can be 'none' or `download`
+         */
+        protected $responseType = 'none';
+        /**
+         * Result of request (usu. 'ok' or failure message)
+         *
+         * @var string
+         */
+        protected $result = '';
+        /**
+         * Base 64 encoded downloadable string
+         *
+         * @var string
+         */
+        protected $download = '';
+        /**
+         * Application type of download (for constructing download)
+         */
+        protected $blobType = '';
+        /**
+         * Filename of the download, including file extension
+         *
+         * @var string
+         */
+        protected $filename = '';
+        /**
+         * Label for single row command
+         *
+         * @var string
+         */
+        protected $label;
+        /**
+         * Registers command to export single submission as PDF
+         * @return void 
+         */
+        public function __construct()
+        {
+        }
+        /**
+         * Construct translatable label property
+         *
+         * @return void
+         */
+        abstract protected function constructLabel(): void;
+        public function addSubmissionHandler(array $handlerCollection, ?\NinjaForms\Includes\Entities\SingleSubmission $singleSubmission): array
+        {
+        }
+        /**
+         * Determine if handler is added to submission row
+         *
+         * @param SingleSubmission $singleSubmission
+         * @return boolean
+         */
+        abstract protected function doesAddHandler(\NinjaForms\Includes\Entities\SingleSubmission $singleSubmission): bool;
+        /**
+         * Perform extra handler action on a single submission
+         *
+         * @param SingleSubmission $singleSubmission
+         * @return array
+         */
+        public function handle(\NinjaForms\Includes\Entities\SingleSubmission $singleSubmission): array
+        {
+        }
+        /**
+         * Perform functionality on submission, update properties for return
+         *
+         * @param SingleSubmission $singleSubmission
+         * @return void
+         */
+        abstract protected function handleSubmission(\NinjaForms\Includes\Entities\SingleSubmission $singleSubmission): void;
+        /**
+         * Returns payload for download
+         * 
+         * @return string 
+         */
+        public function getDownload(): string
+        {
+        }
+        /**
+         * Return an identifying slug for the handler
+         * @return string 
+         */
+        public function getSlug(): string
+        {
+        }
+        /**
+         * Return a label for the handler
+         * @return string 
+         */
+        public function getLabel(): string
+        {
+        }
+        /**
+         * Return class name of SubmissionHandler
+         * @return string 
+         */
+        abstract public function getHandlerClassName(): string;
+    }
+}
+namespace {
     abstract class NF_Abstracts_SubmissionMetabox extends \NF_Abstracts_Metabox
     {
         /**
@@ -3750,6 +3961,22 @@ namespace {
         public function process($action_settings, $form_id, $data)
         {
         }
+        /**
+         * Ensure extra data is valid
+         * 
+         * 1. Ensure that extra data is array
+         * 2. Check that count of extra data is within allowed limit
+         * 3. If count exceeds limit, consolidate data into single value
+         *
+         * The purpose of 'extraDataOverflowOnSave' is to attempt to store the data submitted in the case that the data truly is valid, but an add-on is storing too many values as individually keyed.  It has the added benefit of providing insight on the nature of an attack should that be the case instead of an errant add-on.
+         * 
+         * @param array $dataExtra
+         * @param int $form_id
+         * @return array
+         */
+        protected function validateExtraData($dataExtra, $form_id): array
+        {
+        }
     }
     /**
      * Class NF_Action_SuccessMessage
@@ -3795,7 +4022,7 @@ namespace {
     {
         protected $fields;
         protected $fields_by_key = [];
-        public function __construct($fields = [], $form_id)
+        public function __construct($fields, $form_id)
         {
         }
         public function get_value($id)
@@ -3806,15 +4033,19 @@ namespace {
         | ArrayAccess
         |--------------------------------------------------------------------------
         */
+        #[\ReturnTypeWillChange]
         public function offsetSet($offset, $value)
         {
         }
+        #[\ReturnTypeWillChange]
         public function offsetExists($offset)
         {
         }
+        #[\ReturnTypeWillChange]
         public function offsetUnset($offset)
         {
         }
+        #[\ReturnTypeWillChange]
         public function offsetGet($offset)
         {
         }
@@ -3823,18 +4054,23 @@ namespace {
         | Iterator
         |--------------------------------------------------------------------------
         */
+        #[\ReturnTypeWillChange]
         public function key()
         {
         }
+        #[\ReturnTypeWillChange]
         public function current()
         {
         }
+        #[\ReturnTypeWillChange]
         public function next()
         {
         }
+        #[\ReturnTypeWillChange]
         public function rewind()
         {
         }
+        #[\ReturnTypeWillChange]
         public function valid()
         {
         }
@@ -4003,7 +4239,7 @@ namespace {
      * @license     http://opensource.org/licenses/gpl-2.0.php GNU Public License
      * @since       2.7.4
      */
-    class NF_Step_Processing
+    abstract class NF_Step_Processing
     {
         /**
          * @var action
@@ -4049,6 +4285,12 @@ namespace {
         {
         }
         /**
+         * Should processing continue?
+         *
+         * @return boolean
+         */
+        abstract protected function allowProcessing(): bool;
+        /**
          * Run our loading process.
          * This function should be overwritten in child classes.
          *
@@ -4082,6 +4324,9 @@ namespace {
     class NF_Admin_CPT_DownloadAllSubmissions extends \NF_Step_Processing
     {
         function __construct()
+        {
+        }
+        protected function allowProcessing(): bool
         {
         }
         public function loading()
@@ -4218,6 +4463,89 @@ namespace {
         {
         }
     }
+    /**
+     * Update the admin footer text for
+     * Ninja Forms pages
+     *
+     * @since 3.6.12
+     */
+    class NF_Admin_FooterMessage
+    {
+        /**
+         *
+         */
+        public function __construct()
+        {
+        }
+        /**
+         * Changes the admin footer text
+         *
+         * Adds Ninja Forms review request.
+         *
+         * @return String
+         */
+        public function nf_admin_footer_text()
+        {
+        }
+    }
+}
+namespace NinjaForms\Includes\Admin {
+    /**
+     * Deregister completed or incorrectly structured updates
+     */
+    class ManageUpdates
+    {
+        /**
+         * Function to deregister already completed updates from the list of required updates.
+         *
+         * @since 3.3.14
+         *
+         * @param $updates (Array) Our array of required updates.
+         * @return $updates (Array) Our array of required updates.
+         */
+        public function removeCompletedUpdates($updates)
+        {
+        }
+        /**
+         * Function to deregister updates that have required updates that either
+         * don't exist, or are malformed
+         * @param $updates (Array) Our array of required updates.
+         * @return $updates (Array) Our array of required updates.
+         */
+        public function removeBadUpdates($updates)
+        {
+        }
+        /**
+         * Retrieve required updates array from stored location
+         *
+         * Note that until retrieved value is validated as an array, we do not
+         * declare return type to prevent error
+         * 
+         * @return array
+         */
+        protected function getRequiredUpdates()
+        {
+        }
+        /**
+         * Update value of 'required updates' in storage location
+         *
+         * @param array $updates
+         * @return void
+         */
+        protected function updateRequiredUpdates(array $updates): void
+        {
+        }
+        /**
+         * Return formatted date string
+         *
+         * @return string
+         */
+        protected function getDate(): string
+        {
+        }
+    }
+}
+namespace {
     final class NF_Admin_Menus_AddNew extends \NF_Abstracts_Submenu
     {
         public $parent_slug = 'ninja-forms';
@@ -4288,6 +4616,12 @@ namespace {
         public function display()
         {
         }
+        /**
+         * Enqueue dashboard page elements
+         */
+        public function enqueue_dashboard_script($page)
+        {
+        }
     }
     final class NF_Admin_Menus_Divider extends \NF_Abstracts_Submenu
     {
@@ -4310,6 +4644,16 @@ namespace {
         public $icon_url = 'dashicons-feedback';
         public $position = '35.1337';
         public $ver = \Ninja_Forms::VERSION;
+        //Data needed into nfDasboard wp_localize_script
+        private $preloadedFormData;
+        private $fieldTypeData;
+        private $fieldSettings;
+        private $fieldTypeSections;
+        private $actionTypeData;
+        private $actionSettings;
+        private $formSettingTypeData;
+        private $formSettings;
+        private $mergeTags;
         // Stores whether or not this form has a password field.
         private $legacy_password = \false;
         public function __construct()
@@ -4360,6 +4704,24 @@ namespace {
         private function null_data_check($settings)
         {
         }
+        /**
+         * Sanitize any field setting that can cause vulnerabilities
+         *
+         * @param array $fieldSettings
+         * @return array
+         */
+        private function sanitizeFieldSettings(array $fieldSettings): array
+        {
+        }
+        /**
+         * Remove known script triggers that can be output on screen
+         *
+         * @param string $string
+         * @return string
+         */
+        private function removeScriptTriggers(string $string): string
+        {
+        }
         private function _localize_field_type_data()
         {
         }
@@ -4384,6 +4746,12 @@ namespace {
         protected function _fetch_action_feed()
         {
         }
+        protected function _fetch_settings_feed()
+        {
+        }
+        protected function _fetch_field_feed()
+        {
+        }
         protected function setting_group_priority($a, $b)
         {
         }
@@ -4391,7 +4759,7 @@ namespace {
         {
         }
     }
-    final class NF_Admin_Menus_ImportExport extends \NF_Abstracts_Submenu
+    class NF_Admin_Menus_ImportExport extends \NF_Abstracts_Submenu
     {
         public $parent_slug = 'ninja-forms';
         public $menu_slug = 'nf-import-export';
@@ -4399,46 +4767,55 @@ namespace {
          * @var int
          */
         public $position = 4;
-        public function __construct()
+        final public function __construct()
         {
         }
         /**
          * If we have required updates, redirect to the main Ninja Forms page
          */
-        public function nf_upgrade_redirect()
+        final public function nf_upgrade_redirect()
         {
         }
-        public function get_page_title()
+        final public function get_page_title()
         {
         }
-        public function import_form_listener()
+        final public function import_form_listener()
         {
         }
-        public function export_form_listener()
+        final public function export_form_listener()
         {
         }
-        public function import_fields_listener()
+        final public function import_fields_listener()
         {
         }
-        public function export_fields_listener()
+        /**
+         * Ensure unserialized value is sanitized against malicious objects
+         *
+         * @param string $serializedValue
+         * @return array Expected return is indexed array
+         */
+        protected function sanitizeUnserialize($serializedValue)
         {
         }
-        public function display()
+        final public function export_fields_listener()
         {
         }
-        public function add_meta_boxes()
+        final public function display()
         {
         }
-        public function template_import_forms()
+        final public function add_meta_boxes()
         {
         }
-        public function template_export_forms()
+        final public function template_import_forms()
         {
         }
-        public function template_import_favorite_fields()
+        final public function template_export_forms()
         {
         }
-        public function template_export_favorite_fields()
+        final public function template_import_favorite_fields()
+        {
+        }
+        final public function template_export_favorite_fields()
         {
         }
         /*
@@ -4446,13 +4823,13 @@ namespace {
         | Backwards Compatibility
         |--------------------------------------------------------------------------
         */
-        public function import_fields_backwards_compatibility($field)
+        final public function import_fields_backwards_compatibility($field)
         {
         }
         private function upload_error_check($file)
         {
         }
-        public function get_capability()
+        final public function get_capability()
         {
         }
     }
@@ -4514,16 +4891,6 @@ namespace {
         public function __construct()
         {
         }
-        /**
-         * Function to detect installations without 2.9x tables and prevent them from accessing 2.9x.
-         *
-         * @since 3.5
-         * @param Array $settings The Ninja Forms settings array.
-         * @return Array
-         */
-        public function maybe_hide_rollback($settings)
-        {
-        }
         public function body_class($classes)
         {
         }
@@ -4573,19 +4940,25 @@ namespace {
         /**
          * @var string
          */
-        public $menu_slug = 'edit.php?post_type=nf_sub';
-        /**
-         * @var null
-         */
-        public $function = \NULL;
+        public $menu_slug = 'nf-submissions';
         /**
          * @var int
          */
         public $position = 3;
+        /** @var int */
+        public $load_legacy;
         /**
          * Constructor
          */
         public function __construct()
+        {
+        }
+        /**
+         * Remove the old Submissions page link when legacy mode is not enabled
+         *
+         * @param $screen object of current screen details
+         */
+        public function remove_legacy_submissions_page($screen)
         {
         }
         /**
@@ -4611,21 +4984,6 @@ namespace {
          * @return array Returns modified views to allow our users access to the trash.
          */
         public function change_views($views)
-        {
-        }
-        public function get_page_title()
-        {
-        }
-        /**
-         * Display
-         */
-        public function display()
-        {
-        }
-        /**
-         * enqueue scripts here
-         */
-        public function enqueue_scripts()
         {
         }
         /**
@@ -4683,9 +5041,6 @@ namespace {
         public function hide_page_title_action()
         {
         }
-        /*
-         * PRIVATE METHODS
-         */
         /**
          * Custom Columns: ID
          *
@@ -4720,6 +5075,30 @@ namespace {
         private function table_filter_by_date($vars)
         {
         }
+        public function enqueue_legacy_scripts()
+        {
+        }
+        public function get_page_title()
+        {
+        }
+        /**
+         * Display
+         */
+        public function display()
+        {
+        }
+        public function body_class($classes)
+        {
+        }
+        /**
+         * enqueue scripts here
+         */
+        public function enqueue_scripts($page)
+        {
+        }
+        /*
+         * PRIVATE METHODS
+         */
         public function get_capability()
         {
         }
@@ -4766,7 +5145,84 @@ namespace {
         public function render_metabox($post, $metabox)
         {
         }
+        /**
+         * Register the React metabox for calculations
+         *
+         * @return void
+         */
+        protected function registerReactMetabox(): void
+        {
+        }
+        /**
+         * Add a metabox constructor to the react.js submissions page
+         *
+         * @param array $metaboxHandlers
+         * @return array
+         */
+        public function nfAddMetabox(array $metaboxHandlers): array
+        {
+        }
     }
+}
+namespace NinjaForms\Includes\Admin\Metaboxes {
+    /**
+     * Construct Calculations metabox for the React Submissions page
+     *
+     * Class must have a public function handle that can receive the $extraValue
+     * and a NF submission.
+     * 
+     * Output of handle method is a \NinjaForms\Includes\Entities\MetaboxOutputEntity with two properties:
+     * 
+     * 'title' (string output of metabox title/header)
+     * 'labelValueCollection' – indexed array of label values
+     * 
+     * Each label value array has three keys:
+     *   'label' – label of the output
+     *   'value' –  value of that being output
+     *   'styling' – currently accepts 'alert' to add an 'alert' class for CSS styling
+     */
+    class CalculationsReact
+    {
+        /**
+         * Given submission '$extra' data and the complete submission, return array
+         * construct for metabox If nothing to output, then return null
+         *
+         * If the '$extra' data contains all required information, then simply
+         * construct that as label/value/styling arrays.
+         *
+         * If your output requires other information from the submission, use the
+         * $nfSub to extract the required information.
+         *
+         * Note that in this example, we want additional information from the
+         * submission for output so we disregard the $extraValue and work directly
+         * with the $nfSub to extract the information.
+         * 
+         * @param mixed $extraValue
+         * @param NF_Database_Models_Submission $nfSub
+         * @return \NinjaForms\Includes\Entities\MetaboxOutputEntity|null
+         */
+        public function handle($extraValue, $nfSub): ?\NinjaForms\Includes\Entities\MetaboxOutputEntity
+        {
+        }
+        /**
+         * Construct calculations output
+         */
+        protected static function extractResponses($calculations, ?bool $debug = false): array
+        {
+        }
+        /**
+         * Determine/return if calc debug is set
+         * 
+         * Checks for string `&calcs_debug` in URI
+         *
+         * @return boolean
+         */
+        protected function isDebugSet(): bool
+        {
+        }
+    }
+}
+namespace {
     final class NF_Admin_Metaboxes_Example extends \NF_Abstracts_SubmissionMetabox
     {
         public function __construct()
@@ -4903,6 +5359,27 @@ namespace {
         {
         }
     }
+}
+namespace NinjaForms\Includes\Admin\Processes {
+    /**
+     * Deletes a file given file path
+     * 
+     * 
+     */
+    class DeleteBatchFile
+    {
+        /**
+         * Delete a file, given a filepath
+         *
+         * @param string $filePath
+         * @return string Result of the attempt to delete file
+         */
+        public function delete(string $filePath): string
+        {
+        }
+    }
+}
+namespace {
     /**
      * Class NF_Abstracts_Batch_Process
      */
@@ -4970,6 +5447,147 @@ namespace {
     /**
      * Class NF_Abstracts_Batch_Process
      */
+    class NF_Admin_Processes_ExportSubmissions extends \NF_Abstracts_BatchProcess
+    {
+        protected $_slug = 'export_submissions';
+        protected $form = '';
+        protected $subs_per_step = 25;
+        protected $sub_count = 0;
+        protected $format = 'csv';
+        protected $offset = 0;
+        protected $delimiter = ',';
+        protected $enclosure = '"';
+        protected $terminator = "\n";
+        protected $currentPosition = 0;
+        /**
+         * Filepath of downloaded file in default directory
+         *
+         * @param array $forms
+         */
+        protected $file_path = '';
+        /**
+         * File URL of downloaded file in default directory
+         *
+         * @param array $forms
+         */
+        protected $fileUrl = '';
+        /**
+         * @var NF_Exports_SubmissionCsvExport
+         */
+        protected $csvObject;
+        /**
+         * Aggregated submission keys in output order
+         *
+         * @var array
+         */
+        protected $indexedLookup;
+        /**
+         * Override parent construct to pass form Ids
+         *
+         * @param array $forms
+         */
+        public function __construct($form = '')
+        {
+        }
+        /**
+         * Function to run any setup steps necessary to begin processing.
+         */
+        public function startup()
+        {
+        }
+        /**
+         * Function to run any setup steps necessary to begin processing for steps after the first.
+         *
+         * @since 3.5.0
+         * @return  void 
+         */
+        public function restart()
+        {
+        }
+        /**
+         * Function to loop over the batch.
+         *
+         * @since 3.5.0
+         * @return  void 
+         */
+        public function process()
+        {
+        }
+        /** 
+         * Delete temp file before calling parent method
+         * @inheritDoc 
+         */
+        public function batch_complete(): void
+        {
+        }
+        public function writeBatch(): void
+        {
+        }
+        /**
+         * Method that encodes $this->response and sends the data to the front-end.
+         * 
+         * @since 3.4.0
+         * @updated 3.4.11
+         * @return  void 
+         */
+        public function respond()
+        {
+        }
+        /**
+         * Function to cleanup any lingering temporary elements of a batch process after completion.
+         *
+         * @since 3.5.0
+         * @return  void 
+         */
+        public function cleanup()
+        {
+        }
+        /**
+         * Get Steps
+         * Determines the amount of steps needed for the step processors.
+         *
+         * @since 3.5.0
+         * @return int of the number of steps.
+         */
+        public function get_steps()
+        {
+        }
+        /**
+         * Get the filepath of our constructed csv.
+         * 
+         * @return string
+         */
+        protected function constructFilepath()
+        {
+        }
+        /**
+         * Overwrites the default flag method to use user options
+         * instead of using the default options.
+         * 
+         * @since 3.5.0
+         * @param $flag (String) The flag to check
+         * @param $action (String) The type of interaction to be performed
+         * @return Mixed
+         */
+        public function flag($flag, $action)
+        {
+        }
+        /**
+         * Get file URL of downloaded file in default directory
+         */
+        public function getFileUrl(): string
+        {
+        }
+        /**
+         * Get filepath of downloaded file in default directory
+         */
+        public function getFilePath(): string
+        {
+        }
+    }
+    /**
+     * Class NF_Abstracts_Batch_Process
+     */
     class NF_Admin_Processes_ImportForm extends \NF_Abstracts_BatchProcess
     {
         protected $_slug = 'import_form';
@@ -4994,6 +5612,15 @@ namespace {
          * @return  void
          */
         public function startup()
+        {
+        }
+        /**
+         * Check field settings data before it is being cached
+         *
+         * @since  3.6.10
+         * @return array of $data
+         */
+        public function sanitize_field_settings($data)
         {
         }
         /**
@@ -5119,6 +5746,61 @@ namespace {
         {
         }
     }
+}
+namespace NinjaForms\Includes\Admin {
+    /**
+     * Configuration of what can be called and extended by NF_AJAX_REST_Controller
+     */
+    class RestControllerSafeList
+    {
+        const ALLOWED_METHOD_CALLS = ['NF_AJAX_Controllers_Form' => ['delete'], 'NF_AJAX_REST_Forms' => ['delete']];
+        public static function isClassMethodAllowed(string $fqcn, string $method): bool
+        {
+        }
+    }
+}
+namespace {
+    /**
+     * NF_Slim_Promo Class
+     *
+     * @since 3.6
+     */
+    class NF_Admin_SlimPromo
+    {
+        /**
+         *
+         */
+        public function __construct()
+        {
+        }
+        public function isNFAdminPage()
+        {
+        }
+        /**
+         * Check if we should show the slim promo
+         *
+         * @return bool
+         */
+        public function maybeShowSlimPromo()
+        {
+        }
+        /**
+         * Set the ninja_forms_disable_slim_promo transient
+         *
+         * @return Void
+         */
+        public function setTransient()
+        {
+        }
+        /**
+         * Echo the html for the notice
+         *
+         * @return Void
+         */
+        public function getNoticeHtml()
+        {
+        }
+    }
     class NF_Admin_UserDataRequests
     {
         /**
@@ -5230,6 +5912,545 @@ namespace {
         {
         }
     }
+}
+namespace NinjaForms\Includes\Admin {
+    class VersionCompatibilityCheck
+    {
+        /**
+         * Array construct requirements for compatibility check
+         *
+         * @var array
+         */
+        const COMPATIBILITY_CHECK_REQUIREMENTS = ['className' => 'string', 'minVersion' => 'string', 'title' => 'string', 'message' => 'string', 'int' => 'integer', 'link' => 'string'];
+        /** @var array */
+        protected $compatiblityCheckCollection;
+        /**
+         * Notices to add
+         * 
+         * Uses NF notices array structure
+         *
+         * @var array
+         */
+        protected $compatibilityNotices = [];
+        /**
+         * Activate checks and notices for plugin's envirnoment compatibility 
+         *
+         * @return void
+         */
+        public function activate(): void
+        {
+        }
+        /**
+         * If Authorize.net and NF core versions re incompatible, display user notice
+         *
+         * NOTE: this does not stop functioning of plugin, but warns user that
+         * functionality may be affected
+         *
+         * @return void
+         */
+        public function ensureVersionCompatibility(): void
+        {
+        }
+        /**
+         * Load compatibility check configuration 
+         *
+         * @return void
+         */
+        protected function loadCompatibilityConfiguration(): void
+        {
+        }
+        /**
+         * Iterate collection, check compatibility, append notices
+         *
+         * @return void
+         */
+        protected function constructCompatiblityNotices(): void
+        {
+        }
+        /**
+         * Ensure compatibility check construct is valid
+         *
+         * @param array $compatiblityCheck
+         * @return boolean false on invalid construct
+         */
+        protected function isValidConstruct(array $compatiblityCheck): bool
+        {
+        }
+        /**
+         * Check that required versions are installed for proper functionality
+         *
+         * Default is to pass checks; only fail if known version incompatibility
+         * 
+         * @return boolean Compatible TRUE, incompatible FALSE
+         */
+        protected function checkVersionCompatibility(string $className, string $requiredVersion): bool
+        {
+        }
+        /**
+         * Append a notice to the internal collection of notices
+         *
+         * @param string $className
+         * @param string $title
+         * @param string $message
+         * @param integer $int
+         * @return void
+         */
+        protected function appendNotice(string $className, string $title, string $message, int $int, string $link): void
+        {
+        }
+        /**
+         * Determine the version of the request class name
+         *
+         * @param string $className Name of class to check 
+         * @return string Version of the class, empty string if class doesn't exist or
+         * does not have VERSION constant defined
+         */
+        protected function getClassVersion(string $className): string
+        {
+        }
+        /**
+         * Add NF admin notice for incompatible versions
+         *
+         * @param array $notices
+         * @return array
+         */
+        public function addIncompatibleVersionsNotice($notices): array
+        {
+        }
+    }
+}
+namespace NinjaForms\Includes\Contracts {
+    /**
+     * Contract that mimics methods from NF_Database_Models_Field
+     *
+     * Provides functionality normally handled by the field object created by
+     * \Ninja_Forms()->form()->get_field( $fieldId )
+     *
+     *
+     */
+    interface Field
+    {
+        /**
+         * Get field type
+         *
+         * @return string
+         */
+        public function get_type(): string;
+        /** 
+         * Get a field setting
+         *
+         * @param string $setting
+         * @param mixed $default
+         * @return mixed
+         */
+        public function get_setting($setting, $default = FALSE);
+        /**
+         * Get all field settings
+         * 
+         * @return array
+         */
+        public function get_settings(): array;
+        /** 
+         * Update a field setting
+         *
+         * @param string $key
+         * @param mixed $value
+         */
+        public function update_setting($key, $value): \NinjaForms\Includes\Contracts\Field;
+        /**
+         * Update all settings
+         *
+         * @param array $data
+         * @return Field
+         */
+        public function update_settings($data): \NinjaForms\Includes\Contracts\Field;
+        /**
+         * Delete field
+         *
+         * @return void
+         */
+        public function delete();
+        /**
+         * Find
+         *
+         * @param string $parent_id
+         * @param array $where
+         * @return array
+         */
+        public function find($parent_id = '', array $where = array()): array;
+        /**
+         * Get object settings
+         *
+         * @param [type] $obj_array
+         * @return array
+         */
+        public function get_object_settings($obj_array): array;
+        /**
+         * Save field
+         *
+         * @return void
+         */
+        public function save();
+        /**
+         * Insert row
+         *
+         * @param array $data
+         * @return void
+         */
+        public function _insert_row($data = array()): void;
+        /**
+         * Cache
+         *
+         * @param string $cache
+         * @return Field
+         */
+        public function cache($cache = ''): \NinjaForms\Includes\Contracts\Field;
+        /**
+         * Add parent
+         *
+         * @param [type] $parent_id
+         * @param [type] $parent_type
+         * @return Field
+         */
+        public function add_parent($parent_id, $parent_type): \NinjaForms\Includes\Contracts\Field;
+        /**
+         * Import field
+         *
+         * @param array $settings
+         * @param string $field_id
+         * @param boolean $is_conversion
+         * @return void
+         */
+        public static function import(array $settings, $field_id = '', $is_conversion = FALSE): void;
+    }
+    /**
+     * Contract to retrieve a collection of single submissions from a data source
+     *
+     * Note that the collection has two parts - the submission meta and the
+     * submission values.  
+     *
+     * The meta describes details about the submission such as timestamp, NF form
+     * id, data storage location, and a record id.
+     *
+     * The values portion is a collection of submission values associated with a
+     * given submission.
+     *
+     * The two are retrieved separately.  This enables fast filtering of submissions
+     * to generate a collection of submission records; then, after initial
+     * filtering, the submission values for just the intended records can be
+     * retrieved.
+     */
+    interface SubmissionDataSource
+    {
+        /**
+         * Retrieve a collection of submissions meta given filtering args
+         *
+         * @param array $args
+         * @return SingleSubmission[]
+         */
+        public function retrieveSubmissionMeta(\NinjaForms\Includes\Entities\SubmissionFilter $submissionFilter): array;
+        /**
+         * Populate with submission values a single submission in a collection
+         *
+         * Submission collection may initially only contain submission meta to save
+         * time/memory.  When called, this method retrieves the complete submission
+         * values for the provided SingleSubmision
+         *
+         * @param SingleSubmission $singleSubmission
+         * @return SingleSubmission
+         */
+        public function retrieveSubmissionValues(\NinjaForms\Includes\Entities\SingleSubmission $singleSubmission): \NinjaForms\Includes\Entities\SingleSubmission;
+        /**
+         * Retrieve a single submission with values 
+         *
+         * Absent a previously filtered collection of single submissions within the
+         * aggregate, request a single submission, fully populate it, and return.
+         *
+         * @param SingleSubmission $singleSubmission
+         * @return SingleSubmission
+         */
+        public function retrieveSingleSubmission(\NinjaForms\Includes\Entities\SingleSubmission $singleSubmission): \NinjaForms\Includes\Entities\SingleSubmission;
+        /**
+         * Delete a submission from the data source
+         *
+         * @param SingleSubmission $singleSubmission
+         * @return SubmissionDataSource
+         */
+        public function deleteSubmission(\NinjaForms\Includes\Entities\SingleSubmission $singleSubmission): \NinjaForms\Includes\Contracts\SubmissionDataSource;
+        /**
+         * Restore a submission from the data source
+         *
+         * @param SingleSubmission $singleSubmission
+         * @return SubmissionDataSource
+         */
+        public function restoreSubmission(\NinjaForms\Includes\Entities\SingleSubmission $singleSubmission): \NinjaForms\Includes\Contracts\SubmissionDataSource;
+        /**
+         * Update a submission from the data source
+         *
+         * @param SingleSubmission $singleSubmission
+         * @return SubmissionDataSource
+         */
+        public function updateSubmission(\NinjaForms\Includes\Entities\SingleSubmission $singleSubmission): \NinjaForms\Includes\Contracts\SubmissionDataSource;
+        /**
+         * Return the dataSource id
+         *
+         * Identifies the implementing class, enabling retrieval of submission
+         * specifics by calling the implementing class
+         * 
+         * @return string 
+         */
+        public function getDataSource(): string;
+    }
+}
+namespace NinjaForms\Includes\Database {
+    /**
+     * Retrieves a single Caldera Forms submission by its entry id 
+     */
+    class CalderaSubmissionDataSource implements \NinjaForms\Includes\Contracts\SubmissionDataSource
+    {
+        const TIMESTAMP_FORMAT = 'Y-m-d H:i:s';
+        /**
+         * Identifier of where submission is stored
+         *
+         * @var string
+         */
+        protected $dataSource = 'cf_form_entries';
+        /**
+         * Collection of submissions keyed on Submission Record Id
+         *
+         * @var SingleSubmission[]
+         */
+        protected $submissionCollection = [];
+        /** @var SubmissionFilter   */
+        protected $submissionFilter;
+        /**
+         * Cross reference from NF Form Id to the CF form Id
+         *
+         * Array is in format:
+         *   [ 
+         *      nfFormId => cfFormId,  
+         * ex:  '174' => 'CF60b547cfac102'
+         *   ]
+         * @var array
+         */
+        protected $formIdLookup = [];
+        /** @inheritDoc */
+        public function retrieveSubmissionMeta(\NinjaForms\Includes\Entities\SubmissionFilter $submissionFilter): array
+        {
+        }
+        /** @inheritDoc */
+        public function retrieveSingleSubmission(\NinjaForms\Includes\Entities\SingleSubmission $singleSubmission): \NinjaForms\Includes\Entities\SingleSubmission
+        {
+        }
+        /**
+         * Apply search string filter to submission collection
+         *
+         * Runs a WP Query to search for all post Ids with both a form Id from the
+         * submission filter and also a search string in any meta value of the same
+         * form.  It then filters the submission collection to only those
+         * submissions that meet these additional requirements.
+         *
+         * @return void
+         */
+        protected function applySearchCriterion(): void
+        {
+        }
+        /**
+         * Adds CF lookup for given NF form id
+         *
+         * If given NF id lookup is not set, checks to see if there is a
+         * corresponding CF form.  If not, the value is set to `null` so that
+         * the instance knows that the form id has been checked.
+         *
+         * @param string $nfFormId
+         * @return void
+         */
+        protected function lookupCfFormIdByNfFormId(string $nfFormId): void
+        {
+        }
+        /** @inheritDoc */
+        public function retrieveSubmissionValues(\NinjaForms\Includes\Entities\SingleSubmission $singleSubmission): \NinjaForms\Includes\Entities\SingleSubmission
+        {
+        }
+        /** @inheritDoc */
+        public function deleteSubmission(\NinjaForms\Includes\Entities\SingleSubmission $singleSubmission): \NinjaForms\Includes\Contracts\SubmissionDataSource
+        {
+        }
+        /** @inheritDoc */
+        public function restoreSubmission(\NinjaForms\Includes\Entities\SingleSubmission $singleSubmission): \NinjaForms\Includes\Contracts\SubmissionDataSource
+        {
+        }
+        /** @inheritDoc */
+        public function updateSubmission(\NinjaForms\Includes\Entities\SingleSubmission $singleSubmission): \NinjaForms\Includes\Contracts\SubmissionDataSource
+        {
+        }
+        /**
+         * Retrieve submissions for a given CF form Id
+         * @return void 
+         */
+        protected function retrieveSubmissionMetaByCfFormId(string $formId): void
+        {
+        }
+        /**
+         * Boolean to include as per date filter
+         * 
+         * true=>include, false=>omit
+         *
+         * @return boolean
+         */
+        protected function includeByDateFilter($subDate): bool
+        {
+        }
+        /** @inheritDoc */
+        public function getDataSource(): string
+        {
+        }
+    }
+    /**
+     * Retrieves a CPT Ninja Forms submission by its form id
+     * 
+     * CPT indicates NF submissions stored as custom post type
+     */
+    class CptSubmissionDataSource implements \NinjaForms\Includes\Contracts\SubmissionDataSource
+    {
+        const TIMESTAMP_FORMAT = 'Y-m-d H:i:s';
+        /**
+         * Identifier of where submission is stored
+         *
+         * @var string
+         */
+        protected $dataSource = 'nf_post';
+        /**
+         * Collection of submissions
+         *
+         * @var SingleSubmission[]
+         */
+        protected $submissionCollection = [];
+        /** @var SubmissionFilter   */
+        protected $submissionFilter;
+        /**
+         * Form Id of the primary form
+         *
+         * Form Id used to define fields; other forms can be included in results.
+         *
+         * @var [type]
+         */
+        protected $formId = null;
+        /** @inheritDoc */
+        public function retrieveSubmissionMeta(\NinjaForms\Includes\Entities\SubmissionFilter $submissionFilter): array
+        {
+        }
+        /** @inheritDoc */
+        public function retrieveSingleSubmission(\NinjaForms\Includes\Entities\SingleSubmission $singleSubmission): \NinjaForms\Includes\Entities\SingleSubmission
+        {
+        }
+        /** @inheritDoc */
+        public function retrieveSubmissionValues(\NinjaForms\Includes\Entities\SingleSubmission $singleSubmission): \NinjaForms\Includes\Entities\SingleSubmission
+        {
+        }
+        /** @inheritDoc */
+        public function deleteSubmission(\NinjaForms\Includes\Entities\SingleSubmission $singleSubmission): \NinjaForms\Includes\Contracts\SubmissionDataSource
+        {
+        }
+        /** @inheritDoc */
+        public function restoreSubmission(\NinjaForms\Includes\Entities\SingleSubmission $singleSubmission): \NinjaForms\Includes\Contracts\SubmissionDataSource
+        {
+        }
+        /** @inheritDoc */
+        public function updateSubmission(\NinjaForms\Includes\Entities\SingleSubmission $singleSubmission): \NinjaForms\Includes\Contracts\SubmissionDataSource
+        {
+        }
+        /**
+         * Get the NF_Submission for a SingleSubmission entity
+         */
+        protected function getNfSub(\NinjaForms\Includes\Entities\SingleSubmission $singleSubmission): \NF_Database_Models_Submission
+        {
+        }
+        /**
+         * Populate submission values, extra values, handlers
+         *
+         * @param SingleSubmission $singleSubmission
+         * @param NF_Database_Models_Submission $nfSub
+         * @return SingleSubmission
+         */
+        protected function fullyPopulateSingleSubmission(\NinjaForms\Includes\Entities\SingleSubmission $singleSubmission, \NF_Database_Models_Submission $nfSub): \NinjaForms\Includes\Entities\SingleSubmission
+        {
+        }
+        /**
+         * Populate a single submissin with submitted values
+         * @param SingleSubmission $singleSubmission
+         * @param NF_Database_Models_Submission $nfSub
+         * @return SingleSubmission
+         */
+        protected function populateSubmissionValues(\NinjaForms\Includes\Entities\SingleSubmission $singleSubmission, \NF_Database_Models_Submission $nfSub): \NinjaForms\Includes\Entities\SingleSubmission
+        {
+        }
+        /**
+         * Provide a filtered list of extra value keys storing extra data
+         * 
+         * Non-core actions can filter the list to provide their keys for retrieval
+         * 
+         * @return array 
+         */
+        protected function getExtraValueHandlers(): array
+        {
+        }
+        /**
+         * Retrieve extraValues as constructed into MetaboxOutputEntities
+         *
+         * @param NF_Database_Models_Submission $nfSub
+         * @param array $extraValueHandlers
+         * @return array
+         */
+        protected function retrieveExtraValues($nfSub, array $extraValueHandlers): array
+        {
+        }
+        /**
+         * Apply search string filter to submission collection
+         *
+         * Runs a WP Query to search for all post Ids with both a form Id from the
+         * submission filter and also a search string in any meta value of the same
+         * form.  It then filters the submission collection to only those
+         * submissions that meet these additional requirements.
+         *
+         * @return void
+         */
+        protected function applySearchCriterion(): void
+        {
+        }
+        /**
+         * Retrieve submissions Ids for a given NF form Id
+         *
+         * User Id is conditionally added if submission filter's property is
+         * explicityly set (-1 is default value, indicating that no filtering on
+         * User Id).
+         *
+         * WPDB query args is changed from individual args to being passed as array;
+         * this makes for cleaner structure when sequence of arguments is variable.
+         * 
+         *
+         * @return void 
+         */
+        protected function retrieveSubmissionMetaByNfFormId(string $formId): void
+        {
+        }
+        /**
+         * Boolean to include as per date filter
+         * 
+         * true=>include, false=>omit
+         *
+         * @return boolean
+         */
+        protected function includeByDateFilter($subDate): bool
+        {
+        }
+        /** @inheritDoc */
+        public function getDataSource(): string
+        {
+        }
+    }
+}
+namespace {
     final class NF_Database_FieldsController
     {
         private $db;
@@ -5274,16 +6495,6 @@ namespace {
         {
         }
         private function parse_field_meta()
-        {
-        }
-        /**
-         * Sanitizes single/multiple CSS classNames
-         *
-         * Explodes on space, sanitize each className, implode with space to recombine
-         * @param string $value
-         * @return string
-         */
-        protected function sanitizeClasses($value): string
         {
         }
         private function get_existing_meta()
@@ -6004,7 +7215,7 @@ namespace {
     /**
      * Class NF_Database_Models_Submission
      */
-    final class NF_Database_Models_Submission
+    class NF_Database_Models_Submission
     {
         protected $_id = '';
         protected $_status = '';
@@ -6037,6 +7248,48 @@ namespace {
          */
         protected $_fieldsetRepetitionDelimiter = '_';
         public function __construct($id = '', $form_id = '')
+        {
+        }
+        /**
+         * Get post object
+         * 
+         * Uses WP functionality
+         *
+         * @param string $id
+         * @return object
+         */
+        protected function retrieveSub($id)
+        {
+        }
+        /**
+         * Get the Form Id
+         * 
+         * Uses WP functionality
+         *
+         * @return int
+         */
+        protected function retrieveFormId($id)
+        {
+        }
+        /**
+         * Get the sequence number
+         * 
+         * Uses WP functionality
+         *
+         * @return int
+         */
+        protected function retrieveSeqNum($id)
+        {
+        }
+        /**
+         * Get post meta value for given post Id and key
+         *
+         * @param int $id
+         * @param string $key
+         * @param bool $bool
+         * @return mixed
+         */
+        protected function getPostMeta($id, $key, $bool = \TRUE)
         {
         }
         /**
@@ -6149,6 +7402,12 @@ namespace {
          * Delete Submission
          */
         public function delete()
+        {
+        }
+        /**
+         * Trash Submission
+         */
+        public function trash()
         {
         }
         /**
@@ -6278,7 +7537,7 @@ namespace {
          * If a premium add-on is installed, then users have opted into tracked via our terms and conditions.
          * If no premium add-ons are installed, check to see if the user has opted in or out of anonymous usage tracking.
          *
-         * @since  version
+         * @since  3.2.0
          * @return bool
          */
         public function should_we_send()
@@ -6399,6 +7658,7 @@ namespace {
     final class NF_Display_Preview
     {
         protected $form_id = '';
+        protected $_form_id = '';
         public function __construct()
         {
         }
@@ -6418,7 +7678,9 @@ namespace {
         {
         }
         /**
-         * @return string
+         * Locate_template will be loaded using second argument of the get_query_templates() function
+         * First argument will be prefixed with _template to create a hook
+         * @return void
          */
         function template_include()
         {
@@ -6427,7 +7689,7 @@ namespace {
         {
         }
     }
-    final class NF_Display_Render
+    class NF_Display_Render
     {
         protected static $render_instance_count = array();
         protected static $loaded_templates = array('app-layout', 'app-before-form', 'app-after-form', 'app-before-fields', 'app-after-fields', 'app-before-field', 'app-after-field', 'form-layout', 'form-hp', 'field-layout', 'field-before', 'field-after', 'fields-wrap', 'fields-wrap-no-label', 'fields-wrap-no-container', 'fields-label', 'fields-error', 'form-error', 'field-input-limit', 'field-null');
@@ -6440,7 +7702,88 @@ namespace {
         protected static $form_uses_textarea_media = array();
         protected static $form_uses_helptext = array();
         protected static $form_uses_starrating = array();
+        protected static $thread_id = 1;
+        protected static $recorded_forms = [];
+        protected static $inline_vars_recorded = [];
         public static function localize($form_id)
+        {
+        }
+        /**
+         * Transform the inline JS into a variable passed to wp_localize_script
+         *
+         * @param array $fields
+         * @param string $form_id
+         * @param object $form
+         * @return void
+         * */
+        protected static function transformInlineVars($fields, $form_id, $form_settings)
+        {
+        }
+        /**
+         * Ensure that product related costs on `localize` method have intended number format
+         *
+         * @param array $settings
+         * @param string $decimal_point
+         * @param string $thousands_sep
+         * @return array
+         */
+        protected static function ensureProductRelatedCostLocalizeSettings(array $settings, $decimal_point, $thousands_sep, $currencySymbol): array
+        {
+        }
+        /**
+         * Construct field array for an unknown field type
+         *
+         * @param array $field
+         * @return array
+         */
+        protected static function constructUnknownField($field): array
+        {
+        }
+        /**
+         * Apply localize filters to field
+         *
+         * Property types are not declared because we cannot guarantee what is
+         * returned from apply_filters.
+         * 
+         * @param array $field
+         * @param string $field_type
+         * @return array
+         */
+        protected static function applyLocalizeFilters($field, $field_type)
+        {
+        }
+        /**
+         * Ensure that field array has proper construction after localize filters
+         *
+         * After any WP filter, we cannot assume that all properties are intact, so
+         * ensure that our structure is valid.  Checks field type and calls method
+         * that ensures validity of that field typ.
+         *
+         * @param array $field
+         * @param array $fieldBeforeFilters
+         * @return array
+         */
+        protected static function ensureFieldArrayStructureValidity($field, array $fieldBeforeFilters): array
+        {
+        }
+        /**
+         * Ensure that Recaptcha field array structure is correct
+         *
+         * @param array $field
+         * @param array $fieldBeforeFilters
+         * @return void
+         */
+        protected static function ensureRecaptchaFieldStructureValidity(array $field): array
+        {
+        }
+        /**
+         * Determine currency symbol
+         *
+         * @param array $currencySymbolLookup Currency symbol lookups
+         * @param string $currency
+         * @return string
+         */
+        protected static function getCurrencySymbol($currencySymbolLookup, $currency): string
         {
         }
         public static function checkRepeaterChildType($field, $type)
@@ -6450,6 +7793,17 @@ namespace {
         {
         }
         public static function localize_preview($form_id)
+        {
+        }
+        protected static function ensureProductRelatedCostPreviewFormats(array $field, string $currencySymbol): array
+        {
+        }
+        /**
+         * Decode a number by locale into string
+         *
+         * @return array
+         */
+        protected static function decodeNumberByLocale($incoming): string
         {
         }
         public static function enqueue_scripts($form_id, $is_preview = \false)
@@ -6532,6 +7886,925 @@ namespace {
         {
         }
     }
+}
+namespace NinjaForms\Includes\Entities {
+    /**
+     * Simple entity abstract upon which all entities are built
+     *
+     * Entities are classes that pass well defined data honoring contracts.
+     * Single parameters and arrays, when passed into an entity, can be relied
+     * upon to provide the data defined by the entity, even if the original data
+     * did not fully define values.
+     */
+    class SimpleEntity implements \JsonSerializable
+    {
+        /**
+         * Constructs an array representation
+         */
+        public function toArray(): array
+        {
+        }
+        /**
+         * Sets data for json_encode
+         *
+         * @return void
+         */
+        #[\ReturnTypeWillChange]
+        public function jsonSerialize()
+        {
+        }
+        /**
+         * Magic method getter for properties
+         *
+         * @param string $name
+         * @return void
+         */
+        public function __get($name)
+        {
+        }
+        /**
+         * Magic method setter for properties
+         *
+         * Usually does not support setting undefined properties, but this class is
+         * enabling that, although it is kept as a separate command in case it must
+         * be modified.  This is because field definitions can have an undetermined
+         * collection of settings and this class will enable setting of all those
+         * values, while maintaining the ability to define sets and gets that filter
+         * values for proper types.
+         *
+         * @param string $name
+         * @param mixed $value
+         * @return SimpleEntity
+         */
+        public function __set($name, $value)
+        {
+        }
+    }
+    /**
+     * Entity holding title and label/value/styling output for metaboxes
+     */
+    class MetaboxOutputEntity extends \NinjaForms\Includes\Entities\SimpleEntity
+    {
+        /**
+         * Metabox title
+         *
+         * @var string
+         */
+        protected $title = '';
+        /**
+         * Collection of label/value/styling pairs for output
+         *
+         * @var array
+         */
+        protected $labelValueCollection = [];
+        /**
+         * Construct entity from associative array
+         *
+         * @param array $items
+         * @return SingleSubmission
+         */
+        public static function fromArray(array $items): \NinjaForms\Includes\Entities\MetaboxOutputEntity
+        {
+        }
+        /**
+         * Constructs an array representation
+         */
+        public function toArray(): array
+        {
+        }
+        protected function validateLabelValueCollection($incomingLabelValueCollection): array
+        {
+        }
+        /**
+         * Get metabox title
+         *
+         * @return  string
+         */
+        public function getTitle(): string
+        {
+        }
+        /**
+         * Set metabox title
+         *
+         * @param  string  $title  Metabox title
+         *
+         * @return  MetaboxOutputEntity
+         */
+        public function setTitle(string $title): \NinjaForms\Includes\Entities\MetaboxOutputEntity
+        {
+        }
+        /**
+         * Get the value of labelValueCollection
+         */
+        public function getLabelValueCollection(): array
+        {
+        }
+        /**
+         * Set the value of labelValueCollection
+         *
+         * @return  MetaboxOutputEntity
+         */
+        public function setLabelValueCollection($labelValueCollection): \NinjaForms\Includes\Entities\MetaboxOutputEntity
+        {
+        }
+    }
+    /**
+     * Entity defining Single Submission data structure
+     */
+    class SingleSubmission extends \NinjaForms\Includes\Entities\SimpleEntity
+    {
+        const TIMESTAMP_FORMAT = 'Y-m-d H:i:s';
+        /**
+         * Submission Id
+         *
+         * @var string
+         */
+        protected $submissionRecordId = '';
+        /**
+         * Submission time stamp
+         * 
+         *
+         * @var string
+         */
+        protected $timestamp = '';
+        /**
+         * Form Id to which the submission belongs
+         *
+         * @var string
+         */
+        protected $formId = '';
+        /**
+         * Identifier of where submission is stored
+         *
+         * It is a programmatic name to uniquely identify any given storage
+         * location, such as NF post, CF table
+         * 
+         * @var string
+         */
+        protected $dataSource = '';
+        /**
+         * Submission status
+         *
+         * @var array
+         */
+        protected $status = [];
+        /**
+         * Collection of submitted values stored as SubmissionField entities
+         *
+         * Keyed on field slug within the collection.  The collection may be empty
+         * if the submission data has not been retrieved yet.
+         *
+         * @var SubmissionField[]
+         */
+        protected $submissionFieldCollection = [];
+        /**
+         * Extra data values stored with submission
+         *
+         * Data structured as indexed array of MetaboxOutputEntity->toArray()
+         * @var array
+         */
+        protected $extraValues = [];
+        /**
+         * Associative array (string) of classes providing additional submission handling
+         *
+         * @var array
+         */
+        protected $submissionHandlers = [];
+        /**
+         * User ID of the submitter, "0" if user non logged-in
+         *
+         * @var string
+         */
+        protected $submitterId = "";
+        /**
+         * Get a field value by the field slug
+         *
+         * @param string $fieldSlug
+         * @return void
+         */
+        public function getSubmissionFieldValue(string $fieldSlug)
+        {
+        }
+        /**
+         * Construct entity from associative array
+         *
+         * @param array $items
+         * @return SingleSubmission
+         */
+        public static function fromArray(array $items): \NinjaForms\Includes\Entities\SingleSubmission
+        {
+        }
+        /**
+         * Constructs an array representation
+         */
+        public function toArray(): array
+        {
+        }
+        /**
+         * Get submission Id
+         *
+         * @return  string
+         */
+        public function getSubmissionRecordId(): string
+        {
+        }
+        /**
+         * Set submission Id
+         *
+         * @param  string  $submissionRecordId  Submission Id
+         *
+         * @return  self
+         */
+        public function setSubmissionId(string $submissionRecordId): \NinjaForms\Includes\Entities\SingleSubmission
+        {
+        }
+        /**
+         * Get submission time stamp
+         *
+         * @return  string
+         */
+        public function getTimestamp(): string
+        {
+        }
+        /**
+         * Set submission time stamp
+         *
+         * Force standard format 
+         * @param  string  $timestamp  Submission time stamp
+         *
+         * @return  self
+         */
+        public function setTimestamp(string $timestamp)
+        {
+        }
+        /**
+         * Get form Id to which the submission belongs
+         *
+         * @return  string
+         */
+        public function getFormId(): string
+        {
+        }
+        /**
+         * Set form Id to which the submission belongs
+         *
+         * @param  string  $formId  Form Id to which the submission belongs
+         *
+         * @return  self
+         */
+        public function setFormId(string $formId): \NinjaForms\Includes\Entities\SingleSubmission
+        {
+        }
+        /**
+         * Get dataSource
+         * 
+         * Typical locations include NF post, CF table
+         *
+         * @return  string
+         */
+        public function getDataSource(): string
+        {
+        }
+        /**
+         * Set submitted values as collection of SubmissionField entities
+         *
+         * @param  array  $submissionFieldCollection  SubmissionField entities keyed on field slug
+         *
+         * @return  SingleSubmission
+         */
+        public function setSubmissionFieldCollection(array $submissionFieldCollection): \NinjaForms\Includes\Entities\SingleSubmission
+        {
+        }
+        /**
+         * Get submitted values as collection of SubmissionField entities
+         *
+         * @return  array
+         */
+        public function getSubmissionFieldCollection(): array
+        {
+        }
+        /**
+         * Return array of field slugs for submissionFieldCollection
+         * @return array 
+         */
+        public function getFieldSlugs(): array
+        {
+        }
+        /**
+         * Get extra data values stored with submission
+         *
+         * @return  array
+         */
+        public function getExtraValues(): array
+        {
+        }
+        /**
+         * Set extra data values stored with submission
+         *
+         * @param  array  $extraValues  Extra data values stored with submission
+         *
+         * @return  SingleSubmission
+         */
+        public function setExtraValues(array $extraValues): \NinjaForms\Includes\Entities\SingleSubmission
+        {
+        }
+        /**
+         * Get associative array (string) of classes providing additional submission handling
+         *
+         * [slug]=>(string)ClassName implements SubmissionHandler
+         * @return  array
+         */
+        public function getSubmissionHandlers(): array
+        {
+        }
+        /**
+         * Set associative array (string) of classes providing additional submission handling
+         *
+         * @param  array  $submissionHandlers  Associative array (string) of classes providing additional submission handling
+         *
+         * @return  SingleSubmission
+         */
+        public function setSubmissionHandlers(array $submissionHandlers): \NinjaForms\Includes\Entities\SingleSubmission
+        {
+        }
+        /**
+         * Get submission status
+         *
+         * @return  array
+         */
+        public function getStatus(): array
+        {
+        }
+        /**
+         * Set submission status
+         *
+         * @param  array  $status  Submission status
+         *
+         * @return  SingleSubmission
+         */
+        public function setStatus(array $status): \NinjaForms\Includes\Entities\SingleSubmission
+        {
+        }
+    }
+    /**
+     * Defines data passed from SubmissionHandlers to  submissions page NF>=3.6.1
+     */
+    class SubmissionExtraHandlerResponse extends \NinjaForms\Includes\Entities\SimpleEntity
+    {
+        /**
+         * Response type - 'none' or `download`
+         *
+         * @var string
+         */
+        protected $responseType = '';
+        /**
+         * Base 64 encoded downloadable string
+         *
+         * @var string
+         */
+        protected $download = '';
+        /**
+         * Application type of download (for constructing download)
+         *
+         * @var string
+         */
+        protected $blobType = '';
+        /**
+         * Result of request (usu. 'ok' or failure message)
+         *
+         * @var string
+         */
+        protected $result = '';
+        /**
+         * Filename of the download, including file extension
+         *
+         * @var string
+         */
+        protected $filename = '';
+        /**
+         * Construct entity from associative array
+         *
+         * @param array $items
+         * @return SubmissionExtraHandlerResponse
+         */
+        public static function fromArray(array $items): \NinjaForms\Includes\Entities\SubmissionExtraHandlerResponse
+        {
+        }
+        /**
+         * Get response type
+         *
+         * @return  string
+         */
+        public function getResponseType(): string
+        {
+        }
+        /**
+         * Set response type
+         *
+         * @param  string  $responseType  Response type
+         *
+         * @return  SubmissionExtraHandlerResponse
+         */
+        public function setResponseType(string $responseType): \NinjaForms\Includes\Entities\SubmissionExtraHandlerResponse
+        {
+        }
+        /**
+         * Get download
+         *
+         * @return  string
+         */
+        public function getDownload(): string
+        {
+        }
+        /**
+         * Set download
+         *
+         * @param  string  $download  Download
+         *
+         * @return  SubmissionExtraHandlerResponse
+         */
+        public function setDownload(string $download): \NinjaForms\Includes\Entities\SubmissionExtraHandlerResponse
+        {
+        }
+        /**
+         * Get blob type
+         *
+         * @return  string
+         */
+        public function getBlobType(): string
+        {
+        }
+        /**
+         * Set blob type
+         *
+         * @param  string  $blobType  Blob type
+         *
+         * @return  SubmissionExtraHandlerResponse
+         */
+        public function setBlobType(string $blobType): \NinjaForms\Includes\Entities\SubmissionExtraHandlerResponse
+        {
+        }
+        /**
+         * Get result
+         *
+         * @return  string
+         */
+        public function getResult(): string
+        {
+        }
+        /**
+         * Set result
+         *
+         * @param  string  $result  Result
+         *
+         * @return  SubmissionExtraHandlerResponse
+         */
+        public function setResult(string $result): \NinjaForms\Includes\Entities\SubmissionExtraHandlerResponse
+        {
+        }
+        /**
+         * Get filename of the download, including file extension
+         *
+         * @return  string
+         */
+        public function getFilename(): string
+        {
+        }
+        /**
+         * Set filename of the download, including file extension
+         *
+         * @param  string  $filename  Filename of the download, including file extension
+         *
+         * @return  SubmissionExtraHandlerResponse
+         */
+        public function setFilename(string $filename): \NinjaForms\Includes\Entities\SubmissionExtraHandlerResponse
+        {
+        }
+    }
+    /**
+     * Entity defining a submission field, including value if present
+     * 
+     * Submission field is the submission value for a single field within a form's field collection
+     */
+    class SubmissionField extends \NinjaForms\Includes\Entities\SimpleEntity
+    {
+        /**
+         * Record id for the stored data
+         *
+         * @var string
+         */
+        protected $id = '';
+        /**
+         * Field slug
+         *
+         * @var string
+         */
+        protected $slug = '';
+        /**
+         * Field label
+         *
+         * @var string
+         */
+        protected $label = '';
+        /**
+         * Admin label
+         *
+         * @var string
+         */
+        protected $adminLabel = '';
+        /**
+         * Field type
+         *
+         * @var string
+         */
+        protected $type = '';
+        /**
+         * Indexed collection of option label/value/calc
+         *
+         * @var array
+         */
+        protected $options = [];
+        /**
+         * Indexed collection of fieldset repeater fields as arrays within parent field
+         *
+         * @var array
+         */
+        protected $fieldsetRepeaterFields = [];
+        /**
+         * Array of complete field settings
+         * 
+         * Original source is from NF DB tables
+         *
+         * @var array
+         */
+        protected $original = [];
+        /**
+         * Submission value, null by default
+         *
+         * @var mixed
+         */
+        protected $value = null;
+        /**
+         * Construct entity from associative array
+         *
+         * @param array $items
+         * @return SubmissionField
+         */
+        public static function fromArray(array $items): \NinjaForms\Includes\Entities\SubmissionField
+        {
+        }
+        /**
+         * Get field Id
+         *
+         * @return  string
+         */
+        public function getId()
+        {
+        }
+        /**
+         * Set field database record id
+         *
+         * @param  string  $id  Field Id
+         *
+         * @return  SubmissionField
+         */
+        public function setId(string $id): \NinjaForms\Includes\Entities\SubmissionField
+        {
+        }
+        /**
+         * Get field slug
+         *
+         * @return  string
+         */
+        public function getSlug(): string
+        {
+        }
+        /**
+         * Set field slug
+         *
+         * @param  string  $slug  Field slug
+         *
+         * @return  SubmissionField
+         */
+        public function setSlug(string $slug): \NinjaForms\Includes\Entities\SubmissionField
+        {
+        }
+        /**
+         * Get field label
+         *
+         * @return  string
+         */
+        public function getLabel(): string
+        {
+        }
+        /**
+         * Set field label
+         *
+         * @param  string  $label  Field label
+         *
+         * @return  SubmissionField
+         */
+        public function setLabel(string $label): \NinjaForms\Includes\Entities\SubmissionField
+        {
+        }
+        /**
+         * Get amdin label
+         *
+         * @return  string
+         */
+        public function getAdminLabel(): string
+        {
+        }
+        /**
+         * Set amdin label
+         *
+         * @param  string  $adminLabel  Admin label
+         *
+         * @return  SubmissionField
+         */
+        public function setAdminLabel(string $adminLabel): \NinjaForms\Includes\Entities\SubmissionField
+        {
+        }
+        /**
+         * Get field type
+         *
+         * @return  string
+         */
+        public function getType(): string
+        {
+        }
+        /**
+         * Set field type
+         *
+         * @param  string  $type  Field type
+         *
+         * @return  SubmissionField
+         */
+        public function setType(string $type): \NinjaForms\Includes\Entities\SubmissionField
+        {
+        }
+        /**
+         * Get submission Value
+         *
+         * @return  mixed
+         */
+        public function getValue()
+        {
+        }
+        /**
+         * Set submission Value
+         *
+         * @param  mixed  $value  Submission Value
+         *
+         * @return  self
+         */
+        public function setValue($value): \NinjaForms\Includes\Entities\SubmissionField
+        {
+        }
+        /**
+         * Get indexed collection of option label/value/calc
+         *
+         * @return  array
+         */
+        public function getOptions(): array
+        {
+        }
+        /**
+         * Set indexed collection of option label/value/calc
+         *
+         * @param  array  $options  Indexed collection of option label/value/calc
+         *
+         * @return  SubmissionField
+         */
+        public function setOptions(array $options): \NinjaForms\Includes\Entities\SubmissionField
+        {
+        }
+        /**
+         * Get Indexed collection of fieldset repeater fields within parent field
+         *
+         * @return  array
+         */
+        public function getFieldsetRepeaterFields(): array
+        {
+        }
+        /**
+         * Set Indexed collection of fieldset repeater fields within parent field
+         *
+         * @param  SubmissionField[]  $fieldsetRepeater  Indexed collection of fieldset repeater fields within parent field
+         *
+         * @return  SubmissionField
+         */
+        public function setFieldsetRepeaterFields(array $fieldsetRepeaterCollection): \NinjaForms\Includes\Entities\SubmissionField
+        {
+        }
+        /**
+         * Get original field settings as stored in NF DB tables
+         *
+         * @return  array
+         */
+        public function getOriginal(): array
+        {
+        }
+        /**
+         * Set original source field settings (from NF DB tables)
+         *
+         * @param  array  $original  Original source is from NF DB tables
+         *
+         * @return  SubmissionField
+         */
+        public function setOriginal(array $original): \NinjaForms\Includes\Entities\SubmissionField
+        {
+        }
+    }
+    /**
+     * Define parameters used to filter submissions
+     */
+    class SubmissionFilter extends \NinjaForms\Includes\Entities\SimpleEntity
+    {
+        /**
+         * Indexed array of string NF form Ids
+         *
+         * @var array
+         */
+        protected $nfFormIds = [];
+        /**
+         * Start date for filter submissions
+         *
+         * @var int
+         */
+        protected $startDate = 0;
+        /**
+         * End date for filter submissions
+         *
+         * @var int
+         */
+        protected $endDate = 0;
+        /**
+         * Search string
+         *
+         * @var string
+         */
+        protected $searchString = '';
+        /**
+         *  Filter submissions by status
+         * 
+         * @var array
+         */
+        protected $status = [];
+        /**
+         * Submissions IDs
+         *
+         * @var array
+         */
+        protected $submissionsIDs = [];
+        /**
+         * Filter submissions by user ID
+         *
+         * Default value is null, signifying that no filter for user ID is to be
+         * applied.  This is to differentiate from a user Id of 0, which indicates
+         * that the submission was created by a non-logged in user.
+         * 
+         * @var integer
+         */
+        protected $userId = null;
+        /**
+         * Construct entity from associative array
+         *
+         * @param array $items
+         * @return SubmissionFilter
+         */
+        public static function fromArray(array $items): \NinjaForms\Includes\Entities\SubmissionFilter
+        {
+        }
+        /**
+         * Get indexed array of string NF form Ids
+         *
+         * @return  array
+         */
+        public function getNfFormIds(): array
+        {
+        }
+        /**
+         * Set indexed array of string NF form Ids
+         *
+         * @param  array  $nfFormIds  Indexed array of string NF form Ids
+         *
+         * @return  self
+         */
+        public function setNfFormIds(array $nfFormIds): \NinjaForms\Includes\Entities\SubmissionFilter
+        {
+        }
+        /**
+         * Get start date for filter submissions
+         *
+         * @return  int
+         */
+        public function getStartDate(): int
+        {
+        }
+        /**
+         * Set start date for filter submissions
+         *
+         * @param  int  $startDate  Start date for filter submissions
+         *
+         * @return  SubmissionFilter
+         */
+        public function setStartDate(int $startDate): \NinjaForms\Includes\Entities\SubmissionFilter
+        {
+        }
+        /**
+         * Get end date for filter submissions
+         *
+         * @return  int
+         */
+        public function getEndDate(): int
+        {
+        }
+        /**
+         * Set end date for filter submissions
+         *
+         * @param  int  $endDate  End date for filter submissions
+         *
+         * @return  SubmissionFilter
+         */
+        public function setEndDate(int $endDate): \NinjaForms\Includes\Entities\SubmissionFilter
+        {
+        }
+        /**
+         * Get search string
+         *
+         * @return  string
+         */
+        public function getSearchString(): string
+        {
+        }
+        /**
+         * Set search string
+         *
+         * @param  string  $searchString  Search string
+         *
+         * @return  SubmissionFilter
+         */
+        public function setSearchString(string $searchString): \NinjaForms\Includes\Entities\SubmissionFilter
+        {
+        }
+        /**
+         * Get filter submissions by status
+         *
+         * @return  array
+         */
+        public function getStatus(): array
+        {
+        }
+        /**
+         * Set filter submissions by status
+         *
+         * @param  array  $status  Filter submissions by status
+         *
+         * @return  SubmissionFilter
+         */
+        public function setStatus(array $status): \NinjaForms\Includes\Entities\SubmissionFilter
+        {
+        }
+        /**
+         * Get user Id for filter submissions
+         *
+         * @return  int
+         */
+        public function getUserId(): ?int
+        {
+        }
+        /**
+         * Set user Id for filter submissions
+         *
+         * @param  int  $userId  User Id for filter submissions
+         *
+         * @return  SubmissionFilter
+         */
+        public function setUserId(int $userId): \NinjaForms\Includes\Entities\SubmissionFilter
+        {
+        }
+        /**
+         * Get included submission IDs
+         *
+         * @return array
+         */
+        public function getSubmissionsIDs(): array
+        {
+        }
+        /**
+         * Set submissions IDs
+         *
+         * @param array $submissionsIDs of Submissions IDs to include
+         *
+         * @return  SubmissionFilter
+         */
+        public function setSubmissionsIDs(array $submissionsIDs): \NinjaForms\Includes\Entities\SubmissionFilter
+        {
+        }
+    }
+}
+namespace {
     /**
      * Email exported submissions as an attachment
      */
@@ -7013,6 +9286,21 @@ namespace {
          */
         public function handle();
         /**
+         * Provide submissionCollection indices in reverse order
+         * 
+         * CSV output sorts earliest to current; submissionAggregate returns in reverse order
+         *
+         * @return void
+         */
+        public function reverseSubmissionOrder(): array;
+        /**
+         * Construct a CSV row for record at given submission aggregate's index
+         *
+         * @param mixed $aggregatedKey
+         * @return array
+         */
+        public function constructRow($aggregatedKey): array;
+        /**
          * Set submission collection used in generating the CSV
          * @param SubmissionCollectionInterface $submissionCollection
          */
@@ -7025,7 +9313,13 @@ namespace {
          * @param bool $useAdminLabels
          * @return NF_Exports_Interfaces_SubmissionCsvExportInterface
          */
-        public function setUseAdminLabels($useAdminLabels);
+        public function setUseAdminLabels($useAdminLabels): \NF_Exports_Interfaces_SubmissionCsvExportInterface;
+        /**
+         * Return array of labels
+         * 
+         * @return array 
+         */
+        public function getLabels(): array;
         /**
          * Set date format
          * @param string $dateFormat
@@ -7729,6 +10023,10 @@ namespace {
          * @var SubmissionCollectionInterface
          */
         public $submissionCollection;
+        /** @var SubmissionAggregate */
+        protected $submissionAggregate;
+        /** @var  SubmissionAggregateCsvExportAdapter */
+        protected $submissionAggregateCsvExportAdapter;
         /**
          * Use admin labels boolean
          * @var bool
@@ -7745,6 +10043,12 @@ namespace {
          * @var array
          */
         protected $submissionIds;
+        /**
+         * Lookup of NF submission SeqNum by collection Index
+         * 
+         * @var array
+         */
+        protected $seqNumLookup;
         /**
          * Field labels keyed on field key
          * @var array
@@ -7777,6 +10081,14 @@ namespace {
         public function handle()
         {
         }
+        /** @inheritDoc */
+        public function reverseSubmissionOrder(): array
+        {
+        }
+        /** @inheritDoc */
+        public function constructRow($aggregatedKey): array
+        {
+        }
         /**
          * Construct string output from previously set params, mark submissions read
          * @return string
@@ -7785,36 +10097,58 @@ namespace {
         {
         }
         /**
-         * Record that each submission in the 
+         * Append each submission from the collection as a row
          */
-        protected function markSubmmissionsExported()
+        protected function appendRows()
         {
         }
         /**
-         * Construct all the CSV rows from the submission collection
+         * For NF CPT, construct lookup from index for SeqNum
+         *
+         * @param string $aggregatedKey
+         * @param SingleSubmission $singleSubmission
+         * @return void
          */
-        protected function appendCsvRows()
+        protected function constructSeqNumLookup(string $aggregatedKey, \NinjaForms\Includes\Entities\SingleSubmission $singleSubmission): void
         {
         }
         /**
          * Construct a single row in the CSV from a submission 
-         * @param SingleSubmissionInterface $submission
+         * 
+         * @todo Refactor to remove DB call for NF()->form()->field() on each iteration
+         * @param SingleSubmission $submission
          * @return array
          */
-        protected function constructSubmissionRow(
-            /*SingleSubmissionInterface*/
-            $submission
-        )
+        protected function constructSubmissionRow(string $aggregatedKey, \NinjaForms\Includes\Entities\SingleSubmission $submission)
+        {
+        }
+        /**
+         * Format timestamp for output
+         *
+         * @param string $timestamp
+         * @return string
+         */
+        protected function formatTimestamp(string $timestamp): string
         {
         }
         /**
          * Construct labels array
+         * 
+         * Indexed array of labels, which serves as the column headers
          */
         protected function constructLabels()
         {
         }
         /**
-         * Return filtered array of labels preceding fields
+         * Return labels for the CSV, including SeqNum and Date
+         *
+         * @return array
+         */
+        public function getLabels(): array
+        {
+        }
+        /**
+         * Return array of labels preceding fields
          * 
          * @return array
          */
@@ -7823,6 +10157,8 @@ namespace {
         }
         /**
          * Set submission collection used in generating the CSV
+         * 
+         * @todo Investigate reason for commented out type declarations
          * @param SubmissionCollectionInterface $submissionCollection
          * @return SubmissionCsvExportInterface
          */
@@ -7833,12 +10169,21 @@ namespace {
         {
         }
         /**
+         * Set SubmissionAggregateCsvExport Adapter used in generating the CSV
+         *
+         * @param SubmissionAggregateCsvExportAdapter $submissionAggregateCsvExportAdapter
+         * @return SubmissionCsvExportInterface
+         */
+        public function setSubmissionAggregateCsvExportAdapter(\NinjaForms\Includes\Handlers\SubmissionAggregateCsvExportAdapter $submissionAggregateCsvExportAdapter)
+        {
+        }
+        /**
          * Set boolean useAdminLabels
          * 
          * @param bool $useAdminLabels
          * @return SubmissionCsvExportInterface
          */
-        public function setUseAdminLabels($useAdminLabels)
+        public function setUseAdminLabels($useAdminLabels): \NF_Exports_Interfaces_SubmissionCsvExportInterface
         {
         }
         /**
@@ -7849,7 +10194,7 @@ namespace {
          */
         public function setDateFormat(
             /* string */
-            $dateFormat
+            $dateFormat = \null
         )
         {
         }
@@ -7961,6 +10306,117 @@ namespace {
         {
         }
     }
+}
+namespace NinjaForms\Includes\Factories {
+    class SubmissionAggregateFactory
+    {
+        /**
+         * Construct SubmissionAggregate class with data sources
+         * 
+         * @return SubmissionAggregate 
+         */
+        public function submissionAggregate(): \NinjaForms\Includes\Handlers\SubmissionAggregate
+        {
+        }
+        /**
+         * Constructs SubmissionAggregateCsvExportAdapter with SubmissionAggregate
+         * 
+         * @return SubmissionAggregateCsvExportAdapter 
+         */
+        public function SubmissionAggregateCsvExportAdapter(): \NinjaForms\Includes\Handlers\SubmissionAggregateCsvExportAdapter
+        {
+        }
+        /**
+         * Construct a Caldera submissions data source
+         *
+         * @return CalderaSubmissionDataSource
+         */
+        public function makeCalderaDataSource(): \NinjaForms\Includes\Database\CalderaSubmissionDataSource
+        {
+        }
+        /**
+         * Construct a Ninja Forms CPT data source
+         *
+         * @return CptSubmissionDataSource
+         */
+        public function makeCptSubmissionDataSource(): \NinjaForms\Includes\Database\CptSubmissionDataSource
+        {
+        }
+        /**
+         * Check that both CF entry and values tables exist
+         *
+         * @return boolean
+         */
+        protected function cfTablesExist(): bool
+        {
+        }
+    }
+    /**
+     * Standardize the instantiation of a SubmissionFilter object
+     */
+    class SubmissionFilterFactory
+    {
+        /**
+         * Empty submission filter with default properties
+         *
+         * @return SubmissionFilter
+         */
+        public function unfiltered(): \NinjaForms\Includes\Entities\SubmissionFilter
+        {
+        }
+        /**
+         * SubmissionFilter with start and end dates
+         *
+         * @param integer $startDate Epoch date
+         * @param integer $endDate Epoch date
+         * @return SubmissionFilter
+         */
+        public function startEndDates(int $startDate, int $endDate): \NinjaForms\Includes\Entities\SubmissionFilter
+        {
+        }
+        /**
+         * Add logged in user to SubmissionFilter
+         *
+         * If user is not logged in, value is set to -1 because all non-logged in
+         * user submissions are set to user ID = 0, which is not desired output
+         *
+         * @return SubmissionFilter
+         */
+        public function loggedInUser(): \NinjaForms\Includes\Entities\SubmissionFilter
+        {
+        }
+        /**
+         * Add userId to SubmissionFilter conditionally by WP filter
+         *
+         * Override SubmissionFilter userId default value if an applied WP filter specifies it 
+         *
+         * @return SubmissionFilter
+         */
+        public function maybeLimitByLoggedInUser(): \NinjaForms\Includes\Entities\SubmissionFilter
+        {
+        }
+        /**
+         * Return logged in user's ID
+         *
+         * @return integer If user not logged in, return 0
+         */
+        protected function getUserId(): int
+        {
+        }
+        /**
+         * Provide WP filter to add logged in user to SubmissionFilter
+         *
+         * Default is to retrieve all submissions, so return FALSE.  This applies a
+         * filter that enables external code to change default behaviour.
+         * 
+         * @return boolean
+         */
+        protected function provideLimitByLoggedInUserFilter(): bool
+        {
+        }
+    }
+}
+namespace {
     /**
      * Class NF_Fields_Address
      */
@@ -8378,6 +10834,22 @@ namespace {
         function hide_field_type($field_types)
         {
         }
+        /**
+         * Localizaiton filter.
+         * @param Array $field The field to be localized.
+         * @return Array The localized field.
+         */
+        public function localizeField($field)
+        {
+        }
+        /**
+         * Bypass method for wp_filter_content_tags.
+         * @param String $content The HTML content.
+         * @return String The filtered content.
+         */
+        private function filter_tags($content)
+        {
+        }
     }
     /**
      * Class NF_Fields_Hidden
@@ -8732,6 +11204,14 @@ namespace {
         public function admin_form_element($id, $value)
         {
         }
+        /**
+         * Determine currency symbol
+         *
+         * @return string
+         */
+        protected function getCurrencySymbol(): string
+        {
+        }
     }
     /**
      * Class NF_Fields_ProductQuantity
@@ -8805,10 +11285,26 @@ namespace {
         public function __construct()
         {
         }
-        public function display_filter($field, $form)
+        public function display_filter($fieldset, $form)
         {
         }
         public function admin_form_element($id, $value)
+        {
+        }
+        /**
+         * Apply before field filters.
+         * @param Array $field
+         * @return Array
+         */
+        private function before_field($field)
+        {
+        }
+        /**
+         * Apply after field filters.
+         * @param Array $field
+         * @return Array
+         */
+        private function after_field($field)
         {
         }
         /**
@@ -9039,6 +11535,180 @@ namespace {
         {
         }
     }
+}
+namespace NinjaForms\Includes\Handlers {
+    /**
+     * Converts timestamps between formats, cognizant of WordPress settings
+     *
+     * This class is aware of the WordPress timezone settings and can convert
+     * stringed times into integer timestamps and vice-versa, relieving all other
+     * classes of this responsibility. 
+     */
+    class DateTimeConverter
+    {
+        /**
+         * Convert datetime string into epoch integer adjusted for WP timezone
+         *
+         * @param string $dateTime
+         * @return integer
+         */
+        public static function localizeDateTimeStringIntoEpoch(string $dateTimeString): int
+        {
+        }
+        /**
+         * Convert timestamp into local time adjusted for WP timezone
+         *
+         * @param integer $epochTimestamp
+         * @param string|null $format
+         * @return string
+         */
+        public static function localizeEpochIntoString(int $epochTimestamp, ?string $format = 'Y-m-d H:i:s'): string
+        {
+        }
+        /**
+         *  Returns the blog timezone
+         *
+         * Gets timezone settings from the db. If a timezone identifier is used just
+         * turns it into a DateTimeZone. If an offset is used, it tries to find a
+         * suitable timezone. If all else fails it uses UTC.
+         *
+         * credit:
+         * https://wordpress.stackexchange.com/questions/198435/how-to-convert-datetime-to-display-time-based-on-wordpress-timezone-setting#198453
+         * @return \DateTimeZone The blog timezone
+         */
+        public static function getWpTimezoneSetting(): \DateTimeZone
+        {
+        }
+        /**
+         * Returns stored WP options values for timezone_string, gmt_offset
+         *
+         * @return array
+         */
+        protected static function getWpTimezoneOptions(): array
+        {
+        }
+    }
+    /**
+     * Honor Field contract providing NF Field object methods
+     *
+     * Provides functionality normally handled by the field object created by
+     * \Ninja_Forms()->form()->get_field( $fieldId )
+     * 
+     * 
+     */
+    class Field implements \NinjaForms\Includes\Contracts\Field
+    {
+        /**
+         * Field Id
+         *
+         * @var int
+         */
+        protected $id = 0;
+        /**
+         * Field type
+         *
+         * @var string
+         */
+        protected $type = '';
+        /**
+         * Field settings
+         *
+         * @var array
+         */
+        protected $settings = [];
+        /**
+         * @inheritDoc
+         */
+        public function get_id(): int
+        {
+        }
+        /** @inheritDoc */
+        public function get_tmp_id()
+        {
+        }
+        /** @inheritDoc */
+        public function get_type(): string
+        {
+        }
+        /** @inheritDoc */
+        public function get_setting($setting, $default = FALSE)
+        {
+        }
+        /** @inheritDoc */
+        public function get_settings(): array
+        {
+        }
+        /** @inheritDoc */
+        public function update_setting($key, $value): \NinjaForms\Includes\Handlers\Field
+        {
+        }
+        /** @inheritDoc */
+        public function update_settings($data): \NinjaForms\Includes\Handlers\Field
+        {
+        }
+        /** @inheritDoc */
+        public function delete()
+        {
+        }
+        /** @inheritDoc */
+        public function find($parent_id = '', array $where = array()): array
+        {
+        }
+        /** @inheritDoc */
+        public function get_object_settings($obj_array): array
+        {
+        }
+        /** @inheritDoc */
+        public function save()
+        {
+        }
+        /** @inheritDoc */
+        public function _insert_row($data = array()): void
+        {
+        }
+        /** @inheritDoc */
+        public function cache($cache = ''): \NinjaForms\Includes\Handlers\Field
+        {
+        }
+        /** @inheritDoc */
+        public function add_parent($parent_id, $parent_type): \NinjaForms\Includes\Handlers\Field
+        {
+        }
+        /** @inheritDoc */
+        public static function import(array $settings, $field_id = '', $is_conversion = FALSE): void
+        {
+        }
+        /**
+         * Construct entity from associative array
+         *
+         * @param array $items
+         * @return Field
+         */
+        public static function fromArray(array $items): \NinjaForms\Includes\Handlers\Field
+        {
+        }
+        /**
+         * Magic method getter for properties
+         *
+         * @param string $name
+         * @return void
+         */
+        public function __get($name)
+        {
+        }
+        /**
+         * Magic method setter for properties
+         *
+         *
+         * @param string $name
+         * @param mixed $value
+         */
+        public function __set(string $name, $value)
+        {
+        }
+    }
+}
+namespace {
     /**
      * Handles data of a FieldsetRepeater
      * 
@@ -9261,6 +11931,473 @@ namespace {
         {
         }
     }
+}
+namespace NinjaForms\Includes\Handlers {
+    /**
+     * Sanitize output for enhanced functionality while maintaining security
+     */
+    class Sanitizer
+    {
+        const DISALLOWED_SCRIPT_TRIGGERS = [
+            '/<\s*(script)/i',
+            // < script (includes empty spaces after opening tag)
+            '/(onload)/i',
+            // word 'onload' 
+            '/(onerror)/i',
+            // word 'onerror'
+            '/(onfocus)/i',
+            // word 'onfocus'
+            '/(javascript)/i',
+        ];
+        /**
+         * Block disallowed script triggering text
+         *
+         * @param string $string
+         * @return string
+         */
+        public static function preventScriptTriggerInHtmlOutput(string $string): string
+        {
+        }
+    }
+    /**
+     * Aggregates submissions from all provided data sources
+     *
+     * Data sources include NF submissions stored as posts; may include pre-existing
+     * Caldera Forms submissions
+     */
+    class SubmissionAggregate
+    {
+        /**
+         * NF Id of the master form
+         *
+         * There can be multiple forms in the aggregate; the master form defines the
+         * fields and the data within the aggregate.
+         *
+         * @var string
+         */
+        protected $masterFormId = '';
+        /** @var SubmissionFilter */
+        protected $submissionFilter;
+        /**
+         * Collection of submission data sources
+         *
+         * @var SubmissionDataSource[];
+         */
+        protected $dataSourceCollection = [];
+        /**
+         * Collection of all SingleSubmissions
+         * 
+         * Indexed collection of submissions meeting the filtering parameters
+         *
+         * @var SingleSubmission[]
+         */
+        protected $aggregatedSubmissions = [];
+        /**
+         * Collection of SubmissionFields defining the form
+         *
+         * @var SubmissionField[]
+         */
+        protected $submissionFieldCollection = [];
+        /**
+         * Filter submissions to return a collection of SingleSubmission meta data only
+         *
+         * @param string $formId
+         * @return array
+         */
+        public function filterSubmissions(\NinjaForms\Includes\Entities\SubmissionFilter $submissionFilter): array
+        {
+        }
+        /**
+         * Retrieve a single submission populated with submission/extra values
+         *
+         * Also populates the submissionAggregate such that the aggregate can be
+         * passed for handling elsewhere
+         * 
+         * @param SingleSubmission $singleSubmission
+         * @return SingleSubmission
+         */
+        public function requestSingleSubmission(\NinjaForms\Includes\Entities\SingleSubmission $singleSubmission): \NinjaForms\Includes\Entities\SingleSubmission
+        {
+        }
+        /**
+         * Retrieve a submissions by precise list of submissions IDs
+         * 
+         * @param SubmissionFilter $submissionFilter
+         * @return SubmissionFilter
+         */
+        public function requestSubmissionsByIds(\NinjaForms\Includes\Entities\SubmissionFilter $submissionFilter): \NinjaForms\Includes\Entities\SubmissionFilter
+        {
+        }
+        /**
+         * Retrieve submissionValues from submission at a given aggregated key
+         *
+         * @param string $key
+         * @return SingleSubmission
+         * @see constructUniqueAgreggatedSubmissionKey()
+         */
+        public function getSubmissionValuesByAggregatedKey(string $key): \NinjaForms\Includes\Entities\SingleSubmission
+        {
+        }
+        /**
+         * Delete a single submission
+         *
+         * @param SingleSubmission $singleSubmission
+         * @return SubmissionAggregate
+         */
+        public function deleteSingleSubmission(\NinjaForms\Includes\Entities\SingleSubmission $singleSubmission): \NinjaForms\Includes\Handlers\SubmissionAggregate
+        {
+        }
+        /**
+         * Restore a single submission
+         *
+         * @param SingleSubmission $singleSubmission
+         * @return SubmissionAggregate
+         */
+        public function restoreSingleSubmission(\NinjaForms\Includes\Entities\SingleSubmission $singleSubmission): \NinjaForms\Includes\Handlers\SubmissionAggregate
+        {
+        }
+        /**
+         * Update a single submission
+         *
+         * @param SingleSubmission $singleSubmission
+         * @return SubmissionAggregate
+         */
+        public function updateSingleSubmission(\NinjaForms\Includes\Entities\SingleSubmission $singleSubmission): \NinjaForms\Includes\Handlers\SubmissionAggregate
+        {
+        }
+        /**
+         * Construct field definition collection from formId
+         *
+         * @param string $formId
+         * @return void
+         */
+        protected function constructFieldDefinitionCollection(string $formId): void
+        {
+        }
+        /**
+         * Extract option array from a given array
+         * 
+         * Ensures that required defaults are set if missing in incoming array
+         *
+         * @param array $optionDefinition
+         * @return array
+         */
+        protected function extractOptionsFromDefinition(array $optionDefinition): array
+        {
+        }
+        /**
+         * Return the Ninja Forms field collection
+         *
+         * @param string $formId
+         * @return array
+         */
+        protected function getFieldsCollection(string $formId): array
+        {
+        }
+        /**
+         * Construct a unique aggregated submission key for each submission
+         *
+         * Uses the dataSource's id plus the submission record id.  Each submission
+         * is is unique within its dataSource, and each dataSource is unique, thus
+         * the combined string is unique
+         *
+         * @param SingleSubmission $singleSubmission
+         * @return string
+         */
+        protected function constructUniqueAgreggatedSubmissionKey(\NinjaForms\Includes\Entities\SingleSubmission $singleSubmission): string
+        {
+        }
+        /**
+         * Set collection of submission data sources
+         *
+         * @param  SubmissionDataSource  $dataSource Submission data source
+         *
+         * @return  SubmissionAggregate
+         */
+        public function addDataSource(\NinjaForms\Includes\Contracts\SubmissionDataSource $dataSource): \NinjaForms\Includes\Handlers\SubmissionAggregate
+        {
+        }
+        /**
+         * Get collection of SubmissionFields
+         *
+         * @return  SubmissionField[]
+         */
+        public function getFieldDefinitionCollection(): array
+        {
+        }
+        /**
+         * Get submission count
+         *
+         * @return integer
+         */
+        public function getSubmissionCount(): int
+        {
+        }
+        /**
+         * Get indexed collection of submissions meeting the filtering parameters
+         *
+         * @return  SingleSubmission[]
+         */
+        public function getAggregatedSubmissions(): array
+        {
+        }
+        /**
+         * Get fields and the data within the aggregate.
+         *
+         * @return  string
+         */
+        public function getMasterFormId(): string
+        {
+        }
+        /**
+         * Set keyed collection of submissions
+         *
+         * This method enables re-setting the aggregated submissions after
+         * performing array methods on it.  This is useful to get a subset of the
+         * collection without needing to re-filter and run DB requests
+         *
+         * @param  Array  $aggregatedSubmissions  Keyed collection of
+         * submissions meeting the filtering parameters
+         *
+         * @return  self
+         */
+        public function setAggregatedSubmissions(array $aggregatedSubmissions)
+        {
+        }
+    }
+    /**
+     * Adapts SubmissionAggregate to provide data required by CSV Export
+     *
+     * CSV Export requires specific structuring of submission data, too specialized
+     * to be included in the SubmissionAggregate.  This class structures submission
+     * data as needed for CSV export
+     */
+    class SubmissionAggregateCsvExportAdapter
+    {
+        /**
+         * Field labels, keyed on field key
+         *
+         * @var array
+         */
+        protected $labels;
+        /**
+         * Admin field labels, keyed on field key
+         *
+         * @var array
+         */
+        protected $adminLabels;
+        /**
+         * Indexed array of field types to be omitted in output
+         * @var array
+         */
+        protected $hiddenFieldTypes;
+        /**
+         * Array of field types keyed on field key
+         * @var array
+         */
+        protected $fieldTypes = [];
+        /**
+         * Array of field Ids keyed on field key
+         * @var array
+         */
+        protected $fieldIds = [];
+        /**
+         * Array of column values keyed on field key
+         *
+         * Property is reset and reused for each request; column count must equal
+         * that of $labels, $adminLabels, $fieldtypes, and $fieldIds
+         *
+         * @var array
+         */
+        protected $columnValues = [];
+        /**
+         * @var SubmissionAggregate
+         */
+        public $submissionAggregate;
+        /**
+         * Construct with SubmissionAggregate
+         *
+         * Lookup array properties are not populated until the first request for
+         * either fieldTypes, label/adminLable, or fieldIds.
+         *
+         * @param SubmissionAggregate $submissionAggregate
+         */
+        public function __construct(\NinjaForms\Includes\Handlers\SubmissionAggregate $submissionAggregate)
+        {
+        }
+        /**
+         * Return array of field labels keyed on field keys
+         * 
+         * If hiddenFieldTypes array is set, labels filtered to hide those types
+         * 
+         * @param bool $useAdminLabels Optionally use admin_labels
+         * @return array
+         */
+        public function getLabels(?bool $useAdminLabels = false): array
+        {
+        }
+        /**
+         * Return array of field types keyed on field keys
+         * 
+         * @return array
+         */
+        public function getFieldTypes(): array
+        {
+        }
+        /**
+         * Return array of field Ids keyed on field keys
+         */
+        public function getFieldIds(): array
+        {
+        }
+        /**
+         * Return array of submission Ids in the collection
+         * 
+         * Generated at time of request to ensure it is up to date after last
+         *  query / construction
+         * @return array
+         */
+        public function getSubmissionIds(): array
+        {
+        }
+        /**
+         * Get column values for a given submission aggregated key
+         *
+         * @param string $aggregatedKey
+         * @return array
+         */
+        public function getColumnValuesByAggregatedKey(string $aggregatedKey): array
+        {
+        }
+        /**
+         * Construct labels/adminLabels from submission aggregate
+         *
+         * @return void
+         */
+        protected function constructFieldLookups(): void
+        {
+        }
+        /**
+         * Given submission field, extract labels + meta, or submission values
+         *
+         * @param SubmissionField $submissionField
+         * @param boolean|null $labelsOnly
+         * @return void
+         */
+        protected function extractSubmissionFieldData(\NinjaForms\Includes\Entities\SubmissionField $submissionField, ?bool $labelsOnly = false): void
+        {
+        }
+        /**
+         * Construct NF Field from SubmissionField
+         * 
+         * NF Field is needed to apply existing NF filters
+         *
+         *
+         * @param SubmissionField $submissionField
+         * @return Field
+         */
+        protected function convertSubmissionFieldToNfField(\NinjaForms\Includes\Entities\SubmissionField $submissionField): \NinjaForms\Includes\Handlers\Field
+        {
+        }
+        /**
+         * Extract repeater field column headers
+         *
+         * @todo Enable external setting of in-CSV delimiter
+         * @todo ~L258 - adjust deconstructed value to handle listmultiselect arrays (other fields may also have arrays)
+         * @param SubmissionField $submissionField
+         * @return void
+         */
+        protected function extractRepeaterFieldColumns(\NinjaForms\Includes\Entities\SubmissionField $submissionField, bool $labelsOnly): void
+        {
+        }
+        /**
+         * Extracts collection of SubmissionFields within a fieldset repeater
+         *
+         * @param SubmissionField $submissionField
+         * @return SubmissionField[]
+         */
+        protected function extractRepeaterFieldsFromSubmisionField(\NinjaForms\Includes\Entities\SubmissionField $submissionField): array
+        {
+        }
+        /**
+         * Construct lookup of field settings for fields within fieldset repeater field
+         *
+         * @param SubmissionField $submissionField
+         * @return array
+         */
+        protected function constructRepeaterFieldSettingsLookup(\NinjaForms\Includes\Entities\SubmissionField $submissionField): array
+        {
+        }
+        /**
+         * Ensure each repeater field value is a string
+         *
+         * @param SubmissionField $submissionField
+         * @param array $deconstructedValue
+         * @param string $repeatedValueDelimiter
+         * @return string
+         */
+        protected function getStringedValue(\NinjaForms\Includes\Entities\SubmissionField $submissionField, array $deconstructedValue, string $repeatedValueDelimiter): string
+        {
+        }
+        /**
+         * Deconstruct repeater field array by repeated fields
+         * 
+         * 
+         * @todo Add exception handling for unexpected key structure
+         * @param array $constructedValue
+         * @return array
+         */
+        protected function deconstructRepeaterFieldValue(array $constructedValue): array
+        {
+        }
+        /**
+         * Add key value lookups for labels and admin labels
+         *
+         * @param string $slug
+         * @param string $label
+         * @param string $adminLabel
+         * @return void
+         */
+        protected function setFieldLabels(\NinjaForms\Includes\Entities\SubmissionField $submissionField): void
+        {
+        }
+        /**
+         * Add key value lookups for Id and type on all fields in collection
+         * 
+         * This includes hidden fields and parent fieldset repeater fields
+         *
+         * @param SubmissionField $submissionField
+         * @return void
+         */
+        protected function setFieldMetaData(\NinjaForms\Includes\Entities\SubmissionField $submissionField): void
+        {
+        }
+        /**
+         * Set column value for a given field
+         *
+         * @param string $key
+         * @param string||array $value
+         * @return void
+         */
+        protected function setColumnValue(string $key, $value): void
+        {
+        }
+        protected function filterRawValue(string $key, $rawValue, \NinjaForms\Includes\Handlers\Field $nfField)
+        {
+        }
+        /**
+         * Set indexed array of field types to be omitted in output
+         *
+         * @param  array  $hiddenFieldTypes  Indexed array of field types to be omitted in output
+         *
+         * @return  SubmissionAggregateCsvExportAdapter
+         */
+        public function setHiddenFieldTypes(array $hiddenFieldTypes): \NinjaForms\Includes\Handlers\SubmissionAggregateCsvExportAdapter
+        {
+        }
+    }
+}
+namespace {
     /**
      * Class WPN_Helper
      *
@@ -9498,6 +12635,54 @@ namespace {
          * @return boolean
          */
         public static function use_cache()
+        {
+        }
+        /**
+         * Sanitizes single/multiple CSS classNames
+         *
+         * Explodes on space, sanitize each className, implode with space to recombine
+         * @param string $value
+         * @return string
+         */
+        public static function sanitize_classes($value): string
+        {
+        }
+        /**
+         * Sanitizes string values for field settings 
+         * 
+         * WIP methods can still be implemented for this.
+         *
+         * @param string $key Setting name
+         * @param string $value of setting
+         * @return string sanitized value for setting
+         */
+        public static function sanitize_string_setting_value($key, $value): string
+        {
+        }
+        /**
+         * Check the DISALLOW_UNFILTERED_HTML constant value and return early if true. 
+         * If false, return opposite for 'unfiltered_html' current user capability
+         * 
+         * @return bool
+         */
+        public static function maybe_disallow_unfiltered_html_for_sanitization(): bool
+        {
+        }
+        /**
+         * Check the DISALLOW_UNFILTERED_HTML constant value only on the escaping side
+         * 
+         * @return bool
+         */
+        public static function maybe_disallow_unfiltered_html_for_escaping(): bool
+        {
+        }
+        /**
+         * Sanitize output to csv to prevent formula injection.
+         * 
+         * @param String $value The value to be escaped.
+         * @return String
+         */
+        public static function maybe_escape_csv_column($value): string
         {
         }
     }
@@ -9755,62 +12940,6 @@ namespace {
         {
         }
         private function maybe_debug($data, $key = 'debug')
-        {
-        }
-    }
-    /**
-     * Conditionally install and activate NF Legacy plugin
-     */
-    class NF_LoadLegacy
-    {
-        const LEGACY_PLUGIN_NAME = 'ninja-forms-legacy/ninja-forms-legacy.php';
-        const DOWNLOAD_PREVIOUSLY_ATTEMPTED_KEY = 'ninja_forms_legacy_download_previously_attempted';
-        const PLUGIN_SLUG = 'ninja-forms-legacy';
-        /**
-         * Check if NF Legacy plugin is active
-         *
-         * @var boolean
-         */
-        protected $isLegacyActive = \false;
-        /**
-         * Has download of NF Legacy been previously attempted
-         * 
-         * If previously attempted, do NOT continue to attempt download, otherwise
-         *  we are in a potentially continous loop
-         *
-         * @var boolean
-         */
-        protected $previouslyAttempted = \false;
-        /**
-         * Conditionally install and activate NF Legacy plugin  
-         */
-        public function handle()
-        {
-        }
-        /**
-         * Request WP installation of NF Legacy plugin from public repository
-         *
-         * @return void
-         */
-        protected function installLegacy()
-        {
-        }
-        /**
-         * Check if NF Legacy plugin is active
-         */
-        protected function checkLegacyActive()
-        {
-        }
-        /**
-         * Check if previously attempt to load has been made
-         */
-        protected function checkPreviousAttempt()
-        {
-        }
-        /**
-         * Register that an attempt to install Legacy has been made
-         */
-        protected function registerAttemptedInstallation()
         {
         }
     }
@@ -10150,6 +13279,7 @@ namespace {
          *
          * @return boolean true on success or false on failure.
          */
+        #[\ReturnTypeWillChange]
         public function offsetExists($offset)
         {
         }
@@ -10162,6 +13292,7 @@ namespace {
          *
          * @return mixed Can return all value types.
          */
+        #[\ReturnTypeWillChange]
         public function offsetGet($offset)
         {
         }
@@ -10175,6 +13306,7 @@ namespace {
          *
          * @return void
          */
+        #[\ReturnTypeWillChange]
         public function offsetSet($offset, $data)
         {
         }
@@ -10187,6 +13319,7 @@ namespace {
          *
          * @return void
          */
+        #[\ReturnTypeWillChange]
         public function offsetUnset($offset)
         {
         }
@@ -10371,6 +13504,7 @@ namespace {
          *
          * @return mixed
          */
+        #[\ReturnTypeWillChange]
         public function current()
         {
         }
@@ -10381,6 +13515,7 @@ namespace {
          *
          * @return mixed
          */
+        #[\ReturnTypeWillChange]
         public function key()
         {
         }
@@ -10391,6 +13526,7 @@ namespace {
          *
          * @return void
          */
+        #[\ReturnTypeWillChange]
         public function next()
         {
         }
@@ -10401,6 +13537,7 @@ namespace {
          *
          * @return void
          */
+        #[\ReturnTypeWillChange]
         public function rewind()
         {
         }
@@ -10411,6 +13548,7 @@ namespace {
          *
          * @return bool
          */
+        #[\ReturnTypeWillChange]
         public function valid()
         {
         }
@@ -10424,6 +13562,7 @@ namespace {
          *
          * @return int
          */
+        #[\ReturnTypeWillChange]
         public function count()
         {
         }
@@ -10758,7 +13897,7 @@ namespace {
     /**
      * Class NF_MergeTags_Other
      */
-    final class NF_MergeTags_Other extends \NF_Abstracts_MergeTags
+    class NF_MergeTags_Other extends \NF_Abstracts_MergeTags
     {
         protected $id = 'other';
         public function __construct()
@@ -10770,9 +13909,25 @@ namespace {
         public function init()
         {
         }
+        /**
+         * Construct key-value responses from a referrer string
+         *
+         * @param string $referrer
+         * @return array
+         */
+        protected function constructVariablesFromReferrer(string $referrer): array
+        {
+        }
         public function __call($name, $arguments)
         {
         }
+        /**
+         * Assign a merge tag construct array to a key
+         *
+         * @param string $key
+         * @param mixed $value
+         * @return void
+         */
         public function set_merge_tags($key, $value)
         {
         }
@@ -10808,7 +13963,7 @@ namespace {
     /**
      * Class NF_MergeTags_WordPress
      */
-    final class NF_MergeTags_WP extends \NF_Abstracts_MergeTags
+    class NF_MergeTags_WP extends \NF_Abstracts_MergeTags
     {
         protected $id = 'wp';
         public function __construct()
@@ -10820,6 +13975,14 @@ namespace {
          * @return string
          */
         public function replace($subject)
+        {
+        }
+        /**
+         * Return the current user Id
+         *
+         * @return void
+         */
+        protected function getCurrentUserId(): int
         {
         }
         protected function post_id()
@@ -10872,8 +14035,8 @@ namespace {
     {
         public $promotions;
         /**
-         * Accepts a string of location to tell let us know where in the app we are sending promotions to. 
-         * Then will return an array of promotions to run in the location. 
+         * Accepts a string of location to tell let us know where in the app we are sending promotions to.
+         * Then will return an array of promotions to run in the location.
          */
         public function __construct()
         {
@@ -10882,17 +14045,17 @@ namespace {
         {
         }
         /**
-         * Set our promtions array to our promotions property. 
+         * Set our promtions array to our promotions property.
          */
         private function set_promotions()
         {
         }
-        /**************************************************************************
+        /*
          * Membership Checks
-         * 
+         *
          * These funcitons all check to see if the individual add-ons that make up
-         * our personal membership are active. 
-         ****************************************************************************/
+         * our personal membership are active.
+         */
         private function is_layout_styles_active()
         {
         }
@@ -10907,16 +14070,16 @@ namespace {
         }
         /**
          * Utilizes the helper methods above to determine if a
-         * a Membership is active on a site. 
+         * a Membership is active on a site.
          */
         private function is_personal_active()
         {
         }
         /**************************************************************************
          * Promotion Removal Methods
-         * 
+         *
          * These funcitons all check for different add-ons/products and remove
-         * promotions for them if they are in use. 
+         * promotions for them if they are in use.
          ****************************************************************************/
         private function maybe_remove_sendwp()
         {
@@ -10925,13 +14088,13 @@ namespace {
         {
         }
         /***************************************************************************
-         * Helper Methods 
+         * Helper Methods
          ****************************************************************************/
         /**
-         * Pass in a promotion type to have it removed from 
+         * Pass in a promotion type to have it removed from
          * the list of active promotions.
-         * 
-         * @return void 
+         *
+         * @return void
          */
         private function remove_promotion($type)
         {
@@ -10939,7 +14102,7 @@ namespace {
         /**
          * Sorts our promotions by where they will appear in app.
          *
-         * @return void 
+         * @return void
          */
         private function sort_active_promotions_by_locations()
         {
@@ -10957,14 +14120,6 @@ namespace {
     final class NF_Routes_Submissions extends \NF_Abstracts_Routes
     {
         /**
-         * Set the API routes for submissions
-         *
-         *  @since 3.4.33
-         */
-        public function __construct()
-        {
-        }
-        /**
          * Register REST API routes related to submissions actions
          * 
          * @since 3.4.33
@@ -10973,6 +14128,59 @@ namespace {
          * @route 'ninja-forms-submissions/email-action"
          */
         function register_routes()
+        {
+        }
+        /**
+         * Secure endpoint to allow users to read submissions
+         * 
+         * @since 3.5.8
+         * 
+         * Already passed Nonce validation via wp_rest and x_wp_nonce header checked against rest_cookie_check_errors()
+         */
+        public function get_submissions_permission_callback(\WP_REST_Request $request)
+        {
+        }
+        /**
+         * Secure endpoint to allow users to delete submissions
+         * 
+         * @since 3.5.8
+         * 
+         * Already passed Nonce validation via wp_rest and x_wp_nonce header checked against rest_cookie_check_errors()
+         */
+        public function delete_submissions_permission_callback(\WP_REST_Request $request)
+        {
+        }
+        /**
+         * Secure endpoint to allow users to update a submission
+         * 
+         * @since 3.5.8
+         * 
+         * Already passed Nonce validation via wp_rest and x_wp_nonce header checked against rest_cookie_check_errors()
+         */
+        public function update_submission_permission_callback(\WP_REST_Request $request)
+        {
+        }
+        /**
+         * Secure endpoint to allow users to perform extra handling
+         * 
+         * @since 3.5.8
+         * 
+         * Already passed Nonce validation via wp_rest and x_wp_nonce header checked against rest_cookie_check_errors()
+         */
+        public function handle_extra_submission_permission_callback(\WP_REST_Request $request)
+        {
+        }
+        /**
+         * Secure endpoint to allowed users and uploads folder
+         * 
+         * Used to delete files from the uploads directory. Tmp file in our case
+         *
+         * @since 3.6.25
+         *
+         * Already passed Nonce validation via wp_rest and x_wp_nonce header checked
+         * against rest_cookie_check_errors()
+         */
+        public function delete_submissions_files_permission_callback(\WP_REST_Request $request)
         {
         }
         /**
@@ -11003,6 +14211,24 @@ namespace {
         {
         }
         /**
+         * Download all submissions
+         * 
+         * 
+         * @return array 
+         */
+        public function download_all_submissions(\WP_REST_Request $request)
+        {
+        }
+        /**
+         * Delete a file when provided valid file path
+         *
+         * @param WP_REST_Request $request Object with `file_path` property
+         * @return void
+         */
+        public function delete_download_file(\WP_REST_Request $request)
+        {
+        }
+        /**
          * Trigger Email Action endpoint callback
          * 
          * @since 3.4.33
@@ -11021,6 +14247,95 @@ namespace {
          * 
          */
         public function process_merge_tags($data, $form_id, $sub)
+        {
+        }
+        /**
+         * Get Submissions
+         * 
+         * @since 3.5.8
+         * 
+         * @return array of submissions for a Form
+         */
+        public function get_submissions(\WP_REST_Request $request)
+        {
+        }
+        /**
+         * Save submissions interface settings
+         *
+         * Data passes a json string
+         *
+         * @param WP_REST_Request $request
+         * @return void
+         */
+        public function set_submissions_settings(\WP_REST_Request $request)
+        {
+        }
+        /**
+         * Get submissions interface settings
+         *
+         * @param WP_REST_Request $request
+         * @return array of settings
+         */
+        public function get_submissions_settings(\WP_REST_Request $request)
+        {
+        }
+        /**
+         * Request deletion of a collection of submissions
+         *
+         * Data passes as a collection of single submission entities keyed
+         * under submissions
+         * 
+         * {"submissions": SingleSubmission[]}
+         *
+         * @param WP_REST_Request $request
+         * @return void
+         */
+        public function delete_submissions(\WP_REST_Request $request)
+        {
+        }
+        /**
+         * Request restoration of a collection of submissions
+         *
+         * Data passes as a collection of single submission entities keyed
+         * under submissions
+         * 
+         * {"submissions": SingleSubmission[]}
+         *
+         * @param WP_REST_Request $request
+         * @return void
+         */
+        public function restore_submissions(\WP_REST_Request $request)
+        {
+        }
+        /**
+         * Request update of a single submission
+         *
+         * Data passes as a single submission entity keyed under submission
+         * 
+         * {"submission": SingleSubmission}
+         *
+         * @param WP_REST_Request $request
+         * @return void
+         */
+        public function update_submission(\WP_REST_Request $request)
+        {
+        }
+        /**
+         * Handle extra request for submissions
+         *
+         * This is a starting proof of concept that triggers a download for the PDF submissions add-on
+         * 
+         * Data passes as a single submission entity keyed under submission and a Class to call the handler under handleExtra key
+         * 
+         * {
+         *  "submission": SingleSubmission,
+         *  "handleExtra": HandleExtraClassName
+         * }
+         * 
+         * @param WP_REST_Request $request
+         * @return object with string of responseType, blob of PDF download and string of blobType
+         */
+        public function handle_extra_submission(\WP_REST_Request $request)
         {
         }
     }
@@ -11952,7 +15267,7 @@ namespace {
          * @return (Array) Associative if our data was complex.
          *                 Non-associative if our data was a single item.
          * 
-         * @since UPDATE_VERSION_ON_MERGE
+         * @since 3.0.0
          */
         private function array_squash($data)
         {
@@ -12061,40 +15376,6 @@ namespace {
         {
         }
     }
-    interface NF_Conversion
-    {
-        public function run();
-    }
-    final class NF_Conversion_Calculations implements \NF_Conversion
-    {
-        private $operations = array('add' => '+', 'subtract' => '-', 'multiply' => '*', 'divide' => '/');
-        private $form = array();
-        private $tax_rate;
-        public function __construct($form_data)
-        {
-        }
-        public function run()
-        {
-        }
-        private function reduce_operations($eq, $calc)
-        {
-        }
-        private function reduce_auto_total($eq, $field)
-        {
-        }
-        private function merge_tag($field)
-        {
-        }
-        /**
-         * Sets a float formatted tax rate.
-         * @param string|int|float $tax
-         *
-         * @return float|int
-         */
-        private function set_tax($tax)
-        {
-        }
-    }
     final class NF_AddonChecker
     {
         public function __construct()
@@ -12104,20 +15385,6 @@ namespace {
         {
         }
         public function deactivation_notice()
-        {
-        }
-    }
-    /**
-     * Adds a global exception handler for reporting on form rendering issues.
-     *
-     * Note: Exceptions before `document.ready` do not break scripts inside of `document.ready`.
-     */
-    final class NF_ExceptionHandlerJS
-    {
-        public function __construct()
-        {
-        }
-        public function wp_head()
         {
         }
     }
@@ -12203,27 +15470,418 @@ namespace {
         {
         }
     }
-    final class NF_VersionSwitcher
+    /**
+     * Class Ninja_Forms
+     */
+    final class Ninja_Forms
     {
-        public function __construct()
+        /**
+         * @since 3.0
+         */
+        const VERSION = '3.6.34.1';
+        /**
+         * @since 3.4.0
+         */
+        const DB_VERSION = '1.4';
+        const WP_MIN_VERSION = '5.0';
+        /**
+         * @var Ninja_Forms
+         * @since 2.7
+         */
+        private static $instance;
+        /**
+         * Plugin Directory
+         *
+         * @since 3.0
+         * @var string $dir
+         */
+        public static $dir = '';
+        /**
+         * Plugin Database Version
+         *
+         * This may be overwritten at a later point in this file.
+         *
+         * @since 3.4.0
+         * @var string $db_version
+         */
+        public static $db_version = self::DB_VERSION;
+        /**
+         * Plugin URL
+         *
+         * @since 3.0
+         * @var string $url
+         */
+        public static $url = '';
+        /**
+         * Admin Menus
+         *
+         * @since 3.0
+         * @var array
+         */
+        public $menus = array();
+        /**
+         * AJAX Controllers
+         *
+         * @since 3.0
+         * @var array
+         */
+        public $controllers = array();
+        /**
+         * Form Fields
+         *
+         * @since 3.0
+         * @var array
+         */
+        public $fields = array();
+        /**
+         * Form Actions
+         *
+         * @since 3.0
+         * @var array
+         */
+        public $actions = array();
+        /**
+         * Merge Tags
+         *
+         * @since 3.0
+         * @var array
+         */
+        public $merge_tags = array();
+        /**
+         * Metaboxes
+         *
+         * @since 3.0
+         * @var array
+         */
+        public $metaboxes = array();
+        /**
+         * Model Factory
+         *
+         * @var object
+         */
+        public $factory = '';
+        /**
+         * Logger
+         *
+         * @var string
+         */
+        protected $_logger = '';
+        /**
+         * Dispatcher
+         *
+         * @var string
+         */
+        protected $_dispatcher = '';
+        /**
+         * @var NF_Session
+         */
+        protected $session = '';
+        /**
+         * @var NF_Tracking
+         */
+        public $tracking;
+        /**
+         *
+         * @var NF_Handlers_FieldsetRepeater
+         */
+        public $fieldsetRepeater;
+        /**
+         * Plugin Settings
+         *
+         * @since 3.0
+         * @var array
+         */
+        protected $settings = array();
+        protected $requests = array();
+        protected $processes = array();
+        public $routes;
+        public $preview;
+        public $shortcodes;
+        public $add_form_modal;
+        public $_eos;
+        public $notices;
+        public $widgets;
+        public $submission_expiration_cron;
+        /**
+         * Main Ninja_Forms Instance
+         *
+         * Insures that only one instance of Ninja_Forms exists in memory at any one
+         * time. Also prevents needing to define globals all over the place.
+         *
+         * @since 2.7
+         * @static
+         * @staticvar array $instance
+         * @return Ninja_Forms Highlander Instance
+         */
+        public static function instance()
         {
         }
-        public function ajax_check()
+        public function init()
         {
         }
-        public function version_bypass_check()
+        public function flush_rewrite_rules()
         {
         }
-        public function listener()
+        public function register_rewrite_rules()
         {
         }
-        public function admin_bar_menu($wp_admin_bar)
+        public function admin_init()
         {
         }
-        public function rollback_activation()
+        function maybe_load_public_form($template)
         {
         }
-        public function upgrade_complete_notice($notices)
+        /**
+         * Privacy policy suggested content for Ninja Forms
+         */
+        function nf_plugin_add_suggested_privacy_content()
+        {
+        }
+        /**
+         * Return the default suggested privacy policy content.
+         *
+         * @return string The default policy content.
+         */
+        function plugin_get_default_privacy_content()
+        {
+        }
+        /**
+         * NF PHP Version Whip Notice
+         * If the user is on a version below PHP 7.2 then we get an instance of the
+         * NF PHP Version Whip class which will add a non-dismissible admin notice.
+         *
+         * @return NF_Php_Version_Whip
+         */
+        public function nf_php_version_whip_notice()
+        {
+        }
+        /**
+         * Function to launch our various telemetry calls on admin_init.
+         */
+        public function nf_do_telemetry()
+        {
+        }
+        public function maybe_hide_dashboard_items($items)
+        {
+        }
+        public function scrub_available_actions($actions)
+        {
+        }
+        /**
+         * Call back function for the promo manager cron.
+         * Grabs a fresh copy of the promotions and stores them in an option.
+         *
+         * @return void
+         */
+        public function nf_run_promotion_manager()
+        {
+        }
+        /**
+         * Listens for plugin activation and runs check to see if any
+         * promotions need to be added or removed.
+         *
+         * @return void
+         */
+        public function nf_bust_promotion_cache_on_plugin_activation($plugin, $network_activation)
+        {
+        }
+        /**
+         * Build a look up table for the add-ons that have promotions.
+         * TODO: maybe come up with a better name for this class.
+         *
+         * @return array of promotions.
+         */
+        public function get_promotion_addons_lookup_table()
+        {
+        }
+        /**
+         * Loops over our add-ons that have promotions and
+         * runs the promotion manager class.
+         *
+         * @return void
+         */
+        public function nf_maybe_bust_promotion_cache($promo_addons, $plugin_being_activated)
+        {
+        }
+        public function admin_notices()
+        {
+        }
+        public function plugins_loaded()
+        {
+        }
+        /**
+         * Autoloader
+         *
+         * Autoload Ninja Forms classes
+         *
+         * @param $class_name
+         */
+        public function autoloader($class_name)
+        {
+        }
+        /*
+         * PUBLIC API WRAPPERS
+         */
+        /**
+         * Form Model Factory Wrapper
+         *
+         * @param $id
+         * @return NF_Abstracts_ModelFactory
+         */
+        public function form($id = '')
+        {
+        }
+        /**
+         * Logger Class Wrapper
+         *
+         * Example Use:
+         * Ninja_Forms()->logger()->log( 'debug', "Hello, {name}!", array( 'name' => 'world' ) );
+         * Ninja_Forms()->logger()->debug( "Hello, {name}!", array( 'name' => 'world' ) );
+         *
+         * @return string
+         */
+        public function logger()
+        {
+        }
+        public function dispatcher()
+        {
+        }
+        public function eos()
+        {
+        }
+        public function session()
+        {
+        }
+        public function request($action)
+        {
+        }
+        public function background_process($action)
+        {
+        }
+        /**
+         * Get a setting
+         *
+         * @param string     $key
+         * @param bool|false $default
+         * @return bool
+         */
+        public function get_setting($key = '', $default = \false)
+        {
+        }
+        /**
+         * Get all the settings
+         *
+         * @return array
+         */
+        public function get_settings()
+        {
+        }
+        /**
+         * Update a setting
+         *
+         * @param string           $key
+         * @param mixed           $value
+         * @param bool|false $defer_update Defer the database update of all settings
+         */
+        public function update_setting($key, $value, $defer_update = \false)
+        {
+        }
+        /**
+         * Save settings to database
+         *
+         * @param array $settings
+         */
+        public function update_settings($settings = array())
+        {
+        }
+        /**
+         * Display Wrapper
+         *
+         * @param $form_id
+         */
+        public function display($form_id, $preview = \FALSE)
+        {
+        }
+        /*
+         * PRIVATE METHODS
+         */
+        private function sort_actions($a, $b)
+        {
+        }
+        /**
+         * Load Classes from Directory
+         *
+         * @param string $prefix
+         * @return array
+         */
+        private static function load_classes($prefix = '')
+        {
+        }
+        /*
+         * STATIC METHODS
+         */
+        /**
+         * Template
+         *
+         * @param string $file_name
+         * @param array $data
+         */
+        public static function template($file_name = '', array $data = array(), $return = \FALSE)
+        {
+        }
+        /**
+         * Config
+         *
+         * @param $file_name
+         * @return mixed
+         */
+        public static function config($file_name)
+        {
+        }
+        /**
+         * Activation
+         */
+        public function activation()
+        {
+        }
+        /**
+         * Deprecated Notice
+         *
+         * Example: Ninja_Forms::deprecated_hook( 'ninja_forms_old', '3.0', 'ninja_forms_new', debug_backtrace() );
+         *
+         * @param $deprecated
+         * @param $version
+         * @param null $replacement
+         * @param null $backtrace
+         */
+        public static function deprecated_notice($deprecated, $version, $replacement = \null, $backtrace = \null)
+        {
+        }
+        /**
+         * Function to deregister already completed updates from the list of required updates.
+         *
+         * @since 3.3.14
+         *
+         * @codeCoverageIgnore WP hook only; tests in called class
+         * 
+         * @param $updates (Array) Our array of required updates.
+         * @return $updates (Array) Our array of required updates.
+         */
+        public function remove_completed_updates($updates)
+        {
+        }
+        /**
+         * Function to deregister updates that have required updates that either
+         * don't exist, or are malformed
+         *
+         * @since UPDATE_TO_LATEST version
+         *
+         * @codeCoverageIgnore WP hook only; tests in called class
+         * 
+         * @param $updates (Array) Our array of required updates.
+         * @return $updates (Array) Our array of required updates.
+         */
+        public function remove_bad_updates($updates)
         {
         }
     }
@@ -12280,7 +15938,7 @@ namespace NinjaForms {
         public function get_errors()
         {
         }
-        public function feedback($string)
+        public function feedback($feedback, ...$args)
         {
         }
         public function before()
@@ -12293,7 +15951,7 @@ namespace NinjaForms {
 }
 namespace {
     // autoload_real.php @generated by Composer
-    class ComposerAutoloaderInitf1d7fff7a6b41fcdb739e42dcbea6e42
+    class ComposerAutoloaderInit9cdb3c69caefbada74a3c5adff52fddc
     {
         private static $loader;
         public static function loadClassLoader($class)
@@ -12308,7 +15966,7 @@ namespace {
     }
 }
 namespace Composer\Autoload {
-    class ComposerStaticInitf1d7fff7a6b41fcdb739e42dcbea6e42
+    class ComposerStaticInit9cdb3c69caefbada74a3c5adff52fddc
     {
         public static $prefixLengthsPsr4 = array('N' => array('NinjaForms\NinjaForms\\' => 22, 'NinjaForms\Includes\\' => 20, 'NinjaForms\Blocks\\' => 18));
         public static $prefixDirsPsr4 = array('NinjaForms\NinjaForms\\' => array(0 => __DIR__ . '/../..' . '/'), 'NinjaForms\Includes\\' => array(0 => __DIR__ . '/../..' . '/includes'), 'NinjaForms\Blocks\\' => array(0 => __DIR__ . '/../..' . '/blocks/views/includes'));
@@ -12316,29 +15974,6 @@ namespace Composer\Autoload {
         public static function getInitializer(\Composer\Autoload\ClassLoader $loader)
         {
         }
-    }
-}
-/*
- * This file is part of Composer.
- *
- * (c) Nils Adermann <naderman@naderman.de>
- *     Jordi Boggiano <j.boggiano@seld.be>
- *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
- */
-namespace Composer\Autoload {
-    /**
-     * Scope isolated include.
-     *
-     * Prevents access to $this/self from included files.
-     *
-     * @param  string $file
-     * @return void
-     * @private
-     */
-    function includeFile($file)
-    {
     }
 }
 namespace {
@@ -12455,51 +16090,6 @@ namespace {
     function NF_register_widgets()
     {
     }
-    /*
-    |--------------------------------------------------------------------------
-    | Deprecated Functions
-    |--------------------------------------------------------------------------
-    */
-    function ninja_forms_display_form($form_id = '')
-    {
-    }
-    function ninja_forms_get_fields_by_form_id($form_id, $orderby = 'ORDER BY `order` ASC')
-    {
-    }
-    /**
-     * Included for backwards compatibility with Visual Composer.
-     */
-    function ninja_forms_get_all_forms()
-    {
-    }
-    function nf_is_func_disabled($function)
-    {
-    }
-    function _nf_get_actions()
-    {
-    }
-    function _nf_post_actions()
-    {
-    }
-    // add_action( 'shutdown', '_nf_removed_hooks' );
-    function _nf_removed_hooks()
-    {
-    }
-    function ninja_forms_get_form_by_id($form_id)
-    {
-    }
-    function ninja_forms_conversion_calculations($form_data)
-    {
-    }
-    function ninja_forms_ajax_migrate_database()
-    {
-    }
-    function ninja_forms_ajax_import_form()
-    {
-    }
-    function ninja_forms_ajax_import_fields()
-    {
-    }
     /**
      * Register our step processing admin page.
      *
@@ -12536,7 +16126,69 @@ namespace {
     function nf_output_step_processing_page()
     {
     }
+    /**
+     * Extract page title from given input
+     *
+     * @param string $title
+     * @return string
+     */
+    function nfExtractPageTitle($title)
+    {
+    }
     function ninja_forms_three_table_exists()
+    {
+    }
+    // End Class Ninja_Forms
+    /**
+     * The main function responsible for returning The Highlander Ninja_Forms
+     * Instance to functions everywhere.
+     *
+     * Use this function like you would a global variable, except without needing
+     * to declare the global.
+     *
+     * Example: <?php $nf = Ninja_Forms(); ?>
+     *
+     * @since 2.7
+     * @return Ninja_Forms Highlander Instance
+     */
+    function Ninja_Forms()
+    {
+    }
+    function ninja_forms_uninstall()
+    {
+    }
+    // Scheduled Action Hook
+    function nf_optin_update_environment_vars()
+    {
+    }
+    /**
+     * Function to register our Custom Cron Recurrences.
+     *
+     * @param $schedules (Array) The available cron recurrences.
+     * @return (Array) The filtered cron recurrences.
+     *
+     */
+    function nf_custom_cron_job_recurrence($schedules)
+    {
+    }
+    // Schedule Cron Job Event
+    function nf_optin_send_admin_email_cron_job()
+    {
+    }
+    /**
+     * Function called via weekly wp_cron to update our marketing feeds.
+     *
+     * @since 3.3.17
+     */
+    function nf_update_marketing_feed()
+    {
+    }
+    /**
+     * Function called by our marketing feed cron.
+     *
+     * @since 3.3.17
+     */
+    function nf_marketing_feed_cron_job()
     {
     }
 }
