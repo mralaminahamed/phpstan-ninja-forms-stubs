@@ -17446,7 +17446,7 @@ namespace {
         /**
          * @since 3.0
          */
-        const VERSION = '3.13.3';
+        const VERSION = '3.13.4';
         /**
          * @since 3.4.0
          */
