@@ -1285,6 +1285,368 @@ namespace {
         }
     }
     /**
+     * Class NF_Abilities_Integration
+     *
+     * Manages the Abilities API integration lifecycle.
+     */
+    class NF_Abilities_Integration
+    {
+        /**
+         * @var NF_Abilities_Integration
+         */
+        private static $instance;
+        /**
+         * Constructor
+         *
+         * Sets up hooks for Abilities API integration.
+         *
+         * @since 3.13.0
+         */
+        public function __construct()
+        {
+        }
+        /**
+         * Load Abilities API integration files
+         *
+         * Registers ability categories and abilities.
+         * This runs on plugins_loaded with priority 100 to ensure the Abilities API
+         * is available.
+         *
+         * @since 3.13.0
+         * @return void
+         */
+        public function load_abilities_api()
+        {
+        }
+        /**
+         * Initialize MCP Adapter
+         *
+         * Creates MCP servers after abilities are registered.
+         * This runs after wp_abilities_api_init hook has fired.
+         *
+         * @since 3.13.0
+         * @return void
+         */
+        public function init_mcp_adapter()
+        {
+        }
+        /**
+         * Add Ninja Forms abilities to the default MCP server's tools
+         *
+         * Dynamically discovers all registered Ninja Forms abilities and adds them to the MCP server.
+         * This ensures that all abilities are available as MCP tools without manual updates.
+         *
+         * @since 3.13.0
+         * @param array $config The default server configuration
+         * @return array Modified configuration
+         */
+        public function add_abilities_to_mcp_server($config)
+        {
+        }
+        /**
+         * Get instance
+         *
+         * @since 3.13.0
+         * @return NF_Abilities_Integration
+         */
+        public static function instance()
+        {
+        }
+    }
+    /**
+     * Class NF_Abilities_Cache
+     *
+     * Centralizes cache management for abilities API
+     */
+    class NF_Abilities_Cache
+    {
+        /**
+         * Invalidate all form-related caches
+         *
+         * @param int $form_id Form ID
+         * @return void
+         */
+        public static function invalidate_form_cache($form_id)
+        {
+        }
+        /**
+         * Invalidate field-related caches
+         *
+         * @param int $field_id Field ID
+         * @param int $form_id Form ID (optional)
+         * @return void
+         */
+        public static function invalidate_field_cache($field_id, $form_id = \null)
+        {
+        }
+        /**
+         * Invalidate submission-related caches
+         *
+         * @param int $submission_id Submission ID
+         * @param int $form_id Form ID (optional)
+         * @return void
+         */
+        public static function invalidate_submission_cache($submission_id, $form_id = \null)
+        {
+        }
+        /**
+         * Invalidate action-related caches
+         *
+         * @param int $action_id Action ID
+         * @param int $form_id Form ID (optional)
+         * @return void
+         */
+        public static function invalidate_action_cache($action_id, $form_id = \null)
+        {
+        }
+        /**
+         * Invalidate calculation-related caches
+         *
+         * @param string $calc_name Calculation name
+         * @param int $form_id Form ID
+         * @return void
+         */
+        public static function invalidate_calculation_cache($calc_name, $form_id)
+        {
+        }
+        /**
+         * Invalidate all abilities-related caches
+         *
+         * Use with caution - clears all form-related data
+         *
+         * @return void
+         */
+        public static function invalidate_all_cache()
+        {
+        }
+        /**
+         * Warm up form cache after operations
+         *
+         * @param int $form_id Form ID
+         * @return void
+         */
+        public static function warm_form_cache($form_id)
+        {
+        }
+        /**
+         * Get cache key for abilities data
+         *
+         * @param string $type Cache type
+         * @param mixed $id Resource ID
+         * @return string
+         */
+        public static function get_cache_key($type, $id)
+        {
+        }
+        /**
+         * Set cache with standardized expiration
+         *
+         * @param string $key Cache key
+         * @param mixed $data Data to cache
+         * @param int $expiration Expiration in seconds (default 1 hour)
+         * @return bool
+         */
+        public static function set($key, $data, $expiration = \HOUR_IN_SECONDS)
+        {
+        }
+        /**
+         * Get cached data
+         *
+         * @param string $key Cache key
+         * @param mixed $default Default value if not found
+         * @return mixed
+         */
+        public static function get($key, $default = \false)
+        {
+        }
+        /**
+         * Delete specific cache key
+         *
+         * @param string $key Cache key
+         * @return bool
+         */
+        public static function delete($key)
+        {
+        }
+    }
+    /**
+     * Class NF_Abilities_Response
+     *
+     * Standardizes all response formatting for the abilities API
+     */
+    class NF_Abilities_Response
+    {
+        /**
+         * Create a standardized error response
+         *
+         * @param string $code Error code
+         * @param string $message Error message
+         * @param array $data Optional additional error data
+         * @return WP_Error
+         */
+        public static function error($code, $message, $data = \null)
+        {
+        }
+        /**
+         * Create a standardized success response
+         *
+         * @param mixed $data Response data
+         * @param string $message Optional success message
+         * @return array
+         */
+        public static function success($data = \null, $message = '')
+        {
+        }
+        /**
+         * Create a permission denied error
+         *
+         * @param string $resource Resource being accessed
+         * @return WP_Error
+         */
+        public static function permission_denied($resource = 'Ninja Forms')
+        {
+        }
+        /**
+         * Create a validation error
+         *
+         * @param string $field Field name
+         * @param string $message Custom validation message
+         * @return WP_Error
+         */
+        public static function validation_error($field, $message = '')
+        {
+        }
+        /**
+         * Create a database error response
+         *
+         * @param string $operation Operation that failed
+         * @param string $details Error details (optional, for logging)
+         * @return WP_Error
+         */
+        public static function database_error($operation, $details = '')
+        {
+        }
+        /**
+         * Create a not found error
+         *
+         * @param string $resource Resource type (form, field, submission, etc.)
+         * @param int|string $id Resource ID
+         * @return WP_Error
+         */
+        public static function not_found($resource, $id = '')
+        {
+        }
+        /**
+         * Create a required field error
+         *
+         * @param string $field Required field name
+         * @return WP_Error
+         */
+        public static function required_field($field)
+        {
+        }
+        /**
+         * Check if response is a WP_Error
+         *
+         * @param mixed $response Response to check
+         * @return bool
+         */
+        public static function is_error($response)
+        {
+        }
+        /**
+         * Get error code from WP_Error response
+         *
+         * @param WP_Error $response Error response
+         * @return string
+         */
+        public static function get_error_code($response)
+        {
+        }
+        /**
+         * Get error message from WP_Error response
+         *
+         * @param WP_Error $response Error response
+         * @return string
+         */
+        public static function get_error_message($response)
+        {
+        }
+    }
+    /**
+     * Class NF_Abilities_Validation
+     *
+     * Centralized validation for all abilities input
+     */
+    class NF_Abilities_Validation
+    {
+        /**
+         * Validate calculation formula for security
+         *
+         * @param string $formula The calculation formula
+         * @return string|WP_Error Validated formula or error
+         */
+        public static function validate_calculation_formula($formula)
+        {
+        }
+        /**
+         * Validate balanced parentheses in formula
+         *
+         * @param string $formula Formula to check
+         * @return bool
+         */
+        private static function validate_balanced_parentheses($formula)
+        {
+        }
+        /**
+         * Validate merge tag syntax
+         *
+         * @param string $formula Formula to check
+         * @return bool
+         */
+        private static function validate_merge_tags($formula)
+        {
+        }
+        /**
+         * Validate form ID
+         *
+         * @param mixed $form_id Form ID to validate
+         * @return int|WP_Error Valid form ID or error
+         */
+        public static function validate_form_id($form_id)
+        {
+        }
+        /**
+         * Validate field data
+         *
+         * @param array $field_data Field data to validate
+         * @return array|WP_Error Sanitized field data or error
+         */
+        public static function validate_field_data($field_data)
+        {
+        }
+        /**
+         * Validate and sanitize action settings
+         *
+         * @param array $settings Action settings
+         * @param string $action_type Action type
+         * @return array Sanitized settings
+         */
+        public static function validate_action_settings($settings, $action_type)
+        {
+        }
+        /**
+         * Validate limit parameter
+         *
+         * @param mixed $limit Limit value
+         * @param int $max_limit Maximum allowed limit
+         * @return int|WP_Error Valid limit or error
+         */
+        public static function validate_limit($limit, $max_limit = 100)
+        {
+        }
+    }
+    /**
      * Class NF_Abstracts_Action
      */
     abstract class NF_Abstracts_Action
@@ -17446,7 +17808,7 @@ namespace {
         /**
          * @since 3.0
          */
-        const VERSION = '3.13.4';
+        const VERSION = '3.14.0';
         /**
          * @since 3.4.0
          */
@@ -17553,6 +17915,13 @@ namespace {
          * @var NF_Handlers_FieldsetRepeater
          */
         public $fieldsetRepeater;
+        /**
+         * Abilities API Integration
+         *
+         * @since 3.13.0
+         * @var NF_Abilities_Integration
+         */
+        public $abilities;
         /**
          * Plugin Settings
          *
@@ -17953,6 +18322,167 @@ namespace Composer\Autoload {
     }
 }
 namespace {
+    function ninja_forms_register_abilities()
+    {
+    }
+    /**
+     * Register Ninja Forms ability categories.
+     *
+     * This function registers all ability categories used by Ninja Forms.
+     * It runs on the wp_abilities_api_categories_init action hook.
+     *
+     * @since 3.13.0
+     * @return void
+     */
+    function ninja_forms_register_ability_categories()
+    {
+    }
+    /**
+     * Check if current user can manage forms
+     *
+     * @return bool
+     */
+    function ninja_forms_ability_can_manage_forms()
+    {
+    }
+    function ninja_forms_ability_add_action($input)
+    {
+    }
+    function ninja_forms_ability_update_action($input)
+    {
+    }
+    function ninja_forms_ability_delete_action($input)
+    {
+    }
+    function ninja_forms_ability_list_actions($input)
+    {
+    }
+    function ninja_forms_ability_add_calculation($input)
+    {
+    }
+    function ninja_forms_ability_update_calculation($input)
+    {
+    }
+    function ninja_forms_ability_delete_calculation($input)
+    {
+    }
+    function ninja_forms_ability_list_calculations($input)
+    {
+    }
+    function ninja_forms_ensure_field_key_timestamp($key)
+    {
+    }
+    function ninja_forms_ability_add_field_internal($form_id, $field_data)
+    {
+    }
+    function ninja_forms_ability_add_field($input)
+    {
+    }
+    function ninja_forms_ability_update_field($input)
+    {
+    }
+    function ninja_forms_count_submissions_with_field_data($form_id, $field_id)
+    {
+    }
+    function ninja_forms_export_field_data_to_csv($form_id, $field_id)
+    {
+    }
+    function ninja_forms_get_field_sample_data($form_id, $field_id, $limit = 5)
+    {
+    }
+    function ninja_forms_ability_remove_field($input)
+    {
+    }
+    function ninja_forms_ability_reorder_fields($input)
+    {
+    }
+    function ninja_forms_ability_list_field_types($input)
+    {
+    }
+    function ninja_forms_ability_create_form($input)
+    {
+    }
+    function ninja_forms_ability_list_forms($input)
+    {
+    }
+    function ninja_forms_ability_get_form($input)
+    {
+    }
+    function ninja_forms_ability_update_form($input)
+    {
+    }
+    function ninja_forms_ability_delete_form($input)
+    {
+    }
+    function ninja_forms_ability_duplicate_form($input)
+    {
+    }
+    function ninja_forms_ability_import_form($input)
+    {
+    }
+    function ninja_forms_ability_export_form_definition($input)
+    {
+    }
+    function ninja_forms_ability_embed_form($input)
+    {
+    }
+    function ninja_forms_ability_get_public_link($input)
+    {
+    }
+    function ninja_forms_ability_get_plugin_settings($input)
+    {
+    }
+    function ninja_forms_ability_update_plugin_settings($input)
+    {
+    }
+    /**
+     * Verify CSRF nonce for abilities API requests
+     *
+     * @param WP_REST_Request $request The REST request object
+     * @return bool|WP_Error True if valid, WP_Error if invalid
+     */
+    function ninja_forms_ability_verify_nonce($request)
+    {
+    }
+    /**
+     * Validate calculation formula for security
+     *
+     * @param string $formula The calculation formula
+     * @return string|WP_Error Validated formula or error
+     */
+    function ninja_forms_ability_validate_calculation_formula($formula)
+    {
+    }
+    /**
+     * Enhanced permission callback with CSRF protection for destructive operations
+     *
+     * @param WP_REST_Request $request The REST request object
+     * @return bool|WP_Error True if allowed, WP_Error if not
+     */
+    function ninja_forms_ability_can_manage_forms_with_csrf($request = \null)
+    {
+    }
+    function ninja_forms_ability_get_submissions($input)
+    {
+    }
+    function ninja_forms_ability_get_submission($input)
+    {
+    }
+    function ninja_forms_ability_get_submission_fields($input)
+    {
+    }
+    function ninja_forms_ability_update_submission($input)
+    {
+    }
+    function ninja_forms_ability_delete_submission($input)
+    {
+    }
+    function ninja_forms_ability_export_submissions($input)
+    {
+    }
+    function ninja_forms_ability_process_submission($input)
+    {
+    }
     /**
      * The main function responsible for returning The Highlander Plugin
      * Instance to functions everywhere.
