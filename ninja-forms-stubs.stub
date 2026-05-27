@@ -6434,6 +6434,10 @@ namespace {
          */
         protected $csvObject;
         /**
+         * @var \NinjaForms\Includes\Handlers\SubmissionAggregateCsvExportAdapter
+         */
+        protected $submissionAdapter;
+        /**
          * Aggregated submission keys in output order
          *
          * @var array
@@ -6466,7 +6470,7 @@ namespace {
          * Function to loop over the batch.
          *
          * @since 3.5.0
-         * @return  void 
+         * @return  void
          */
         public function process()
         {
@@ -12375,7 +12379,7 @@ namespace {
         protected $_type = 'checkbox';
         protected $_templates = 'checkbox';
         protected $_test_value = 0;
-        protected $_settings = array('checkbox_default_value', 'checkbox_values', 'checked_calc_value', 'unchecked_calc_value');
+        protected $_settings = array('checkbox_default_value', 'checkbox_values', 'checked_value', 'unchecked_value', 'checked_calc_value', 'unchecked_calc_value');
         protected $_settings_exclude = array('default', 'placeholder', 'input_limit_set');
         /**
          * NF_Fields_Checkbox constructor.
@@ -12442,6 +12446,20 @@ namespace {
          * @return string|void
          */
         public function export_value($value, $field)
+        {
+        }
+        /**
+         * Localize Field
+         * Pass checkbox display values to JavaScript for front-end merge tag replacement.
+         * Exposes resolved checked/unchecked values at the top level so
+         * fieldModel.get('checked_value') works in JavaScript.
+         *
+         * @since 3.14.2
+         *
+         * @param array $field
+         * @return array
+         */
+        public function localize_field($field)
         {
         }
     }
@@ -16426,7 +16444,7 @@ namespace {
     /**
      * Class NF_Routes_SubmissionsActions
      */
-    final class NF_Routes_Submissions extends \NF_Abstracts_Routes
+    class NF_Routes_Submissions extends \NF_Abstracts_Routes
     {
         /**
          * Register REST API routes related to submissions actions
@@ -16548,14 +16566,33 @@ namespace {
         {
         }
         /**
-         * Process Merge tags for a given Value
-         * 
-         * @since 3.4.33
-         * 
-         * @return object of Email Action Model with merge tags settingsprocessed
-         * 
+         * Process a field through its type-specific handler
+         *
+         * Similar to process_field() in AJAX/Controllers/Submission.php
+         * but adapted for email retriggering context
+         *
+         * @since 3.7.0
+         * @param array $field_settings Field settings array
+         * @param array $form_data Form data array (for reference compatibility)
+         * @return void
          */
-        public function process_merge_tags($data, $form_id, $sub)
+        protected function process_retriggered_field($field_settings, &$form_data)
+        {
+        }
+        /**
+         * Process Merge tags for a given Value
+         *
+         * @since 3.4.33
+         * @param object $data Action settings data
+         * @param int $form_id Form ID
+         * @param object $sub Submission object
+         * @param array $form_data Optional form data with processed fields
+         * @param array $formSettings Optional form settings (for calculation processing)
+         *
+         * @return object of Email Action Model with merge tags settingsprocessed
+         *
+         */
+        public function process_merge_tags($data, $form_id, $sub, $form_data = \null, $formSettings = \null)
         {
         }
         /**
@@ -17829,7 +17866,7 @@ namespace {
         /**
          * @since 3.0
          */
-        const VERSION = '3.14.1';
+        const VERSION = '3.14.2';
         /**
          * @since 3.4.0
          */
