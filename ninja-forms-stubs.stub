@@ -4465,7 +4465,7 @@ namespace {
     /**
      * Class NF_Action_Email
      */
-    final class NF_Actions_Email extends \NinjaForms\Includes\Abstracts\SotAction implements \NinjaForms\Includes\Interfaces\SotAction
+    class NF_Actions_Email extends \NinjaForms\Includes\Abstracts\SotAction implements \NinjaForms\Includes\Interfaces\SotAction
     {
         use \NinjaForms\Includes\Traits\SotGetActionProperties;
         /**
@@ -4516,7 +4516,7 @@ namespace {
         private function _format_recipient($type, $email, $name = '')
         {
         }
-        private function _create_csv($fields, $form_id = 0)
+        protected function _create_csv($fields, $form_id = 0)
         {
         }
         /**
@@ -7509,7 +7509,7 @@ namespace {
         public function get_updated_fields_data()
         {
         }
-        private function parse_fields()
+        protected function parse_fields()
         {
         }
         private function parse_field_meta()
@@ -10463,13 +10463,13 @@ namespace {
          * 
          * @param bool $isUnread
          */
-        public function setIsUnreadParameter(bool $isUnread = \null);
+        public function setIsUnreadParameter(?bool $isUnread = \null);
         /**
          * Set parameter to filter submissions by `previouslyExported` = true or false
          * 
          * @param bool $previouslyExported
          */
-        public function setPreviouslyExportedParameter(bool $previouslyExported = \null);
+        public function setPreviouslyExportedParameter(?bool $previouslyExported = \null);
         /**
          * Set max number of submissions to return in a request
          * 
@@ -10886,7 +10886,7 @@ namespace {
          * 
          * @param bool $isUnread
          */
-        public function setIsUnreadParameter(bool $isUnread = \null)
+        public function setIsUnreadParameter(?bool $isUnread = \null)
         {
         }
         /**
@@ -10894,7 +10894,7 @@ namespace {
          * 
          * @param bool $previouslyExported
          */
-        public function setPreviouslyExportedParameter(bool $previouslyExported = \null)
+        public function setPreviouslyExportedParameter(?bool $previouslyExported = \null)
         {
         }
         /**
@@ -11048,7 +11048,7 @@ namespace {
          * 
          * @param array $hidden
          */
-        public function setHiddenFieldTypes(array $hidden = \null)
+        public function setHiddenFieldTypes(?array $hidden = \null)
         {
         }
     }
@@ -11178,7 +11178,7 @@ namespace {
          * @param bool $isUnread
          * @return NF_Exports_SubmissionCollectionFilterParameters
          */
-        public function setIsUnread(bool $isUnread = \null)
+        public function setIsUnread(?bool $isUnread = \null)
         {
         }
         /**
@@ -11187,7 +11187,7 @@ namespace {
          * @param boolean $previouslyExported
          * @return NF_Exports_SubmissionCollectionFilterParameters
          */
-        public function setPreviouslyExported(bool $previouslyExported = \null)
+        public function setPreviouslyExported(?bool $previouslyExported = \null)
         {
         }
         /**
@@ -11196,7 +11196,7 @@ namespace {
          * @param int $maxReturnCount
          * @return NF_Exports_SubmissionCollectionFilterParameters
          */
-        public function setMaxReturnCount(int $maxReturnCount = \null)
+        public function setMaxReturnCount(?int $maxReturnCount = \null)
         {
         }
         /**
@@ -11205,7 +11205,7 @@ namespace {
          * @param bool $useAdminLabels
          * @return NF_Exports_SubmissionCollectionFilterParameters
          */
-        public function setUseAdminLabels(bool $useAdminLabels = \null)
+        public function setUseAdminLabels(?bool $useAdminLabels = \null)
         {
         }
         /**
@@ -11214,7 +11214,7 @@ namespace {
          * @param array $hiddenFieldTypes
          * @return NF_Exports_SubmissionCollectionFilterParameters
          */
-        public function setHiddenFieldTypes(array $hiddenFieldTypes = \null)
+        public function setHiddenFieldTypes(?array $hiddenFieldTypes = \null)
         {
         }
         /**
@@ -11428,7 +11428,7 @@ namespace {
          * @param string $dateFormat
          * @return SubmissionCsvExportInterface
          */
-        public function setDateFormat(string $dateFormat = \null): \NF_Exports_Interfaces_SubmissionCsvExportInterface
+        public function setDateFormat(?string $dateFormat = \null): \NF_Exports_Interfaces_SubmissionCsvExportInterface
         {
         }
     }
@@ -17866,7 +17866,7 @@ namespace {
         /**
          * @since 3.0
          */
-        const VERSION = '3.14.3';
+        const VERSION = '3.14.4';
         /**
          * @since 3.4.0
          */
