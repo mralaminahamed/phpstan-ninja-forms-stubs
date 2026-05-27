@@ -7,172 +7,40 @@
 
 namespace NinjaForms\Blocks\Authentication {
     /**
-     * Creates cryptographically secure random strings for use as public and private keys.
+     * Creats randomly generated strings for use as public and private keys.
      */
     class KeyFactory
     {
         /**
-         * Generate a cryptographically secure random key using random_bytes().
-         *
-         * @param int $length Desired length of the output string (default 40)
-         *
-         * @return string Hex-encoded random string (actual length will be $length * 2)
+         * @param int $length
+         * 
+         * @return string
          */
         public static function make($length = 40)
         {
         }
     }
     /**
-     * Rate limiter for Views REST API endpoints.
-     *
-     * Prevents DoS attacks by limiting requests per IP address.
-     */
-    class RateLimiter
-    {
-        /** @var int Default rate limit (requests per window) */
-        const DEFAULT_LIMIT = 60;
-        /** @var int Default time window in seconds */
-        const DEFAULT_WINDOW = 60;
-        // 1 minute
-        /** @var string Transient key prefix */
-        const TRANSIENT_PREFIX = 'nf_views_rate_limit_';
-        /**
-         * Check if the current request should be rate limited.
-         *
-         * @param string $endpoint Endpoint identifier (e.g., 'submissions', 'forms')
-         * @param int    $limit    Maximum requests per window (default 60)
-         * @param int    $window   Time window in seconds (default 60)
-         *
-         * @return bool|\WP_Error True if allowed, WP_Error if rate limited
-         */
-        public static function check($endpoint, $limit = null, $window = null)
-        {
-        }
-        /**
-         * Get the client IP address.
-         *
-         * @return string IP address
-         */
-        protected static function getClientIp()
-        {
-        }
-        /**
-         * Generate transient key for IP + endpoint.
-         *
-         * @param string $ip       IP address
-         * @param string $endpoint Endpoint identifier
-         *
-         * @return string Transient key
-         */
-        protected static function getTransientKey($ip, $endpoint)
-        {
-        }
-        /**
-         * Clear rate limit for a specific IP and endpoint.
-         * Useful for testing or manual intervention.
-         *
-         * @param string $ip       IP address
-         * @param string $endpoint Endpoint identifier
-         *
-         * @return bool True on success
-         */
-        public static function clear($ip, $endpoint)
-        {
-        }
-        /**
-         * Get current request count for an IP + endpoint.
-         *
-         * @param string $ip       IP address (default: current client)
-         * @param string $endpoint Endpoint identifier
-         *
-         * @return int Current request count
-         */
-        public static function getCount($ip = null, $endpoint = 'default')
-        {
-        }
-        /**
-         * Get remaining requests for an IP + endpoint.
-         *
-         * @param string $endpoint Endpoint identifier
-         * @param int    $limit    Maximum requests per window
-         *
-         * @return int Remaining requests
-         */
-        public static function getRemaining($endpoint = 'default', $limit = null)
-        {
-        }
-    }
-    /**
-     * Manages a stored secret and guarantees that one is always available.
-     *
-     * Includes automatic secret rotation for enhanced security.
+     * Manages a stored secret and guarentees that one is always available.
      */
     class SecretStore
     {
         /** @var string */
         const OPTION_KEY = 'ninja-forms-views-secret';
-        /** @var string */
-        const ROTATION_DATE_KEY = 'ninja-forms-views-secret-rotation-date';
-        /** @var int Default rotation interval in seconds (90 days) */
-        const DEFAULT_ROTATION_INTERVAL = 7776000;
-        // 90 * 24 * 60 * 60
         /**
          * Gets the SECRET or creates the SECRET if it does not exist.
-         *
+         * 
          * If defined, defaults to NINJA_FORMS_VIEWS_SECRET constant.
          * If a secret does not exist, then it creates a secret and stores the value.
          * If the secret is wrongly typed, then it self-corrects by creating a new secret.
-         *
+         * 
          * @return string
          */
         public static function getOrCreate()
         {
         }
         /**
-         * Rotate the secret (invalidates all existing tokens).
-         *
-         * Call this when:
-         * - Security is compromised
-         * - During scheduled rotation
-         * - Manually via admin action
-         *
-         * @return string New secret
-         */
-        public static function rotate()
-        {
-        }
-        /**
-         * Check if secret should be rotated based on age.
-         *
-         * @param int $maxAge Maximum age in seconds (default 90 days)
-         *
-         * @return bool True if rotation is needed
-         */
-        public static function shouldRotate($maxAge = null)
-        {
-        }
-        /**
-         * Get the last rotation date.
-         *
-         * @return int|false Unix timestamp of last rotation, or false if never rotated
-         */
-        public static function getLastRotationDate()
-        {
-        }
-        /**
-         * Get days until next rotation.
-         *
-         * @return int Days remaining, or -1 if overdue
-         */
-        public static function getDaysUntilRotation()
-        {
-        }
-        /**
-         * Validate secret format.
-         *
          * @param mixed $secret
-         *
-         * @return bool
          */
         public static function validate($secret)
         {
@@ -180,19 +48,11 @@ namespace NinjaForms\Blocks\Authentication {
     }
     /**
      * Creates an encoded public/private key hash and validates it.
-     *
-     * Security improvements:
-     * - Tokens are bound to specific form IDs
-     * - Tokens include expiration timestamps (15 minutes)
-     * - Validation checks both authenticity and authorization
      */
     class Token
     {
         /** @var string */
         protected $privateKey;
-        /** @var int Token expiration time in seconds */
-        const TOKEN_EXPIRATION = 900;
-        // 15 minutes
         /**
          * @param string $privateKey
          */
@@ -200,50 +60,27 @@ namespace NinjaForms\Blocks\Authentication {
         {
         }
         /**
-         * Create a token bound to specific form IDs with expiration.
-         *
          * @param string $publicKey
-         * @param array $formIds Array of form IDs this token can access
-         *
+         * 
          * @return string
          */
-        public function create($publicKey, $formIds = array())
+        public function create($publicKey)
         {
         }
         /**
-         * Validate token authenticity and check if it grants access to a specific form.
-         *
          * @param string $token
-         * @param int|null $formId Form ID to check access for (null to only validate token structure)
-         *
+         * 
          * @return bool
          */
-        public function validate($token, $formId = null)
+        public function validate($token)
         {
         }
         /**
-         * Extract form IDs from a token without full validation.
-         * Used for debugging/logging purposes only.
-         *
-         * @param string $token
-         *
-         * @return array|false Array of form IDs or false on failure
-         */
-        public function getFormIds($token)
-        {
-        }
-        /**
-         * Generate HMAC hash for token validation using hash_hmac().
-         *
-         * Uses HMAC-SHA256 which is cryptographically stronger than simple
-         * concatenation and prevents length extension attacks.
-         *
          * @param string $publicKey
-         * @param string $payload
-         *
+         * 
          * @return string
          */
-        protected function hash($publicKey, $payload = '')
+        protected function hash($publicKey)
         {
         }
     }
@@ -4121,7 +3958,7 @@ namespace {
         private function _get_headers($settings)
         {
         }
-        private function _get_attachments($settings, $data)
+        private function _get_attachments($settings, $data, $form_id)
         {
         }
         private function _format_from($settings)
@@ -4133,7 +3970,7 @@ namespace {
         private function _format_recipient($type, $email, $name = '')
         {
         }
-        private function _create_csv($fields)
+        private function _create_csv($fields, $form_id = 0)
         {
         }
         /**
@@ -7113,7 +6950,7 @@ namespace {
          */
         private $db_columns = array('parent_id' => 'parent_id', 'id' => 'id', 'key' => 'key', 'type' => 'type', 'label' => 'label', 'field_key' => 'key', 'field_label' => 'label', 'order' => 'order', 'required' => 'required', 'default_value' => 'default', 'label_pos' => 'label_pos', 'personally_identifiable' => 'personally_identifiable');
         private $db_bit_columns = array('required', 'personally_identifiable');
-        public function __construct($form_id, $fields_data)
+        public function __construct(int $form_id, $fields_data)
         {
         }
         public function run()
@@ -8409,6 +8246,7 @@ namespace {
         protected static $form_uses_textarea_media = array();
         protected static $form_uses_helptext = array();
         protected static $form_uses_starrating = array();
+        protected static $form_uses_react_fields = array();
         protected static $thread_id = 1;
         protected static $recorded_forms = [];
         protected static $inline_vars_recorded = [];
@@ -8508,6 +8346,9 @@ namespace {
         public static function checkRepeaterChildSetting($field, $setting, $value)
         {
         }
+        public static function checkRepeaterChildReactField($field)
+        {
+        }
         public static function localize_preview($form_id)
         {
         }
@@ -8567,6 +8408,24 @@ namespace {
          * UTILITY
          */
         protected static function is_template_loaded($template_name)
+        {
+        }
+        /**
+         * Check if a field type uses React components
+         * 
+         * @param string $field_type
+         * @return bool
+         */
+        protected static function is_react_field($field_type)
+        {
+        }
+        /**
+         * Enqueue React field assets (fields.js and fields.css)
+         * 
+         * This method is called when a form contains React-based fields
+         * like the signature field.
+         */
+        protected static function enqueue_react_field_assets()
         {
         }
     }
@@ -12871,6 +12730,294 @@ namespace {
         }
     }
     /**
+     * Class NF_Fields_Signature
+     *
+     * Provides signature capture functionality with both typed and drawn signature options.
+     * This field is intended for collecting acknowledgments, confirmations, and user consent
+     * in a visual format. It is NOT designed to create legally binding signatures or meet
+     * legal requirements for electronic signatures (e.g., e-signature laws, digital certificates).
+     *
+     * Features:
+     * - Typed signatures: User types their name, displayed with custom fonts
+     * - Drawn signatures: User draws signature on a canvas
+     * - Method selection: Can be configured for typed-only, drawn-only, or both
+     * 
+     * Data Storage:
+     * - Signatures are stored as JSON with the following structure:
+     *   {
+     *     "signature_type": "typed" | "drawn",
+     *     "typed_name": "John Doe" (for typed),
+     *     "signature_font": "dancing-script" (for typed),
+     *     "signature_data": "data:image/png;base64,..." (for drawn),
+     *     "canvas_dimensions": {"width": 400, "height": 150} (for drawn),
+     *     "timestamp": "2024-01-01T12:00:00Z"
+     *   }
+     * 
+     * Export Formats:
+     * - CSV: "Method: typed/drawn | Signed: true/false | Value: [name if typed]"
+     * - PDF: Text representation (e.g., "John Doe (Typed signature - dancing-script font)")
+     * - Email/HTML: Full HTML display with styled text or image
+     * 
+     * Usage in HTML fields:
+     * - Use merge tag format: {field:signature_field_key} or {field:signature_field_id}
+     * - In HTML emails: Displays styled text (typed) or base64 image (drawn)
+     * - In plain text emails: Shows text representation only
+     * - Example: <p>Customer Signature: {field:signature_1}</p>
+     * 
+     * Repeater Field Support:
+     * - Fully supports signature fields within repeater fields
+     * - Maintains consistent formatting across all export types
+     * 
+     * @since 3.x
+     */
+    class NF_Fields_Signature extends \NF_Abstracts_Input
+    {
+        protected $_name = 'signature';
+        protected $_type = 'signature';
+        protected $_section = 'common';
+        protected $_icon = 'pencil-square-o';
+        protected $_templates = 'signature';
+        protected $_test_value = '{"signature_type":"typed","typed_name":"John Doe","signature_font":"dancing-script"}';
+        // Constants for validation and limits
+        const MAX_SIGNATURE_SIZE = 137000;
+        // ~100KB in base64
+        const MAX_NAME_LENGTH = 100;
+        const VALID_SIGNATURE_TYPES = array('drawn', 'typed');
+        const VALID_FONTS = array('dancing-script', 'satisfy', 'cursive');
+        protected $_settings = array('signature_method', 'signature_font', 'typed_placeholder', 'drawn_placeholder', 'canvas_width', 'canvas_height', 'pen_color', 'background_color');
+        protected $_settings_all_fields = array('key', 'label', 'label_pos', 'required', 'classes', 'manual_key', 'admin_label', 'help', 'description', 'signature_method', 'signature_font', 'typed_placeholder', 'drawn_placeholder', 'canvas_width', 'canvas_height', 'pen_color', 'background_color');
+        public function __construct()
+        {
+        }
+        /**
+         * Localize field settings for frontend
+         */
+        public function localize_field_settings($settings)
+        {
+        }
+        /**
+         * Validate field
+         */
+        public function validate($field, $data)
+        {
+        }
+        /**
+         * Sanitize field value
+         */
+        public function sanitize_field_value($value)
+        {
+        }
+        /**
+         * Format value for display in the legacy admin interface
+         * 
+         * Note: This method is used by the old WordPress admin submission view interface
+         * (WordPress Admin → Ninja Forms → Submissions → View individual submission).
+         * The modern submission management interface uses a React component instead,
+         * but this method is kept for backwards compatibility.
+         * 
+         * @param array $field Field data
+         * @param string $value Field value (JSON string)
+         * @return string HTML formatted signature for display
+         */
+        public function admin_form_element($field, $value)
+        {
+        }
+        /**
+         * Filter merge tag value for display in various contexts
+         *
+         * This method handles signature display for:
+         * - HTML fields (via merge tags)
+         * - Email notifications
+         * - PDF documents
+         * - Any other merge tag usage
+         *
+         * @param mixed $value The field value
+         * @param array $field The field data (may contain additional field settings)
+         * @return string Formatted value for display
+         */
+        public function filter_merge_tag_value($value, $field)
+        {
+        }
+        /**
+         * Filter CSV export value
+         * 
+         * Formats signature data for CSV exports in a human-readable format:
+         * - Empty: "Method: none | Signed: false"
+         * - Typed: "Method: typed | Signed: true | Value: John Doe"
+         * - Drawn: "Method: drawn | Signed: true"
+         * 
+         * @param mixed $value The field value (JSON string)
+         * @param object|array $field The field object or array (unused but required by filter signature)
+         * @return string Formatted value for CSV export
+         */
+        public function filter_csv_export_value($value, $field)
+        {
+        }
+        /**
+         * Filter PDF export value - transforms signature data for PDF export
+         * 
+         * This filter is specific to the signature field type and prepares
+         * the signature data in a format suitable for PDF generation.
+         * 
+         * @param mixed $value The field value (JSON string)
+         * @param object $field The field object (unused but required by filter signature)
+         * @return array Formatted value for PDF export with type and value keys
+         */
+        public function filter_pdf_value($value, $field)
+        {
+        }
+        /**
+         * Filter PDF field display to show signature
+         * 
+         * This is the main filter for controlling how signature fields appear in PDFs.
+         * It handles both the default PDF table (which uses MultiCell and doesn't support HTML)
+         * and custom templates (which can use WriteHTML for full HTML support).
+         * 
+         * Note: The default PDF table generation doesn't support HTML, so we provide
+         * a text representation. For proper signature image display, users should
+         * use a custom PDF template or the document body feature.
+         * 
+         * @param string $field_value The current field value
+         * @param string $original_value The original field value (JSON string)
+         * @param array $field The field data including type, id, etc.
+         * @return string Modified field value for PDF display
+         */
+        public function filter_pdf_field_display($field_value, $original_value, $field)
+        {
+        }
+        /**
+         * Disable wpautop for signature fields in PDF
+         * 
+         * @param bool $apply_wpautop Whether to apply wpautop
+         * @param string $field_value The field value
+         * @param array $field The field data
+         * @return bool
+         */
+        public function disable_wpautop_for_signatures($apply_wpautop, $field_value, $field)
+        {
+        }
+        /**
+         * Add signature to the list of HTML-safe fields
+         * 
+         * This ensures signature field values are not stripped of HTML
+         * when used in merge tags
+         * 
+         * @param array $safe_fields Current list of safe fields
+         * @return array Modified list
+         */
+        public function add_to_safe_fields($safe_fields)
+        {
+        }
+        /**
+         * Get default HTML options for signature display
+         *
+         * @param string $context The display context (merge_tag, email, etc.)
+         * @return array HTML generation options
+         */
+        private function get_signature_html_options($context = 'merge_tag')
+        {
+        }
+        /**
+         * Detect if we're rendering in a PDF context
+         *
+         * Checks various indicators to determine if the current rendering
+         * is happening within a PDF generation process.
+         *
+         * @return bool True if in PDF context, false otherwise
+         */
+        private function is_pdf_rendering_context()
+        {
+        }
+        /**
+         * Generate HTML for signature display in PDF using an image
+         *
+         * Converts typed signature text to an image to ensure proper font rendering
+         * in PDF documents without affecting other text.
+         *
+         * @param array $signature_data Decoded signature JSON data
+         * @param array $options Display options
+         * @return string HTML with image tag or fallback text
+         */
+        private function get_signature_pdf_image_html($signature_data, $options = [])
+        {
+        }
+        /**
+         * Generate HTML wrapper for signature content
+         * @param string $html The signature HTML content
+         * @param string $context The display context
+         * @return string Wrapped HTML
+         */
+        private function wrap_signature_html($html, $context = 'merge_tag')
+        {
+        }
+        /**
+         * Convert signature data to HTML for email display
+         *
+         * @param array $signature_data Decoded signature JSON data
+         * @param array $options Display options
+         * @return string HTML output
+         */
+        private function get_signature_email_html($signature_data, $options = [])
+        {
+        }
+        /**
+         * Get font family CSS value
+         *
+         * @param string $font Font identifier
+         * @return string CSS font-family value
+         */
+        private function get_signature_font_family($font)
+        {
+        }
+        /**
+         * Get font file path for signature font
+         *
+         * @param string $font Font identifier
+         * @return string|false Path to TTF font file or false if not found
+         */
+        private function get_signature_font_file($font)
+        {
+        }
+        /**
+         * Generate image from typed signature text
+         *
+         * Creates a PNG image with the signature text rendered in the selected font.
+         * This is used for PDF display to ensure fonts render correctly without affecting
+         * the rest of the PDF document.
+         *
+         * @param string $text The signature text to render
+         * @param string $font Font identifier (dancing-script, satisfy, cursive)
+         * @param array $options Image generation options (font_size, color, padding)
+         * @return string|false Base64 encoded PNG data URL or false on failure
+         */
+        private function generate_signature_image($text, $font = 'dancing-script', $options = [])
+        {
+        }
+        /**
+         * Generate PDF-ready signature data
+         * 
+         * @param array $signature_data Decoded signature JSON data
+         * @return array PDF-compatible data structure
+         */
+        private function get_signature_pdf_data($signature_data)
+        {
+        }
+        /**
+         * Format signature field display for CPT custom columns
+         *
+         * This method handles signature display in the WordPress CPT submissions table
+         * (edit.php?post_type=nf_sub). It displays a compact signature representation.
+         *
+         * @param mixed $value Field value
+         * @param object $field Field object
+         * @param int $sub_id Submission ID
+         * @return string Formatted HTML for table display
+         */
+        public function custom_columns($value, $field, $sub_id = 0)
+        {
+        }
+    }
+    /**
      * Class NF_Fields_Spam
      */
     class NF_Fields_Spam extends \NF_Abstracts_Input
@@ -17074,6 +17221,9 @@ namespace {
         function report_optin($data = array())
         {
         }
+        function recover_optin_email()
+        {
+        }
         /**
          * Check if the current user is allowed to opt in on behalf of a site
          *
@@ -17133,7 +17283,7 @@ namespace {
         /**
          * @since 3.0
          */
-        const VERSION = '3.12.2.1';
+        const VERSION = '3.13.0';
         /**
          * @since 3.4.0
          */
