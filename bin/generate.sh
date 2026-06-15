@@ -3,22 +3,26 @@
 # Generate Ninja Forms stubs from the source directory.
 #
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(dirname "$SCRIPT_DIR")"
+
 HEADER=$'/**\n * Generated stub declarations for Ninja Forms.\n * @see https://ninjaforms.com/\n * @see https://github.com/mralaminahamed/phpstan-ninja-forms-stubs\n */'
 
-FILE="ninja-forms-stubs.stub"
-FILE_CONSTANTS="ninja-forms-constants-stubs.stub"
+FILE="$ROOT_DIR/ninja-forms-stubs.stub"
+FILE_CONSTANTS="$ROOT_DIR/ninja-forms-constants-stubs.stub"
+GENERATOR_BIN="$ROOT_DIR/vendor/bin/generate-stubs"
+FINDER_FILE="$ROOT_DIR/configs/finder.php"
 
 set -e
 
 test -f "$FILE" || touch "$FILE"
 test -f "$FILE_CONSTANTS" || touch "$FILE_CONSTANTS"
-test -d "source/ninja-forms"
+test -d "$ROOT_DIR/source/ninja-forms"
 
-# Exclude globals, constants.
-"$(dirname "$0")/vendor/bin/generate-stubs" \
+"$GENERATOR_BIN" \
     --include-inaccessible-class-nodes \
     --force \
-    --finder=finder.php \
+    --finder="$FINDER_FILE" \
     --header="$HEADER" \
     --functions \
     --classes \
@@ -26,11 +30,10 @@ test -d "source/ninja-forms"
     --traits \
     --out="$FILE"
 
-# Exclude functions, classes, interfaces, traits and globals.
-"$(dirname "$0")/vendor/bin/generate-stubs" \
+"$GENERATOR_BIN" \
     --include-inaccessible-class-nodes \
     --force \
-    --finder=finder.php \
+    --finder="$FINDER_FILE" \
     --header="$HEADER" \
     --constants \
     --out="$FILE_CONSTANTS"

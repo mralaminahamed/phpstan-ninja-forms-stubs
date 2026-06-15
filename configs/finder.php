@@ -1,11 +1,13 @@
 <?php
 
-return \StubsGenerator\Finder::create()
+use StubsGenerator\Finder;
+
+return Finder::create()
     ->in( array(
         'source/ninja-forms',
     ) )
     ->append(
-        \StubsGenerator\Finder::create()
+        Finder::create()
             ->in(['source/ninja-forms'])
             ->files()
             ->depth('< 1')

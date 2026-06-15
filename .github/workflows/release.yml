@@ -8,7 +8,7 @@ on:
     - cron: '0 * * * *'
 
 jobs:
-  relase-new-stubs:
+  release-new-stubs:
     runs-on: ubuntu-latest
 
     steps:
@@ -35,14 +35,14 @@ jobs:
 
       - name: Install dependencies
         run: composer install --prefer-dist --no-suggest --no-progress --no-interaction --ignore-platform-reqs
-      
+
       - name: Set up Git user
         run: |
           git config user.name 'github-actions'
           git config user.email 'github-actions@github.com'
 
       - name: Release new stubs from latest version
-        run: bash release-latest-versions.sh
+        run: bash bin/release-latest-versions.sh
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v6
@@ -53,7 +53,7 @@ jobs:
           author: ${{ github.actor }} <${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com>
           signoff: false
           delete-branch: true
-          title: 'Generate stubs from latest version of Ninja Forms plugin'
+          title: 'Generate stubs from latest version'
           body: |
             This PR updates the codebase with the latest changes from the WordPress Plugin Directory
             - Update from WordPress Plugin Directory
