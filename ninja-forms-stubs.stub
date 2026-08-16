@@ -5299,6 +5299,101 @@ namespace {
         public function custom_columns($column, $sub_id)
         {
         }
+        /**
+         * Apply the ninja_forms_custom_columns filter and escape the output for safe display.
+         *
+         * Uses wp_kses_post() to allow safe HTML (e.g., Signature field styling, <br> tags)
+         * while stripping dangerous elements like <script> and event handlers.
+         *
+         * The data: protocol is allowed ONLY for safe bitmap image MIME types
+         * (png, jpeg, gif, webp) to support drawn signatures.
+         *
+         * Security approach (defense-in-depth):
+         * 1. Strip ALL unsafe data: URIs first (prevents bypass via unquoted attrs, entity encoding)
+         * 2. Extract safe bitmap URIs for later restoration
+         * 3. Run wp_kses_post (strips remaining dangerous content)
+         * 4. Restore only explicitly extracted safe URIs
+         *
+         * @param mixed $value  The field value to filter and escape.
+         * @param mixed $field  The field object or settings.
+         * @param int   $sub_id The submission ID.
+         * @return string The safely escaped filtered value.
+         */
+        protected function safeEscapeFilteredValue($value, $field, $sub_id): string
+        {
+        }
+        /**
+         * Sanitize data: URIs to only allow safe bitmap image types.
+         *
+         * Strips all data: URIs except those with safe bitmap MIME types:
+         * - image/png, image/jpeg, image/gif, image/webp
+         *
+         * Security: Handles bypass attempts including:
+         * - Quoted attributes: href="data:..."
+         * - Unquoted attributes: href=data:...
+         * - Entity-obfuscated scheme letters: &#100;ata: or &#x64;ata:
+         * - Entity-obfuscated colon: data&#58; or data&#x3a; or data&colon;
+         *
+         * @param string $content Content potentially containing data: URIs.
+         * @return string Content with unsafe data: URIs removed.
+         */
+        protected function sanitizeDataUris(string $content): string
+        {
+        }
+        /**
+         * Filter a single data: URI attribute value.
+         *
+         * @param string $attrName   The attribute name (href or src).
+         * @param string $openQuote  The opening quote character (", ', or empty).
+         * @param string $dataUri    The data URI value.
+         * @param string $closeQuote The closing quote character.
+         * @return string The filtered attribute.
+         */
+        protected function filterDataUriAttribute(string $attrName, string $openQuote, string $dataUri, string $closeQuote): string
+        {
+        }
+        /**
+         * Extract safe bitmap image data URIs from content.
+         *
+         * Captures only data URIs with safe MIME types (png, jpeg, gif, webp)
+         * and base64 encoding. These can be restored after kses strips all data: URIs.
+         *
+         * @param string $content Content potentially containing data: URIs.
+         * @return array Array of ['placeholder' => 'SAFE_DATA_URI_0', 'uri' => 'data:image/png;base64,...']
+         */
+        protected function extractSafeBitmapDataUris(string $content): array
+        {
+        }
+        /**
+         * Restore safe data URIs after kses has stripped all data: protocol URLs.
+         *
+         * After wp_kses_post() strips all data: URIs, this method restores only
+         * the safe bitmap images that were explicitly extracted beforehand.
+         *
+         * wp_kses may either:
+         * - Remove the src attribute entirely: <img alt="x">
+         * - Leave an empty src: <img src="" alt="x">
+         *
+         * This method handles both cases by adding/replacing src as needed.
+         *
+         * @param string $escaped  Content after wp_kses_post (data: URIs stripped).
+         * @param array  $safeUris Array of safe URIs from extractSafeBitmapDataUris().
+         * @return string Content with safe data URIs restored.
+         */
+        protected function restoreSafeDataUris(string $escaped, array $safeUris): string
+        {
+        }
+        /**
+         * Add data: protocol to allowed protocols for wp_kses.
+         *
+         * @deprecated No longer used - extract/restore pattern doesn't require protocol allowance.
+         *
+         * @param array $protocols List of allowed protocols.
+         * @return array Modified list including data: protocol.
+         */
+        public function allowDataProtocol($protocols)
+        {
+        }
         public function save_nf_sub($nf_sub_id, $nf_sub)
         {
         }
@@ -17836,7 +17931,7 @@ namespace {
         /**
          * @since 3.0
          */
-        const VERSION = '3.14.7';
+        const VERSION = '3.14.8';
         /**
          * @since 3.4.0
          */
