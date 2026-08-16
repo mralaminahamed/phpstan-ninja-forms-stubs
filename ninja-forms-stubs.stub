@@ -379,6 +379,1503 @@ namespace NinjaForms\Blocks\DataBuilder {
         }
     }
 }
+namespace NinjaForms\Includes\AI {
+    /**
+     * Runs the provider-backed form-editing loop against an in-memory draft.
+     */
+    class ChatAgent
+    {
+        public const MAX_TURNS = 12;
+        /**
+         * Reminder carried beside the current request.
+         *
+         * The system instruction is resent on every call, but by then it sits
+         * behind every prior turn and tool result, and a model weighs what is
+         * nearest the request it is answering. Restating the two rules that cost a
+         * user something when they lapse keeps them adjacent to the ask. Sent with
+         * the outbound turn only: appending it to stored history would replay it as
+         * though the user had demanded it again on every message.
+         */
+        public const TURN_REMINDER = 'Before acting: if this needs an ability you do not have, or cannot be ' . 'undone, say so and wait rather than doing something else.';
+        /** @var array<int,string> */
+        public const ABILITIES = array('ninjaforms/get-form', 'ninjaforms/list-field-types', 'ninjaforms/add-field', 'ninjaforms/update-field', 'ninjaforms/remove-field', 'ninjaforms/reorder-fields', 'ninjaforms/update-form', 'ninjaforms/list-actions', 'ninjaforms/add-action', 'ninjaforms/update-action', 'ninjaforms/delete-action', 'ninjaforms/list-calculations', 'ninjaforms/add-calculation', 'ninjaforms/update-calculation', 'ninjaforms/delete-calculation');
+        /**
+         * Run one user request to a natural-language completion.
+         *
+         * @param int    $formId       Open form ID.
+         * @param string $message      User request.
+         * @param array  $history      Accepted prior turns.
+         * @param string $providerId   Provider ID.
+         * @param string $providerName Provider display name.
+         * @param array  $draft        Live browser draft.
+         * @param string $modelId      Exact model ID.
+         * @return array|WP_Error
+         */
+        public function run(int $formId, string $message, array $history, string $providerId, string $providerName, array $draft, string $modelId)
+        {
+        }
+        /**
+         * Build provider messages from accepted text history.
+         *
+         * @param array  $history Accepted turns.
+         * @param string $message Current request.
+         * @return array
+         */
+        private function buildMessages(array $history, string $message): array
+        {
+        }
+        /**
+         * Read function-call parts without assuming every part has that shape.
+         *
+         * @param object $modelMessage Model message DTO.
+         * @return array
+         */
+        private function getFunctionCalls(object $modelMessage): array
+        {
+        }
+        /**
+         * Concatenate text parts from a model message.
+         *
+         * @param object $modelMessage Model message DTO.
+         * @return string
+         */
+        private function getText(object $modelMessage): string
+        {
+        }
+        /**
+         * Shape the final browser response.
+         *
+         * @param DraftForm $draftForm Draft adapter.
+         * @param string    $reply     Assistant reply.
+         * @return array
+         */
+        private function response(\NinjaForms\Includes\AI\DraftForm $draftForm, string $reply): array
+        {
+        }
+        /**
+         * Ask for a plain-language close after the tool-call budget is exhausted.
+         *
+         * @param DraftForm $draftForm Draft adapter.
+         * @param array     $messages  Provider transcript.
+         * @param int       $formId    Form ID.
+         * @param string    $providerId Provider ID.
+         * @param string    $modelId    Model ID.
+         * @return array
+         */
+        private function summarizeAtTurnLimit(\NinjaForms\Includes\AI\DraftForm $draftForm, array $messages, int $formId, string $providerId, string $modelId): array
+        {
+        }
+        /**
+         * System instruction for the form-editing assistant.
+         *
+         * @param int $formId Open form ID.
+         * @return string
+         */
+        private function getSystemInstruction(int $formId): string
+        {
+        }
+    }
+    /**
+     * Builder UI bootstrap and lifecycle hooks for the AI assistant.
+     */
+    class ChatUiBootstrap
+    {
+        /**
+         * Register builder and form-lifecycle hooks.
+         *
+         * @return void
+         */
+        public function register(): void
+        {
+        }
+        /**
+         * Delete assistant state attached to a deleted form.
+         *
+         * @param int $formId Form ID.
+         * @return void
+         */
+        public function deleteFormData(int $formId): void
+        {
+        }
+        /**
+         * Supply the builder drawer with connected models, state, and copy.
+         *
+         * @return void
+         */
+        public function enqueue(): void
+        {
+        }
+        /**
+         * Enrich accepted history for display.
+         *
+         * @param int $formId Form ID.
+         * @return array
+         */
+        private function displayHistory(int $formId): array
+        {
+        }
+        /**
+         * Get current-user display data.
+         *
+         * @return array{name:string,avatar:string}
+         */
+        private function currentUserIdentity(): array
+        {
+        }
+        /**
+         * Get assistant display data.
+         *
+         * @return array{name:string,avatar:string}
+         */
+        private function assistantIdentity(): array
+        {
+        }
+        /**
+         * Get localized strings used by the drawer module.
+         *
+         * @return array<string,string>
+         */
+        private function localizedCopy(): array
+        {
+        }
+        /**
+         * Get the copy shown wherever AI is offered without a connected provider.
+         *
+         * One source for two surfaces. The drawer renders these from the localized
+         * bundle and the dashboard generation modal renders the same words as
+         * server-side markup (GenerationUi::getModalContent), so keeping the
+         * strings here stops the two explanations drifting apart and stops the
+         * same paragraph reaching translators twice.
+         *
+         * @return array<string,string>
+         */
+        public static function connectCopy(): array
+        {
+        }
+    }
+    /**
+     * Persistent conversation, pending exchange, and model-choice storage.
+     *
+     * Accepted exchanges are stored as independent options. This avoids the
+     * lost-update race inherent in read/modify/write of one history option when
+     * two browser sessions complete at the same time.
+     */
+    class ConversationStore
+    {
+        public const LEGACY_HISTORY_PREFIX = 'nf_ai_chat_log_';
+        public const LEGACY_PROVIDER_PREFIX = 'nf_ai_chat_provider_';
+        public const LEGACY_MODEL_PREFIX = 'nf_ai_chat_model_';
+        public const LEGACY_UNDO_PREFIX = 'nf_ai_chat_undo_';
+        public const CHOICE_PREFIX = 'nf_ai_chat_choice_';
+        public const EXCHANGE_PREFIX = 'nf_ai_chat_exchange_';
+        public const PENDING_PREFIX = 'nf_ai_chat_pending_';
+        public const GENERATION_PREFIX = 'nf_ai_generation_request_';
+        public const PENDING_CLEANUP_HOOK = 'nf_ai_chat_cleanup_pending_exchange';
+        public const GENERATION_CLEANUP_HOOK = 'nf_ai_cleanup_generation_request';
+        public const MAX_STORED = 40;
+        public const PENDING_TTL = 900;
+        public const GENERATION_TTL = 900;
+        /**
+         * Get the accepted history for a form in creation order.
+         *
+         * @param int $formId Form ID.
+         * @return array<int,array<string,mixed>>
+         */
+        public static function getHistory(int $formId): array
+        {
+        }
+        /**
+         * Append an already accepted exchange.
+         *
+         * Used when generation creates a form before a builder client exists.
+         *
+         * @param int   $formId  Form ID.
+         * @param array $messages Conversation rows.
+         * @return string|\WP_Error Exchange token, or a storage error.
+         */
+        public static function appendAccepted(int $formId, array $messages)
+        {
+        }
+        /**
+         * Stage an exchange until the browser confirms exact draft application.
+         *
+         * @param int   $formId   Form ID.
+         * @param array $messages Conversation rows.
+         * @return string|\WP_Error Pending exchange token, or a storage error.
+         */
+        public static function stage(int $formId, array $messages)
+        {
+        }
+        /**
+         * Move a pending exchange into accepted history.
+         *
+         * @param int    $formId Form ID.
+         * @param string $token  Exchange token.
+         * @return bool|\WP_Error Whether the exchange was accepted, or a storage error.
+         */
+        public static function accept(int $formId, string $token)
+        {
+        }
+        /**
+         * Discard an exchange that the browser did not apply.
+         *
+         * @param int    $formId Form ID.
+         * @param string $token  Exchange token.
+         * @return bool|\WP_Error Whether the pending row is absent, or a storage error.
+         */
+        public static function discard(int $formId, string $token)
+        {
+        }
+        /**
+         * Record that the client successfully reverted an accepted exchange.
+         *
+         * @param int    $formId Form ID.
+         * @param string $token  Accepted exchange token.
+         * @param int    $userId Current user ID.
+         * @return bool|\WP_Error Whether a matching accepted exchange exists, or a storage error.
+         */
+        public static function recordReversion(int $formId, string $token, int $userId)
+        {
+        }
+        /**
+         * Determine whether an invisible Undo exchange has a committed original.
+         *
+         * @param int   $formId  Form ID.
+         * @param array $exchange Pending reversion exchange.
+         * @return bool Whether the original durably points back to this exchange.
+         */
+        private static function isCommittedReversion(int $formId, array $exchange): bool
+        {
+        }
+        /**
+         * Query the durable lifecycle state of one exchange.
+         *
+         * Clients use this after an ambiguous transport failure before changing
+         * the browser draft in the opposite direction.
+         *
+         * @param int    $formId Form ID.
+         * @param string $token  Exchange token.
+         * @return array{accepted:bool,pending:bool,reverted:bool}
+         */
+        public static function getExchangeState(int $formId, string $token): array
+        {
+        }
+        /**
+         * Get a form's exact provider/model pair, including legacy migration.
+         *
+         * @param int $formId Form ID.
+         * @return array{provider:string,model:string}
+         */
+        public static function getChoice(int $formId): array
+        {
+        }
+        /**
+         * Persist an exact provider/model pair in one option.
+         *
+         * @param int    $formId    Form ID.
+         * @param string $providerId Provider ID.
+         * @param string $modelId    Model ID.
+         * @return bool|\WP_Error Whether the choice was stored, or a storage error.
+         */
+        public static function setChoice(int $formId, string $providerId, string $modelId)
+        {
+        }
+        /**
+         * Delete only the attached model choice.
+         *
+         * @param int $formId Form ID.
+         * @return bool|\WP_Error Whether all choice rows are absent, or a storage error.
+         */
+        public static function deleteChoice(int $formId)
+        {
+        }
+        /**
+         * Clear conversation context while retaining the form and model choice.
+         *
+         * @param int $formId Form ID.
+         * @return bool|\WP_Error Whether all context rows are absent, or a storage error.
+         */
+        public static function clearContext(int $formId)
+        {
+        }
+        /**
+         * Delete every per-form conversation datum.
+         *
+         * @param int $formId Form ID.
+         * @return bool|\WP_Error Whether all per-form rows are absent, or a storage error.
+         */
+        public static function deleteForm(int $formId)
+        {
+        }
+        /**
+         * Atomically claim one client-generated form-generation request.
+         *
+         * @param string $token Client request token.
+         * @return array{status:string,form_id:int,expired:bool,claimed:bool}|\WP_Error Request state.
+         */
+        public static function claimGeneration(string $token)
+        {
+        }
+        /**
+         * Read one durable form-generation request outcome.
+         *
+         * @param string $token Client request token.
+         * @return array{status:string,form_id:int,expired:bool}|\WP_Error Request state.
+         */
+        public static function getGenerationState(string $token)
+        {
+        }
+        /**
+         * Attach the generated form ID to an in-flight request lease.
+         *
+         * A later retry can remove the form if the PHP request terminates before
+         * model attachment, history seeding, and completion all finish.
+         *
+         * @param string $token  Client request token.
+         * @param int    $formId Generated form ID.
+         * @return true|\WP_Error Persistence result.
+         */
+        public static function trackGenerationForm(string $token, int $formId)
+        {
+        }
+        /**
+         * Persist and verify one request-to-form outcome.
+         *
+         * @param string $token  Client request token.
+         * @param int    $formId Generated form ID.
+         * @return true|\WP_Error Completion result.
+         */
+        public static function completeGeneration(string $token, int $formId)
+        {
+        }
+        /**
+         * Release a failed generation claim so an explicit retry can run.
+         *
+         * @param string $token Client request token.
+         * @return true|\WP_Error Release result.
+         */
+        public static function releaseGeneration(string $token)
+        {
+        }
+        /**
+         * Delete completed generation mappings for a deleted form.
+         *
+         * @param int $formId Deleted form ID.
+         * @return true|\WP_Error Cleanup result.
+         */
+        private static function deleteGenerationForForm(int $formId)
+        {
+        }
+        /**
+         * Delete abandoned pending exchanges for one form.
+         *
+         * @param int $formId Form ID.
+         * @return bool|\WP_Error Whether expired rows were removed, or a storage error.
+         */
+        public static function cleanupExpiredPending(int $formId)
+        {
+        }
+        /**
+         * Delete one scheduled pending exchange after its TTL.
+         *
+         * @param int    $formId Form ID.
+         * @param string $token  Pending exchange token.
+         * @return void
+         */
+        public static function expirePending(int $formId, string $token): void
+        {
+        }
+        /**
+         * Schedule cleanup of one generation lease after its TTL.
+         *
+         * The lease is a permanent option holding TTL-bounded state, and its token
+         * lives only in browser memory: a closed tab or a reload guarantees nobody
+         * ever presents it again, so a request that dies after the claim would
+         * otherwise leave the row behind for good. Scheduling mirrors stage(), but
+         * a scheduling failure is only reported, never fatal — this is
+         * housekeeping, and refusing to generate a form because a cron event could
+         * not be queued would cost the owner far more than an unswept option row.
+         *
+         * @param string $token Client request token.
+         * @return void
+         */
+        private static function scheduleGenerationCleanup(string $token): void
+        {
+        }
+        /**
+         * Delete one abandoned generation lease after its TTL.
+         *
+         * Only unfinished leases that never reached form creation are swept. A
+         * lease that recorded a form ID is the sole record that a half-built form
+         * exists, and the retry path (NF_AJAX_REST_AIFormBuilder) reads it to
+         * remove that form; a completed lease is what makes recovery return the
+         * generated form instead of building it twice. Deleting either would trade
+         * a stray option row for a stray form.
+         *
+         * @param string $token Client request token.
+         * @return void
+         */
+        public static function expireGeneration(string $token): void
+        {
+        }
+        /**
+         * Get every current and legacy AI assistant option prefix.
+         *
+         * @return array<int,string>
+         */
+        public static function optionPrefixes(): array
+        {
+        }
+        /**
+         * Normalize message rows before persistence.
+         *
+         * @param array  $messages Message rows.
+         * @param string $token    Exchange token.
+         * @return array<int,array<string,mixed>>
+         */
+        private static function normalizeMessages(array $messages, string $token): array
+        {
+        }
+        /**
+         * Get legacy history safely.
+         *
+         * @param int $formId Form ID.
+         * @return array
+         */
+        private static function getLegacyHistory(int $formId): array
+        {
+        }
+        /**
+         * Get rows for a per-form option prefix.
+         *
+         * @param string $prefix      Option prefix.
+         * @param int    $formId      Form ID.
+         * @param bool   $withNames   Return option names alongside values.
+         * @return array
+         */
+        private static function getRows(string $prefix, int $formId, bool $withNames = false): array
+        {
+        }
+        /**
+         * Delete every row for a prefix/form pair through the Options API.
+         *
+         * @param string $prefix Option prefix.
+         * @param int    $formId Form ID.
+         * @return bool|\WP_Error Whether every row is absent, or a storage error.
+         */
+        private static function deleteRows(string $prefix, int $formId)
+        {
+        }
+        /**
+         * Retain only the newest accepted exchanges needed by MAX_STORED turns.
+         *
+         * @param int $formId Form ID.
+         * @return bool|\WP_Error Whether pruning completed, or a storage error.
+         */
+        private static function pruneAccepted(int $formId)
+        {
+        }
+        /**
+         * Find an already-persisted Undo exchange for an accepted exchange.
+         *
+         * This makes retrying Undo idempotent when writing the Undo exchange
+         * succeeded but marking the original exchange reverted did not.
+         *
+         * @param int    $formId Form ID.
+         * @param string $token  Accepted exchange token.
+         * @return string Reversion exchange token, or an empty string.
+         */
+        private static function findReversionToken(int $formId, string $token): string
+        {
+        }
+        /**
+         * Persist and read back an option value.
+         *
+         * update_option() returns false when a value is unchanged, so the
+         * read-back is the source of truth for both new and idempotent writes.
+         *
+         * @param string $name  Option name.
+         * @param mixed  $value Option value.
+         * @return bool|\WP_Error Whether the exact value is durable, or a storage error.
+         */
+        private static function writeOption(string $name, $value)
+        {
+        }
+        /**
+         * Delete and verify one option, treating an absent option as success.
+         *
+         * @param string $name Option name.
+         * @return bool|\WP_Error Whether the option is absent, or a storage error.
+         */
+        private static function deleteOption(string $name)
+        {
+        }
+        /**
+         * Delete and verify a list of options.
+         *
+         * @param array<int,string> $names Option names.
+         * @return bool|\WP_Error Whether every option is absent, or a storage error.
+         */
+        private static function deleteOptions(array $names)
+        {
+        }
+        /**
+         * Build a normalized storage error.
+         *
+         * @param string $code    Error code.
+         * @param string $message Safe error message.
+         * @return \WP_Error
+         */
+        private static function storageError(string $code, string $message): \WP_Error
+        {
+        }
+        /**
+         * Report cleanup/pruning failures without reversing a durable transition.
+         *
+         * @param \WP_Error $error Maintenance failure.
+         * @return void
+         */
+        private static function reportMaintenanceFailure(\WP_Error $error): void
+        {
+        }
+        /**
+         * Build a tokenized per-form option name.
+         *
+         * @param string $prefix Option prefix.
+         * @param int    $formId Form ID.
+         * @param string $token  Exchange token.
+         * @return string
+         */
+        private static function optionName(string $prefix, int $formId, string $token): string
+        {
+        }
+        /**
+         * Generate a URL-safe, unguessable option-name token.
+         *
+         * @return string
+         */
+        private static function newToken(): string
+        {
+        }
+        /**
+         * Restrict an exchange token to its generated alphabet.
+         *
+         * @param string $token Exchange token.
+         * @return string
+         */
+        private static function sanitizeToken(string $token): string
+        {
+        }
+    }
+    /**
+     * Storage-free form adapter used by the builder assistant.
+     *
+     * The adapter applies the same normalization as the persisted Abilities API,
+     * while delaying all browser state changes until an entire model exchange has
+     * completed successfully.
+     */
+    class DraftForm
+    {
+        /** @var int Open form ID. */
+        private int $formId;
+        /** @var array Browser form snapshot. */
+        private array $draft;
+        /** @var bool Whether an operation changed the draft. */
+        private bool $changed = false;
+        /** @var int Next temporary row ID. */
+        private int $nextId = -1;
+        /**
+         * Initialize a storage-free adapter for one open form.
+         *
+         * @param int   $formId Open form ID.
+         * @param array $draft  Browser form snapshot.
+         * @return void
+         */
+        public function __construct(int $formId, array $draft)
+        {
+        }
+        /**
+         * Execute one declared chat ability against the draft.
+         *
+         * @param string $abilityName Ability identifier.
+         * @param array  $input       Provider-supplied arguments.
+         * @return array|\WP_Error
+         */
+        public function execute(string $abilityName, array $input)
+        {
+        }
+        /**
+         * Whether any successful operation changed the draft.
+         *
+         * @return bool
+         */
+        public function hasChanged(): bool
+        {
+        }
+        /**
+         * Return the complete browser-facing draft.
+         *
+         * @return array
+         */
+        public function getDraft(): array
+        {
+        }
+        /**
+         * Normalize the three browser collections without changing row settings.
+         *
+         * @param array $draft Browser form snapshot.
+         * @return array
+         */
+        private function normalizeDraft(array $draft): array
+        {
+        }
+        /**
+         * Return a provider-safe projection of the current draft.
+         *
+         * @param array $input Ability arguments.
+         * @return array
+         */
+        private function getForm(array $input): array
+        {
+        }
+        /**
+         * Add a normalized field at a one-based insertion position.
+         *
+         * @param array $input Ability arguments.
+         * @return array|\WP_Error
+         */
+        private function addField(array $input)
+        {
+        }
+        /**
+         * Update one field while preserving its stable ID across reordering.
+         *
+         * @param array $input Ability arguments.
+         * @return array|\WP_Error
+         */
+        private function updateField(array $input)
+        {
+        }
+        /**
+         * Remove one field.
+         *
+         * @param array $input Ability arguments.
+         * @return array|\WP_Error
+         */
+        private function removeField(array $input)
+        {
+        }
+        /**
+         * Reorder fields from an ID-to-order map.
+         *
+         * @param array $input Ability arguments.
+         * @return array|\WP_Error
+         */
+        private function reorderFields(array $input)
+        {
+        }
+        /**
+         * Update normalized form settings.
+         *
+         * @param array $input Ability arguments.
+         * @return array|\WP_Error
+         */
+        private function updateForm(array $input)
+        {
+        }
+        /**
+         * List provider-safe action projections.
+         *
+         * @return array
+         */
+        private function listActions(): array
+        {
+        }
+        /**
+         * Add one normalized action.
+         *
+         * @param array $input Ability arguments.
+         * @return array|\WP_Error
+         */
+        private function addAction(array $input)
+        {
+        }
+        /**
+         * Update one normalized action.
+         *
+         * @param array $input Ability arguments.
+         * @return array|\WP_Error
+         */
+        private function updateAction(array $input)
+        {
+        }
+        /**
+         * Delete one action.
+         *
+         * @param array $input Ability arguments.
+         * @return array|\WP_Error
+         */
+        private function deleteAction(array $input)
+        {
+        }
+        /**
+         * List the draft's calculations.
+         *
+         * @return array
+         */
+        private function listCalculations(): array
+        {
+        }
+        /**
+         * Add one calculation to the draft.
+         *
+         * Mirrors ninja_forms_ability_add_calculation, including its formula
+         * validation, but writes to the draft instead of the stored form so the
+         * change stays inside the same verify-and-roll-back boundary as every
+         * other chat edit.
+         *
+         * @param array $input Ability arguments.
+         * @return array|\WP_Error
+         */
+        private function addCalculation(array $input)
+        {
+        }
+        /**
+         * Update one of the draft's calculations.
+         *
+         * @param array $input Ability arguments.
+         * @return array|\WP_Error
+         */
+        private function updateCalculation(array $input)
+        {
+        }
+        /**
+         * Delete one of the draft's calculations.
+         *
+         * @param array $input Ability arguments.
+         * @return array|\WP_Error
+         */
+        private function deleteCalculation(array $input)
+        {
+        }
+        /**
+         * Validate a calculation formula through the shared ability validator.
+         *
+         * @param mixed $formula Provider-supplied formula.
+         * @return string|\WP_Error Sanitized formula, or the validator's error.
+         */
+        private function validateFormula($formula)
+        {
+        }
+        /**
+         * Read the draft's calculation rows.
+         *
+         * @return array
+         */
+        private function calculations(): array
+        {
+        }
+        /**
+         * Replace the draft's calculation rows and mark the draft changed.
+         *
+         * @param array $calculations Complete calculation rows.
+         * @return void
+         */
+        private function setCalculations(array $calculations): void
+        {
+        }
+        /**
+         * Find a calculation row index by name.
+         *
+         * @param string $name Calculation name.
+         * @return int|false
+         */
+        private function findCalculationIndex(string $name)
+        {
+        }
+        /**
+         * Copy normalized type-specific settings onto an action row.
+         *
+         * @param array $action Action row, passed by reference.
+         * @param array $input  Normalized ability input.
+         * @return int Number of changed settings.
+         */
+        private function applyActionSettings(array &$action, array $input): int
+        {
+        }
+        /**
+         * Find a row index by stable ID.
+         *
+         * @param string $collection Draft collection name.
+         * @param mixed  $id         Row ID.
+         * @return int|false
+         */
+        private function findIndex(string $collection, $id)
+        {
+        }
+        /**
+         * Allocate a temporary negative row ID.
+         *
+         * @return int
+         */
+        private function allocateId(): int
+        {
+        }
+        /**
+         * Return fields with deterministic one-based order values.
+         *
+         * @return array
+         */
+        private function fieldsForRead(): array
+        {
+        }
+        /**
+         * Normalize collection order to contiguous one-based values.
+         *
+         * @return void
+         */
+        private function normalizeFieldOrders(): void
+        {
+        }
+        /**
+         * Move one field to a clamped one-based insertion position.
+         *
+         * @param int $index Current field index.
+         * @param int $order Requested one-based order.
+         * @return void
+         */
+        private function moveFieldToOrder(int $index, int $order): void
+        {
+        }
+        /**
+         * Stable-sort fields by explicit order.
+         *
+         * @return void
+         */
+        private function sortFieldsByOrder(): void
+        {
+        }
+        /**
+         * Make a generated field key unique within the browser draft.
+         *
+         * @param string $key Candidate field key.
+         * @return string
+         */
+        private function uniqueFieldKey(string $key): string
+        {
+        }
+    }
+    /**
+     * Shared availability and authorization policy for Ninja Forms AI features.
+     */
+    class FeaturePolicy
+    {
+        /**
+         * Whether the current user can manage every Ninja Forms form.
+         *
+         * @return bool
+         */
+        public static function currentUserCanManageForms(): bool
+        {
+        }
+        /**
+         * Whether AI features are enabled for this site.
+         *
+         * @return bool
+         */
+        public static function isEnabled(): bool
+        {
+        }
+        /**
+         * Whether at least one authenticated compatible provider is available.
+         *
+         * @return bool
+         */
+        public static function hasProvider(): bool
+        {
+        }
+        /**
+         * Whether the feature can render for the current administrator.
+         *
+         * Deliberately does not require a connected provider. The dashboard tile
+         * already renders without one and lets its modal explain how to connect;
+         * the builder assistant gated its whole bootstrap on hasProvider(), so the
+         * drawer's connect explanation could never be reached and the control
+         * simply vanished with nothing to say why. A missing control teaches a
+         * rule, and the rule it taught here was wrong.
+         *
+         * The AI Client itself is still required. Without it the platform cannot
+         * host the feature at all, and the contract is that the tile, the sparkle
+         * and the endpoints are simply absent rather than offering a dead end or
+         * an upsell. Only the connected-provider requirement is lifted.
+         *
+         * Availability still decides what the surfaces show — see hasProvider() —
+         * and the endpoints authorize on capability and the kill switch
+         * independently, so rendering the entry point grants no new access.
+         *
+         * @return bool
+         */
+        public static function canRender(): bool
+        {
+        }
+    }
+    /**
+     * Converts a plain-language request into a persisted form through create-form.
+     */
+    class FormGenerationService
+    {
+        /**
+         * Generate and persist one form.
+         *
+         * @param string $prompt    User description.
+         * @param array  $choice    Resolved provider/model choice.
+         * @param array  $providers Available providers for display names.
+         * @return array|WP_Error
+         */
+        public function generate(string $prompt, array $choice, array $providers)
+        {
+        }
+        /**
+         * Prepare an ability schema for provider structured-output requirements.
+         *
+         * @param array $schema Ability input schema.
+         * @return array
+         */
+        private function prepareSchema(array $schema): array
+        {
+        }
+        /**
+         * Decode JSON, tolerate code fences, and remove null optional values.
+         *
+         * @param string $json Provider response.
+         * @return array|null
+         */
+        private function decodeSpec(string $json): ?array
+        {
+        }
+        /**
+         * Recursively remove null optional values.
+         *
+         * @param array $data Decoded form definition.
+         * @return array
+         */
+        private function stripNulls(array $data): array
+        {
+        }
+        /**
+         * Get the schema-driven generation instruction.
+         *
+         * @param array $schema Prepared create-form schema.
+         * @return string
+         */
+        private function getSystemInstruction(array $schema): string
+        {
+        }
+    }
+    /**
+     * Shared storage lookups for the AI endpoints.
+     */
+    class FormLookup
+    {
+        /**
+         * Whether a form row is durable in storage.
+         *
+         * Both AI endpoints need the same answer before they trust a form ID they
+         * were handed, so the existence query lives here rather than in each
+         * controller.
+         *
+         * @param int $formId Form ID.
+         * @return bool Whether the form row exists.
+         */
+        public static function exists(int $formId): bool
+        {
+        }
+    }
+    /**
+     * Dashboard integration and provider-cache warming for AI generation.
+     */
+    class GenerationAdminHooks
+    {
+        /** @var int Maximum prompt characters. */
+        private int $promptLimit;
+        /** @var bool|null Memoized provider availability. */
+        private ?bool $available = null;
+        /**
+         * Initialize the dashboard hook subscriber.
+         *
+         * @param int $promptLimit Maximum prompt characters.
+         */
+        public function __construct(int $promptLimit)
+        {
+        }
+        /**
+         * Register dashboard and connector hooks.
+         *
+         * @return void
+         */
+        public function register(): void
+        {
+        }
+        /**
+         * Add the first-class AI generation tile.
+         *
+         * @param array $templates Existing dashboard templates.
+         * @return array
+         */
+        public function addTemplate(array $templates): array
+        {
+        }
+        /**
+         * Populate provider discovery caches in a background request.
+         *
+         * @return void
+         */
+        public function warmProvider(): void
+        {
+        }
+        /**
+         * Enqueue the dashboard's idle provider-cache warmer.
+         *
+         * @return void
+         */
+        public function enqueueWarmer(): void
+        {
+        }
+        /**
+         * Flush provider discovery when connector settings change.
+         *
+         * @param string $option Option name.
+         * @return void
+         */
+        public function flushProviderCache(string $option): void
+        {
+        }
+        /**
+         * Memoize provider availability for this request.
+         *
+         * @return bool
+         */
+        private function isAvailable(): bool
+        {
+        }
+    }
+    /**
+     * Builds the dashboard tile and modal markup for AI form generation.
+     */
+    class GenerationUi
+    {
+        /** @var bool */
+        private bool $available;
+        /** @var int */
+        private int $promptLimit;
+        /**
+         * Initialize the generation UI renderer.
+         *
+         * @param bool $available   Whether a usable model is available.
+         * @param int  $promptLimit Maximum prompt characters.
+         * @return void
+         */
+        public function __construct(bool $available, int $promptLimit)
+        {
+        }
+        /**
+         * Add the first-class generation tile.
+         *
+         * @param array $templates Existing dashboard templates.
+         * @return array
+         */
+        public function addTile(array $templates): array
+        {
+        }
+        /**
+         * Render the modal content for the tile.
+         *
+         * @return string
+         */
+        private function getModalContent(): string
+        {
+        }
+        /**
+         * Render the exact-model picker shell and serialized state.
+         *
+         * The shared browser ModelPicker owns option rendering for both the
+         * generation modal and builder drawer.
+         *
+         * @param array $providers Provider/model rows.
+         * @param array $choice    Current choice.
+         * @return string
+         */
+        private function renderModelPicker(array $providers, array $choice): string
+        {
+        }
+    }
+    /**
+     * Makes model messages safe to replay in a provider-agnostic agent loop.
+     */
+    class MessageReplay
+    {
+        /**
+         * Remove provider reasoning blocks before replaying a model message.
+         *
+         * Anthropic and Google require opaque signatures when reasoning/thinking
+         * blocks are sent back. Provider adapters have not consistently preserved
+         * those signatures. Visible text, function calls, and their order are
+         * retained, so the next tool turn has all portable conversation state.
+         *
+         * @param object $message Model message with getParts().
+         * @return object A new message of the same class without thought parts.
+         */
+        public static function withoutThoughts(object $message): object
+        {
+        }
+    }
+    /**
+     * Persists checked provider/model choices through one shared boundary.
+     */
+    class ModelAttachment
+    {
+        /**
+         * Remember a resolved choice as the global default.
+         *
+         * @param array $choice Resolved provider/model choice.
+         * @return true|\WP_Error
+         */
+        public static function remember(array $choice)
+        {
+        }
+        /**
+         * Attach a resolved choice to a form and remember it as the global default.
+         *
+         * @param int   $formId Form ID.
+         * @param array $choice Resolved provider/model choice.
+         * @return true|\WP_Error
+         */
+        public static function attach(int $formId, array $choice)
+        {
+        }
+    }
+    /**
+     * Validates AI prompt boundaries without modifying the submitted text.
+     */
+    class PromptValidator
+    {
+        /**
+         * Return an error when a prompt exceeds its supported character count.
+         *
+         * @param string $prompt Sanitized prompt.
+         * @param int    $limit  Maximum Unicode character count.
+         * @return null|\WP_Error
+         */
+        public static function lengthError(string $prompt, int $limit): ?\WP_Error
+        {
+        }
+    }
+    /**
+     * Provider discovery and selection for Ninja Forms AI features.
+     *
+     * Credentials remain owned by WordPress Connectors. This class exposes only
+     * provider IDs and display names, validates an explicit choice, and pins that
+     * choice on every prompt built for a form.
+     */
+    class ProviderManager
+    {
+        public const CACHE_KEY = 'nf_ai_connected_providers';
+        public const MODEL_CACHE_PREFIX = 'nf_ai_model_catalog_';
+        public const LAST_MODEL_OPTION = 'nf_ai_last_model';
+        public const AUTH_FAILURE_PREFIX = 'nf_ai_auth_failed_';
+        public const CACHE_VERSION = 2;
+        /**
+         * Used only when the Connectors discovery API is unavailable.
+         */
+        public const AUTO_PROVIDER = '__auto__';
+        /**
+         * Providers Ninja Forms withholds regardless of connection state.
+         *
+         * The AI Provider for Google plugin drops the thought signature Gemini
+         * returns alongside each function call, and Gemini rejects the following
+         * turn without it, so a conversation cannot continue past its first reply.
+         * Generation on its own would still work, but offering it would hand the
+         * owner a form that chat can never edit. Withheld here only: the connector
+         * stays registered with WordPress and usable by everything else on the
+         * site. Drop the ID once that plugin round-trips the signature.
+         *
+         * @see https://github.com/WordPress/ai-provider-for-google/pull/36
+         */
+        public const UNSUPPORTED_PROVIDERS = array('google');
+        /**
+         * Connected, text-capable providers.
+         *
+         * @param bool $refresh Ignore the transient and discover providers again.
+         * @return array<int,array{id:string,name:string,models:array,default_model:string}> Provider rows.
+         */
+        public static function getAvailableProviders(bool $refresh = false): array
+        {
+        }
+        /**
+         * Clear provider discovery caches after connector changes or failures.
+         *
+         * @return void
+         */
+        public static function flushCache(): void
+        {
+        }
+        /**
+         * Resolve an exact provider/model pair. A form preference wins, then the
+         * last model used anywhere in Ninja Forms, then the first connected
+         * provider's newest stable compatible model.
+         *
+         * @param array  $providers          Available provider rows.
+         * @param string $requested_provider Explicit provider ID.
+         * @param string $requested_model    Explicit model ID.
+         * @param array  $preferred          Attached provider/model preference.
+         * @return array|\WP_Error Exact provider/model choice, or an availability error.
+         */
+        public static function resolveModelChoice(array $providers, string $requested_provider = '', string $requested_model = '', array $preferred = array())
+        {
+        }
+        /**
+         * Get the unselected model choice used when resolution fails.
+         *
+         * Lives beside resolveModelChoice() because every caller that has to cope
+         * with its WP_Error needs the same four empty keys to render an
+         * unselected picker.
+         *
+         * @return array<string,string>
+         */
+        public static function emptyChoice(): array
+        {
+        }
+        /**
+         * Remember the most recently used exact model as the cross-form default.
+         *
+         * @param array $choice Resolved provider/model choice.
+         * @return true|\WP_Error
+         */
+        public static function rememberModelChoice(array $choice)
+        {
+        }
+        /**
+         * Temporarily hide a provider after an authentication failure.
+         *
+         * @param string $provider_id Provider ID.
+         * @return void
+         */
+        public static function markAuthenticationFailed(string $provider_id): void
+        {
+        }
+        /**
+         * Clear authentication-failure markers after connector edits.
+         *
+         * @return void
+         */
+        public static function clearAuthenticationFailures(): void
+        {
+        }
+        /**
+         * Start a prompt pinned to the selected provider.
+         *
+         * @param mixed  $input Prompt text or message objects.
+         * @param string $provider_id Connected provider ID.
+         * @param string $model_id Exact model ID.
+         * @return mixed WP AI Client prompt builder (or a filtered test double).
+         */
+        public static function prompt($input, string $provider_id, string $model_id = '')
+        {
+        }
+        /**
+         * Human-readable provider name.
+         *
+         * @param string $provider_id Provider ID.
+         * @param array  $providers   Optional provider rows.
+         * @return string Provider display name.
+         */
+        public static function getProviderName(string $provider_id, array $providers = array()): string
+        {
+        }
+        /**
+         * Does a provider error indicate missing/invalid authentication?
+         *
+         * Typed as mixed to match classifyError(), which deliberately tolerates
+         * anything that is not a WP_Error by classifying it as 'unknown'.
+         *
+         * @param mixed $error Provider error.
+         * @return bool Whether the error indicates an authentication failure.
+         */
+        public static function isAuthenticationError($error): bool
+        {
+        }
+        /**
+         * Wording that identifies a failure class, in the order it is tested.
+         *
+         * Order is the whole design. An exhausted account and a busy minute both
+         * arrive as HTTP 429 with nothing but the provider's wording to separate
+         * them, so the money words are read first; otherwise an account that needs
+         * paying is described as weather that will pass. Each class earns its place
+         * by changing what the reader should do next: reconnect, pay, wait a
+         * minute, wait longer, shorten the request, rephrase it, or look at the
+         * site's own network.
+         *
+         * Wording only. Status numbers were matched here as substrings against the
+         * serialized error, which read the AI Client's own 503-for-any-network
+         * convenience as provider overload and told a site with a broken connection
+         * that the provider was at fault. A bare number in a blob is a coincidence
+         * waiting to happen: 503 can as easily fall inside a request id, a byte
+         * count or a timeout. Status codes are read explicitly in ERROR_STATUSES.
+         *
+         * @var array<string,array<int,string>>
+         */
+        private const ERROR_MARKERS = array(
+            'authentication' => array('authentication', 'requestauthenticationinterface', 'api key', 'api_key', 'unauthorized', 'forbidden', 'invalid_api_key'),
+            // Anthropic says credit balance and Plans and Billing; OpenAI says
+            // insufficient_quota and exceeded your current quota; Google names a
+            // free tier. All mean the same thing: retrying cannot help.
+            'account' => array('credit balance', 'purchase credits', 'plans and billing', 'insufficient_quota', 'insufficient quota', 'exceeded your current quota', 'billing', 'payment required', 'free_tier', 'free tier'),
+            'too_large' => array('context length', 'context_length_exceeded', 'maximum context', 'too many tokens', 'request too large', 'prompt is too long'),
+            'refused' => array('content filter', 'content_filter', 'content policy', 'safety', 'blocked by'),
+            // Ahead of 'unavailable': the client labels every network failure 503,
+            // so the provider's own wording is the only honest signal of which of
+            // the two it was.
+            'unreachable' => array('timeout', 'timed out', 'curl error', 'could not resolve', 'connection refused', 'network_error'),
+            'rate_limited' => array('rate limit', 'rate_limit', 'too many requests', 'retry after'),
+            'unavailable' => array('overload', 'high demand', 'upstream_server_error', 'server_error', 'service unavailable'),
+        );
+        /**
+         * Status codes that identify a class when no wording did.
+         *
+         * Read from the error data's own status field rather than found in text, so
+         * a number appearing inside some unrelated value cannot be mistaken for the
+         * response code. Consulted only after every wording test has failed, which
+         * keeps the client's blanket 503 for network failures from outranking the
+         * "cURL error" sitting in the same message.
+         *
+         * @var array<string,array<int,int>>
+         */
+        private const ERROR_STATUSES = array('authentication' => array(401, 403), 'account' => array(402), 'too_large' => array(413), 'rate_limited' => array(429), 'unavailable' => array(500, 502, 503, 504, 529));
+        /**
+         * Classify a provider failure by what the reader should do about it.
+         *
+         * @param mixed $error Provider error.
+         * @return string Class key, or 'unknown'.
+         */
+        public static function classifyError($error): string
+        {
+        }
+        /**
+         * Read the HTTP status the client recorded, if it recorded one.
+         *
+         * @param \WP_Error $error Provider error.
+         * @return int Status code, or 0 when absent.
+         */
+        private static function statusCode($error): int
+        {
+        }
+        /**
+         * Replace raw SDK/provider errors with safe product language.
+         *
+         * The provider's own text never reaches the reader: it carries SDK
+         * internals and, in the authentication case, credential detail. It is
+         * written to the debug log instead when the site has debug logging on, so
+         * an owner chasing a failure can see exactly what the provider said
+         * without that text being published into the interface.
+         *
+         * @param \WP_Error $error         Provider error.
+         * @param string   $provider_name Display name.
+         * @return \WP_Error Safe product-facing error.
+         */
+        public static function normalizeError($error, string $provider_name): \WP_Error
+        {
+        }
+        /**
+         * Record what the provider actually said, for a site with debug logging on.
+         *
+         * A whole retest pass produced not one byte of log, so a failure left
+         * nobody anything to read: an account decline dressed as weather cost an
+         * hour of chasing a form-state bug that did not exist.
+         *
+         * @param mixed  $error         Provider error.
+         * @param string $provider_name Display name.
+         * @param string $class         Resolved failure class.
+         * @return void
+         */
+        private static function logProviderError($error, string $provider_name, string $class): void
+        {
+        }
+        /**
+         * Does an error describe a failure that may pass on its own?
+         *
+         * @param \WP_Error $error Provider error.
+         * @return bool Whether waiting could plausibly resolve the failure.
+         */
+        public static function isTemporaryError($error): bool
+        {
+        }
+        /**
+         * Discover providers from the public WordPress Connectors API.
+         *
+         * @return array Discovered provider rows.
+         */
+        private static function discoverProviders(): array
+        {
+        }
+        /**
+         * Normalize and deduplicate provider rows.
+         *
+         * @param mixed $providers Provider rows.
+         * @return array Normalized provider rows.
+         */
+        private static function normalizeProviders($providers): array
+        {
+        }
+        /**
+         * Determine whether a connector is installed and authenticated.
+         *
+         * @param string $provider_id Provider ID.
+         * @param array  $connector   Connector metadata.
+         * @return bool Whether the connector can make authenticated requests.
+         */
+        private static function connectorIsUsable(string $provider_id, array $connector): bool
+        {
+        }
+        /**
+         * Discover compatible text/function models for a provider.
+         *
+         * @param string $provider_id Provider ID.
+         * @return array Compatible model rows.
+         */
+        private static function discoverModels(string $provider_id): array
+        {
+        }
+        /**
+         * Check the model capabilities required for form building.
+         *
+         * @param array $data Model metadata.
+         * @return bool Whether the model has every required capability.
+         */
+        private static function modelSupportsFormBuilding(array $data): bool
+        {
+        }
+        /**
+         * Exclude specialized, preview, and dated variants from defaults.
+         *
+         * @param string $model_id Model ID.
+         * @return bool Whether the model is suitable as a stable default.
+         */
+        private static function isStableGeneralModel(string $model_id): bool
+        {
+        }
+        /**
+         * Find one exact choice in normalized provider rows.
+         *
+         * @param array  $providers   Provider rows.
+         * @param string $provider_id Provider ID.
+         * @param string $model_id    Model ID, or empty for the default.
+         * @return array|false Exact provider/model choice, or false when not found.
+         */
+        private static function findModelChoice(array $providers, string $provider_id, string $model_id)
+        {
+        }
+    }
+}
 namespace {
     abstract class NF_Abstracts_Controller
     {
@@ -1242,6 +2739,216 @@ namespace {
          * Returns debugging data when a fatal error is triggered.
          */
         public function shutdown()
+        {
+        }
+    }
+    /**
+     * Authenticated browser transport for the builder AI assistant.
+     */
+    class NF_AJAX_REST_AIChat extends \NF_AJAX_REST_Controller
+    {
+        protected $action = 'nf_ai_chat';
+        public const MESSAGE_MAX_LENGTH = 2000;
+        public const MAX_HISTORY = 12;
+        /** @var ChatAgent */
+        private \NinjaForms\Includes\AI\ChatAgent $agent;
+        /**
+         * Register the endpoint.
+         *
+         * The builder chat bootstrap is mounted from the plugin bootstrap
+         * (ninja-forms.php) alongside the other feature integrations, so this
+         * transport registers nothing beyond its own admin-ajax action.
+         *
+         * @return void
+         */
+        public function __construct()
+        {
+        }
+        /**
+         * Handle chat and conversation lifecycle requests.
+         *
+         * @param array $requestData Sanitized request data.
+         * @return array
+         */
+        public function post($requestData): array
+        {
+        }
+        /**
+         * Name the provider a failure should be attributed to.
+         *
+         * @param array $requestData Sanitized request data.
+         * @return string Display name, or a neutral fallback.
+         */
+        private function providerNameForError($requestData): string
+        {
+        }
+        /**
+         * Handle chat and conversation lifecycle requests.
+         *
+         * @param array $requestData Sanitized request data.
+         * @return array
+         */
+        private function handle($requestData): array
+        {
+        }
+        /**
+         * Validate capability, nonce, and feature state.
+         *
+         * @return void
+         */
+        private function authorizeRequest(): void
+        {
+        }
+        /**
+         * Confirm the requested form exists in storage.
+         *
+         * @param int $formId Form ID.
+         * @return void
+         */
+        private function assertFormExists(int $formId): void
+        {
+        }
+        /**
+         * Resolve an exact provider/model selection.
+         *
+         * @param int   $formId     Form ID.
+         * @param array $providers  Available provider rows.
+         * @param array $requestData Request values.
+         * @return array|WP_Error
+         */
+        private function resolveChoice(int $formId, array $providers, array $requestData)
+        {
+        }
+        /**
+         * Validate and immediately persist a picker selection.
+         *
+         * @param int   $formId     Form ID.
+         * @param array $requestData Request values.
+         * @return array
+         */
+        private function persistModelChoice(int $formId, array $requestData): array
+        {
+        }
+        /**
+         * Normalize provider failures and recover from authentication loss.
+         *
+         * @param int      $formId    Form ID.
+         * @param string   $providerId Provider ID.
+         * @param WP_Error $error      Normalized provider error.
+         * @return array
+         */
+        private function handleProviderError(int $formId, string $providerId, \WP_Error $error): array
+        {
+        }
+        /**
+         * Build a response that refreshes the model picker.
+         *
+         * @param WP_Error $error     Selection error.
+         * @param array    $providers Available providers.
+         * @return array
+         */
+        private function providerSelectionResponse(\WP_Error $error, array $providers): array
+        {
+        }
+        /**
+         * Stop request processing with a safe endpoint error.
+         *
+         * @param string $message Error message.
+         * @return void
+         */
+        private function fail(string $message): void
+        {
+        }
+        /**
+         * Stop request processing when conversation storage did not complete.
+         *
+         * @param mixed $result Storage operation result.
+         * @return void
+         */
+        private function requireStorageSuccess($result): void
+        {
+        }
+        /**
+         * Get sanitized request data.
+         *
+         * @return array<string,mixed>
+         */
+        protected function get_request_data(): array
+        {
+        }
+    }
+    /**
+     * AI Form Builder endpoint.
+     *
+     * Generates a Ninja Forms form from a plain-language description using the
+     * WordPress AI Client (WP 7.0+, Settings → Connectors) and the
+     * ninjaforms/create-form ability, then returns the new form ID so the
+     * dashboard can open it in the builder.
+     *
+     * The site owner's connected AI provider handles the model call — Ninja Forms
+     * holds no API keys and sends only the description the user typed.
+     */
+    class NF_AJAX_REST_AIFormBuilder extends \NF_AJAX_REST_Controller
+    {
+        protected $action = 'nf_ai_generate_form';
+        public const PROMPT_MAX_LENGTH = 2000;
+        /**
+         * Register the endpoint.
+         *
+         * The dashboard integration is mounted from the plugin bootstrap
+         * (ninja-forms.php) alongside the other feature integrations, so this
+         * transport registers nothing beyond its own admin-ajax action.
+         *
+         * @return void
+         */
+        public function __construct()
+        {
+        }
+        /**
+         * POST nf_ai_generate_form
+         *
+         * @param array $request_data Generation request data.
+         * @return array Generated form ID payload.
+         */
+        public function post($request_data): array
+        {
+        }
+        /**
+         * Remove a form whose post-creation bootstrap did not finish.
+         *
+         * @param int      $formId Generated form ID.
+         * @param string   $requestToken Generation request token.
+         * @param WP_Error $error        Bootstrap failure.
+         * @return void
+         */
+        private function failIncompleteGeneration(int $formId, string $requestToken, \WP_Error $error): void
+        {
+        }
+        /**
+         * Remove and verify every durable row from an incomplete generation.
+         *
+         * @param int    $formId       Generated form ID, or zero before creation.
+         * @param string $requestToken Generation request token.
+         * @return true|WP_Error Cleanup result.
+         */
+        private function cleanupIncompleteGeneration(int $formId, string $requestToken)
+        {
+        }
+        /**
+         * Confirm that a completed request still points to a durable form.
+         *
+         * @param int $formId Form ID.
+         * @return bool Whether the form row exists.
+         */
+        private function formExists(int $formId): bool
+        {
+        }
+        /**
+         * Get sanitized request data.
+         *
+         * @return array Sanitized generation request data.
+         */
+        protected function get_request_data(): array
         {
         }
     }
@@ -5758,6 +7465,11 @@ namespace {
         public function admin_init()
         {
         }
+        /**
+         * Display the forms dashboard or builder.
+         *
+         * @return void
+         */
         public function display()
         {
         }
@@ -5772,6 +7484,12 @@ namespace {
         private function import_from_template()
         {
         }
+        /**
+         * Enqueue builder scripts and styles for a form.
+         *
+         * @param int|string $form_id Form ID or temporary form identifier.
+         * @return void
+         */
         private function _enqueue_the_things($form_id)
         {
         }
@@ -6242,6 +7960,15 @@ namespace {
     final class NF_Admin_Metaboxes_AppendAForm extends \NF_Abstracts_Metabox
     {
         protected $_post_types = array('post', 'page');
+        /**
+         * Post IDs that have already had a form appended in this request,
+         * so a discarded/internal the_content pass (e.g. Yoast SEO's meta
+         * description calculation) can't consume a render instance slot
+         * that then gets misassigned to the real, visible render.
+         *
+         * @var array
+         */
+        protected static $_appended_posts = array();
         public function __construct()
         {
         }
@@ -7797,6 +9524,7 @@ namespace {
          * Function to handle the actual deletion of tables and caches.
          *
          * @since 3.1.0
+         * @return void
          */
         protected function _nuke()
         {
@@ -13821,7 +15549,7 @@ namespace {
         protected $_icon = 'tags';
         protected $_templates = array('terms', 'listcheckbox');
         protected $_settings = array('taxonomy', 'add_new_terms');
-        protected $_settings_exclude = array('required');
+        protected $_settings_exclude = array();
         protected $_excluded_taxonomies = array('post_format');
         public function __construct()
         {
@@ -18060,7 +19788,7 @@ namespace {
         /**
          * @since 3.0
          */
-        const VERSION = '3.14.12';
+        const VERSION = '3.15.0';
         /**
          * @since 3.4.0
          */
@@ -18427,6 +20155,22 @@ namespace {
         {
         }
         /**
+         * Asset Version
+         *
+         * Resolve the cache-busting version for a plugin asset. Built assets are
+         * versioned by file mtime so a rebuild busts the browser cache, but build
+         * output such as assets/js/min/ is not committed. On a checkout where the
+         * build has not run the file is absent, and an unguarded filemtime() would
+         * warn and return false, which casts to an empty version string and drops
+         * cache busting entirely. Fall back to the plugin version instead.
+         *
+         * @param string $relative_path Asset path relative to the plugin directory.
+         * @return string Version string for wp_enqueue_script/wp_enqueue_style.
+         */
+        public static function asset_version($relative_path)
+        {
+        }
+        /**
          * Config
          *
          * @param $file_name
@@ -18622,6 +20366,11 @@ namespace {
     function nf_security_process_blocks_for_unauthorized_save($new_blocks, $original_submissions)
     {
     }
+    /**
+     * Register Ninja Forms abilities with WordPress.
+     *
+     * @return void
+     */
     function ninja_forms_register_abilities()
     {
     }
@@ -18645,15 +20394,33 @@ namespace {
     function ninja_forms_ability_can_manage_forms()
     {
     }
+    /**
+     * Add an action to a form.
+     *
+     * @param array $input Ability input.
+     * @return array|WP_Error Action result.
+     */
     function ninja_forms_ability_add_action($input)
     {
     }
+    /**
+     * Update an existing form action.
+     *
+     * @param array $input Ability input.
+     * @return array|WP_Error Action result.
+     */
     function ninja_forms_ability_update_action($input)
     {
     }
     function ninja_forms_ability_delete_action($input)
     {
     }
+    /**
+     * List the actions on a form.
+     *
+     * @param array $input Ability input.
+     * @return array Action list result.
+     */
     function ninja_forms_ability_list_actions($input)
     {
     }
@@ -18669,45 +20436,447 @@ namespace {
     function ninja_forms_ability_list_calculations($input)
     {
     }
+    /**
+     * Ensure a field key ends with a millisecond timestamp.
+     *
+     * @param string $key Field key.
+     * @return string Timestamped field key.
+     */
     function ninja_forms_ensure_field_key_timestamp($key)
     {
     }
+    /**
+     * Normalize a requested field type against the field registry.
+     *
+     * Callers (including AI-generated specs and external MCP agents) can request
+     * a type Ninja Forms doesn't register. Persisting one produces a broken
+     * "unknown" field (a "?" in the builder), so coerce anything unrecognized to
+     * a plain textbox — the safe, editable default.
+     *
+     * @param string $type Requested field type.
+     * @return string A registered field type.
+     */
+    function ninja_forms_ability_normalize_field_type($type)
+    {
+    }
+    /**
+     * Apply the schema's conditional field flags shared by both add-field paths.
+     *
+     * Sets personally_identifiable (the GDPR flag the schema mandates for email,
+     * phone, and address fields) and number_of_stars (mandated for starrating
+     * fields — stars don't render without it). Each is only written when the
+     * definition provides it, and number_of_stars only when numeric.
+     *
+     * @param object $field      Field model being built.
+     * @param array  $field_data Field definition.
+     * @return void
+     */
+    function ninja_forms_ability_apply_field_flags($field, $field_data)
+    {
+    }
+    /**
+     * Create one field on a form — the shared worker behind the add-field and
+     * create-form abilities.
+     *
+     * Persists the field with full dashboard parity (auto-generated timestamped
+     * key, defaults, styling placeholder settings) so the builder can edit it
+     * exactly like a hand-made field.
+     *
+     * @param int    $form_id         Parent form ID.
+     * @param array  $field_data      {
+     *     Field definition.
+     *
+     *     @type string $type                    Required. Types not registered on
+     *                                           this install are coerced to
+     *                                           textbox rather than persisting a
+     *                                           broken field.
+     *     @type string $label                   Optional. HTML and hr fields get
+     *                                           their UI default labels.
+     *     @type string $key                     Optional. Auto-generated from the
+     *                                           label or type, timestamped, and
+     *                                           de-duplicated per form.
+     *     @type int    $required                Optional. Defaults to 0.
+     *     @type bool   $personally_identifiable Optional. GDPR flag; the schema
+     *                                           mandates it for email, phone, and
+     *                                           address fields.
+     *     @type int    $number_of_stars         Optional. Star count; the schema
+     *                                           mandates it for starrating fields
+     *                                           (stars don't render without it).
+     *     @type array  $options                 Optional. List-field options as
+     *                                           label/value(/calc) rows.
+     *     @type string $placeholder             Optional. Also help_text, default
+     *                                           (or legacy default_value),
+     *                                           label_pos, order, admin_label,
+     *                                           desc_text, and the *_class keys.
+     * }
+     * @param string $insertion_policy Preserve the supplied order or insert while
+     *                                 shifting existing fields.
+     * @return array|WP_Error [ success, field_id, form_id, type ], or WP_Error
+     *                        when the type is missing or the save fails.
+     */
+    function ninja_forms_ability_persist_field($form_id, $field_data, $insertion_policy = 'preserve')
+    {
+    }
+    /**
+     * Compatibility entry point for create-form and existing internal callers.
+     *
+     * @param int   $form_id    Parent form ID.
+     * @param array $field_data Field definition.
+     * @return array|WP_Error Field result.
+     */
     function ninja_forms_ability_add_field_internal($form_id, $field_data)
     {
     }
+    /**
+     * Insert one field and shift existing order values as one transaction.
+     *
+     * @param int   $form_id    Parent form ID.
+     * @param array $field_data Normalized field definition.
+     * @return array|WP_Error Field result.
+     */
+    function ninja_forms_ability_insert_field($form_id, $field_data)
+    {
+    }
+    /**
+     * List the field settings the field model persists as table columns.
+     *
+     * Every other setting is authoritative in the field meta table. The
+     * `nf3_fields` table also carries mirror columns (`required`, `order`,
+     * `default_value`, `label_pos`, `personally_identifiable`) that only the
+     * builder publish path writes, so they are never read back as truth here.
+     *
+     * @return array<int,string> Settings stored on the field row itself.
+     */
+    function ninja_forms_ability_field_column_settings()
+    {
+    }
+    /**
+     * Verify one field row and its order setting directly from storage.
+     *
+     * @param int   $form_id          Parent form ID.
+     * @param int   $field_id         Field ID.
+     * @param int   $expected_order   Expected persisted order.
+     * @param array $expected_settings Required normalized field settings.
+     * @return true|WP_Error True when the exact row is durable, otherwise an error.
+     */
+    function ninja_forms_ability_verify_field_persistence($form_id, $field_id, $expected_order, $expected_settings = array())
+    {
+    }
+    /**
+     * Read persisted field settings from the authoritative field meta table.
+     *
+     * @param int             $field_id Field ID.
+     * @param array<int,string> $settings Setting keys to read.
+     * @return array<string,mixed> Persisted values keyed by setting.
+     */
+    function ninja_forms_ability_get_field_meta_settings($field_id, $settings)
+    {
+    }
+    /**
+     * Verify the exact persisted field IDs and order values for a form.
+     *
+     * @param int            $form_id         Parent form ID.
+     * @param array<int,int> $expected_orders Expected order keyed by field ID.
+     * @return true|WP_Error True when storage exactly matches, otherwise an error.
+     */
+    function ninja_forms_ability_verify_field_order($form_id, $expected_orders)
+    {
+    }
+    /**
+     * Read the exact persisted field IDs and order values for a form.
+     *
+     * @param int $form_id Parent form ID.
+     * @return array<int,int>|WP_Error Persisted order keyed by field ID, or an ambiguity error.
+     */
+    function ninja_forms_ability_get_field_orders($form_id)
+    {
+    }
+    /**
+     * Verify original fields after rollback without rejecting concurrent inserts.
+     *
+     * @param int            $form_id           Parent form ID.
+     * @param array<int,int> $expected_orders   Original order keyed by field ID.
+     * @param int            $inserted_field_id Field created by this request, if known.
+     * @return true|WP_Error True when originals are exact and this request's insert is absent.
+     */
+    function ninja_forms_ability_verify_field_rollback($form_id, $expected_orders, $inserted_field_id = 0)
+    {
+    }
+    /**
+     * Roll back an insertion and restore the in-memory field order snapshot.
+     *
+     * @param int              $form_id         Parent form ID.
+     * @param array<int,array> $original_orders Original field models and orders.
+     * @param WP_Error         $error           Failure that caused the rollback.
+     * @param int              $inserted_field_id Field created by this request, if known.
+     * @return WP_Error Original failure, or a rollback failure.
+     */
+    function ninja_forms_ability_rollback_field_insertion($form_id, $original_orders, $error, $inserted_field_id = 0)
+    {
+    }
+    /**
+     * Clear the cached model factory state for a form after transactional writes.
+     *
+     * @param int $form_id Form ID.
+     * @return void
+     */
+    function ninja_forms_ability_clear_form_cache($form_id)
+    {
+    }
+    /**
+     * Execute callback for the ninjaforms/add-field ability.
+     *
+     * Standalone add-field entry point: verifies the target form exists, then
+     * persists one field with the same dashboard-parity treatment as
+     * ninja_forms_ability_add_field_internal() — including coercing types not
+     * registered on this install to textbox instead of saving a broken field.
+     *
+     * @param array $input {
+     *     Ability input, validated against the add-field schema.
+     *
+     *     @type int    $form_id                 Required. Target form ID.
+     *     @type string $type                    Required. Unregistered types are
+     *                                           coerced to textbox.
+     *     @type bool   $personally_identifiable Optional. GDPR flag; the schema
+     *                                           mandates it for email, phone, and
+     *                                           address fields.
+     *     @type int    $number_of_stars         Optional. Star count; the schema
+     *                                           mandates it for starrating fields.
+     *     @type string $label                   Optional. Remaining keys (key,
+     *                                           required, placeholder, help_text,
+     *                                           default, options, label_pos,
+     *                                           order, …) follow the same contract
+     *                                           as add_field_internal().
+     * }
+     * @return array|WP_Error [ success, field_id, form_id, type ], or WP_Error
+     *                        when form_id/type is missing, the form doesn't
+     *                        exist, or the save fails.
+     */
     function ninja_forms_ability_add_field($input)
     {
     }
+    /**
+     * Update an existing form field.
+     *
+     * @param array $input Ability input.
+     * @return array|WP_Error Field update result.
+     */
     function ninja_forms_ability_update_field($input)
     {
     }
+    /**
+     * Count published submissions containing data for one field.
+     *
+     * @param int $form_id  Parent form ID.
+     * @param int $field_id Field ID.
+     * @return int Matching submission count.
+     */
     function ninja_forms_count_submissions_with_field_data($form_id, $field_id)
     {
     }
+    /**
+     * Export the populated submission values for one field to a protected CSV.
+     *
+     * @param int $form_id  Parent form ID.
+     * @param int $field_id Field ID.
+     * @return array|WP_Error Export metadata, or an error when the export fails.
+     */
     function ninja_forms_export_field_data_to_csv($form_id, $field_id)
     {
     }
+    /**
+     * Get a bounded sample of populated submission values for one field.
+     *
+     * @param int $form_id  Parent form ID.
+     * @param int $field_id Field ID.
+     * @param int $limit    Maximum number of samples.
+     * @return array<int,array{submission_id:int,value:mixed,date:string}> Sample rows.
+     */
     function ninja_forms_get_field_sample_data($form_id, $field_id, $limit = 5)
     {
     }
+    /**
+     * Remove one field through the guarded export-and-confirmation workflow.
+     *
+     * @param array $input Ability input.
+     * @return array|WP_Error Removal result, required workflow step, or an error.
+     */
     function ninja_forms_ability_remove_field($input)
     {
     }
+    /**
+     * Apply an explicit order mapping to existing fields on a form.
+     *
+     * @param array $input Ability input.
+     * @return array|WP_Error Reorder result, or an error when no field is updated.
+     */
     function ninja_forms_ability_reorder_fields($input)
     {
     }
+    /**
+     * List field types currently registered with Ninja Forms.
+     *
+     * @param array $input Unused ability input.
+     * @return array|WP_Error Registered field metadata, or an error when none exist.
+     */
     function ninja_forms_ability_list_field_types($input)
     {
     }
+    /**
+     * Create one action on a form the way an ability must.
+     *
+     * CRITICAL ACTION CREATION REQUIREMENTS (Session 10 - November 2025):
+     * =====================================================================
+     * When creating actions, you MUST:
+     * 1. Use update_setting() (singular) NOT update_settings() (plural array)
+     * 2. EXPLICITLY set 'parent_id' => $form_id for EVERY action
+     * 3. Set each property individually with update_setting()
+     *
+     * WHY THIS MATTERS:
+     * - Without explicit parent_id, save actions don't work (submissions not saved)
+     * - Forms appear to work (show success message) but data is lost
+     * - This was root cause of W3, W6 submission bugs in testing
+     * - add-action ability works because it sets parent_id explicitly
+     * - Original code used update_settings() array without parent_id = BROKEN
+     *
+     * VERIFIED FIX (Session 10):
+     * - Form 51 tested with explicit parent_id = submissions saved correctly
+     * - Form 50 (before fix) = no submissions saved, required delete/recreate
+     * =====================================================================
+     * This helper carries that invariant for every action create-form makes, so
+     * it is enforced — and documented — in exactly one place.
+     *
+     * @param int    $form_id  Parent form ID.
+     * @param string $type     Registered action type.
+     * @param string $label    Action label.
+     * @param int    $order    Action order.
+     * @param array  $settings Optional pre-sanitized extra settings. 'active'
+     *                         defaults to 1 and may be overridden here;
+     *                         parent_id, type, and order are managed by the
+     *                         helper and ignored if passed.
+     * @return int|WP_Error Saved action ID, or a persistence error.
+     */
+    function ninja_forms_ability_create_form_action($form_id, $type, $label, $order, $settings = array())
+    {
+    }
+    /**
+     * Compare normalized persisted settings across scalar database encodings.
+     *
+     * @param mixed $expected Expected value.
+     * @param mixed $actual   Persisted value.
+     * @return bool Whether values are equivalent.
+     */
+    function ninja_forms_ability_persisted_value_matches($expected, $actual)
+    {
+    }
+    /**
+     * Delete a partially generated form and verify no related form remains.
+     *
+     * @param int      $form_id Generated form ID.
+     * @param WP_Error $error   Original creation failure.
+     * @return WP_Error Original error, or a cleanup failure.
+     */
+    function ninja_forms_ability_abort_form_creation($form_id, $error)
+    {
+    }
+    /**
+     * Capture the child IDs needed to detect orphan metadata after form deletion.
+     *
+     * @param int $form_id Generated form ID.
+     * @return array{fields:array<int>,actions:array<int>} Generated child IDs.
+     */
+    function ninja_forms_ability_capture_generated_form_children($form_id)
+    {
+    }
+    /**
+     * Count durable rows still tied to one deleted child object.
+     *
+     * @param int    $id        Child object ID.
+     * @param string $type      Child type: field or action.
+     * @param string $table     Primary table suffix.
+     * @param string $meta_table Meta table suffix.
+     * @return int Remaining primary, metadata, and relationship rows.
+     */
+    function ninja_forms_ability_count_generated_child_rows($id, $type, $table, $meta_table)
+    {
+    }
+    /**
+     * Verify that no generated-form rows, child metadata, or relationships remain.
+     *
+     * @param int   $form_id Generated form ID.
+     * @param array $children Captured field and action IDs from before deletion.
+     * @return true|WP_Error Exact cleanup result.
+     */
+    function ninja_forms_ability_verify_generated_form_absent($form_id, $children = array())
+    {
+    }
+    /**
+     * Normalize one provider-generated action through the public action boundary.
+     *
+     * The generation schema groups type-specific values beneath `settings`, while
+     * the shared action normalizer accepts the public ability's flat input. This
+     * adapter permits only the four public action types and maps only their
+     * declared settings before returning storage-keyed values.
+     *
+     * @param array $action_data Provider-generated action definition.
+     * @return array|WP_Error Normalized action definition, or validation error.
+     */
+    function ninja_forms_ability_normalize_generated_action($action_data)
+    {
+    }
+    /**
+     * Execute callback for the ninjaforms/create-form ability.
+     *
+     * Creates a form with its fields and actions in one call, resilient to
+     * imperfect generated input: unknown field types are coerced to textbox and
+     * unknown action types are skipped, so one bad entry never fails the whole
+     * generation. A submit button field is always appended, and the saved form
+     * is always given a save (Record Submission) action and a success-message
+     * action even when the provided actions omit them; with no actions at all,
+     * the dashboard Blank Form defaults (success message, admin email, save)
+     * are created instead.
+     *
+     * @param array $input {
+     *     Ability input, validated against the create-form schema.
+     *
+     *     @type string $title           Required. Form title.
+     *     @type array  $fields          Optional. Field definitions, each passed to
+     *                                   ninja_forms_ability_add_field_internal()
+     *                                   (see it for the per-field contract).
+     *     @type array  $actions         Optional. Action definitions (type, label,
+     *                                   active, settings). Types not registered on
+     *                                   this install are skipped.
+     *     @type string $success_message Optional. Body for the guaranteed
+     *                                   success-message action.
+     *     @type string $submit_label    Optional. Submit button label.
+     *                                   Plus optional display/behavior settings
+     *                                   (show_title, default_label_pos,
+     *                                   sub_limit_number, honeypot_enabled, …).
+     * }
+     * @return array|WP_Error [ success, form_id, field_count, message ], or
+     *                        WP_Error when the title is missing.
+     */
     function ninja_forms_ability_create_form($input)
     {
     }
     function ninja_forms_ability_list_forms($input)
     {
     }
+    /**
+     * Get a form and its requested related data.
+     *
+     * @param array $input Ability input.
+     * @return array|WP_Error Form result.
+     */
     function ninja_forms_ability_get_form($input)
     {
     }
+    /**
+     * Update form settings.
+     *
+     * @param array $input Ability input.
+     * @return array|WP_Error Form update result.
+     */
     function ninja_forms_ability_update_form($input)
     {
     }
@@ -18727,6 +20896,140 @@ namespace {
     {
     }
     function ninja_forms_ability_get_public_link($input)
+    {
+    }
+    /**
+     * Return an error when input contains keys outside an ability's contract.
+     *
+     * @param array $input   Raw ability input.
+     * @param array $allowed Allowed top-level keys.
+     * @return true|WP_Error
+     */
+    function ninja_forms_ability_validate_input_keys(array $input, array $allowed)
+    {
+    }
+    /**
+     * Normalize list-field options recursively.
+     *
+     * Only the three keys declared by the ability schema are accepted. This
+     * prevents nested provider-supplied data from bypassing top-level checks.
+     *
+     * @param mixed $options Raw option rows.
+     * @return array|WP_Error
+     */
+    function ninja_forms_ability_normalize_options($options)
+    {
+    }
+    /**
+     * Resolve a clamped one-based field insertion position.
+     *
+     * When no position is requested, insertion defaults immediately before the
+     * first Submit field, or to the end when the form has no Submit field.
+     *
+     * @param array    $field_types Ordered field type names.
+     * @param int|null $requested   Requested one-based position.
+     * @return int
+     */
+    function ninja_forms_ability_resolve_field_insertion_order(array $field_types, ?int $requested = \null): int
+    {
+    }
+    /**
+     * Normalize add-field or update-field input without touching storage.
+     *
+     * @param array  $input      Raw ability input.
+     * @param string $operation  Either "add" or "update".
+     * @param string $field_type Existing type for an update.
+     * @return array|WP_Error
+     */
+    function ninja_forms_ability_normalize_field_input(array $input, string $operation = 'add', string $field_type = '')
+    {
+    }
+    /**
+     * Determine whether a field type can be chosen when building a form.
+     *
+     * Core retires a field type by clearing its section: the builder palette
+     * renders by section, so a section-less type is unreachable by hand and
+     * survives only for forms that already contain one. Total, product, shipping
+     * and the legacy password types are all in that group, along with the
+     * "unknown" type an unrecognized field is coerced to. An agent gets the same
+     * border a person has, rather than being advised of it and trusted to comply.
+     *
+     * Permissive when the field registry is unavailable, which is the case under
+     * unit tests: the registry is the only authority on what a section holds, and
+     * guessing without it would reject every type.
+     *
+     * @param string $type Field type name.
+     * @return bool Whether the type may be added to a form.
+     */
+    function ninja_forms_ability_field_type_is_selectable(string $type): bool
+    {
+    }
+    /**
+     * Determine whether an action type is supported by the public AI contract.
+     *
+     * @param string $type Requested action type.
+     * @return bool
+     */
+    function ninja_forms_ability_is_supported_action_type(string $type): bool
+    {
+    }
+    /**
+     * Normalize add-action or update-action input without touching storage.
+     *
+     * @param array  $input       Raw ability input.
+     * @param string $action_type Existing type for an update.
+     * @param string $operation   Either "add" or "update".
+     * @return array|WP_Error
+     */
+    function ninja_forms_ability_normalize_action_input(array $input, string $action_type = '', string $operation = 'add')
+    {
+    }
+    /**
+     * Normalize update-form input without touching storage.
+     *
+     * @param array $input Raw ability input.
+     * @return array|WP_Error
+     */
+    function ninja_forms_ability_normalize_form_input(array $input)
+    {
+    }
+    /**
+     * Project form settings to the values an external provider needs to edit.
+     *
+     * @param array $settings Stored form settings.
+     * @return array
+     */
+    function ninja_forms_ability_project_form_settings(array $settings): array
+    {
+    }
+    /**
+     * Project a field row to an explicit provider-facing allowlist.
+     *
+     * @param array $field Stored or draft field settings.
+     * @return array
+     */
+    function ninja_forms_ability_project_field(array $field): array
+    {
+    }
+    /**
+     * Project calculations to the three public schema settings.
+     *
+     * @param array $calculations Stored calculation rows.
+     * @return array
+     */
+    function ninja_forms_ability_project_calculations(array $calculations): array
+    {
+    }
+    /**
+     * Project an action row to an explicit provider-facing allowlist.
+     *
+     * Secret, authentication, header, token, and unknown add-on settings are
+     * intentionally absent even when they exist in the stored action model.
+     *
+     * @param array $action Stored or draft action settings.
+     * @return array
+     */
+    function ninja_forms_ability_project_action(array $action): array
     {
     }
     function ninja_forms_ability_get_plugin_settings($input)
