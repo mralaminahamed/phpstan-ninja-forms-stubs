@@ -16395,6 +16395,20 @@ namespace {
         public function set_merge_tags($key, $value)
         {
         }
+        /**
+         * Neutralize shortcode brackets to prevent shortcode injection.
+         *
+         * Converts [ and ] to HTML entities so they display correctly
+         * but are not interpreted as shortcodes by do_shortcode().
+         *
+         * @since 3.14.10
+         *
+         * @param mixed $value The value to sanitize.
+         * @return mixed The sanitized value with brackets converted to entities.
+         */
+        protected function neutralize_shortcodes($value)
+        {
+        }
         protected function system_date()
         {
         }
@@ -18046,7 +18060,7 @@ namespace {
         /**
          * @since 3.0
          */
-        const VERSION = '3.14.9';
+        const VERSION = '3.14.10';
         /**
          * @since 3.4.0
          */
