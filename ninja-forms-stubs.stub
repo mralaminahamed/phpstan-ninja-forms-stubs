@@ -429,6 +429,26 @@ namespace {
         public function delete_all_data()
         {
         }
+        /**
+         * Determine if the current user is authorized to perform network-wide deletion.
+         *
+         * Only super admins or users with manage_network_options capability on multisite
+         * installations are authorized to delete data across all subsites.
+         * Site admins can only delete their own site's data.
+         *
+         * @since 3.x.x
+         * @return bool True if network-wide deletion is authorized, false for site-scoped only.
+         */
+        protected function should_nuke_multisite(): bool
+        {
+        }
+        /**
+         * Prepare an IN clause for SQL queries.
+         *
+         * @param string $sql SQL query with [IN] placeholder.
+         * @param array  $vals Values to insert into the IN clause.
+         * @return string Prepared SQL query.
+         */
         private function prepare_in($sql, $vals)
         {
         }
@@ -679,9 +699,40 @@ namespace {
     }
     class NF_AJAX_Controllers_Submission extends \NF_Abstracts_Controller
     {
+        /**
+         * Client-submitted form data from the AJAX request.
+         *
+         * WARNING: This data is client-controlled and must not be trusted for security-sensitive
+         * properties like 'type', 'required', 'key', or 'settings'. Always use server-side
+         * form definitions from $_form_cache as the source of truth for field configuration.
+         *
+         * @var array
+         */
         protected $_form_data = array();
+        /**
+         * Server-side form configuration cache.
+         *
+         * This data is trusted and should be used as the authoritative source for field
+         * definitions including type, required status, validation rules, and other
+         * security-sensitive settings.
+         *
+         * @var array
+         */
         protected $_form_cache = array();
+        /**
+         * Preview data for form preview submissions.
+         *
+         * Contains temporary form configuration when processing preview submissions
+         * from the form builder.
+         *
+         * @var array
+         */
         protected $_preview_data = array();
+        /**
+         * The form ID being processed.
+         *
+         * @var string|int
+         */
         protected $_form_id = '';
         public function __construct()
         {
@@ -740,6 +791,28 @@ namespace {
          *               See: https://github.com/Saturday-Drive/ninja-forms/issues/7838
          */
         protected function process_repeater_fields_merge_tags($field)
+        {
+        }
+        /**
+         * Apply field whitelist to merge only safe properties from submitted data.
+         *
+         * This method controls which properties from client-submitted field data
+         * are allowed to be merged into the server-defined field configuration.
+         *
+         * SECURITY: This method implements defense-in-depth by explicitly blocking
+         * security-sensitive properties (type, required, key, settings, id) even if
+         * they appear in the whitelist. This prevents malicious filter hooks from
+         * re-enabling dangerous properties.
+         *
+         * @since 3.x.x
+         * @see https://github.com/Saturday-Drive/ninja-forms/issues/8011
+         *
+         * @param array $server_field Server-defined field configuration (trusted).
+         * @param array $submitted    Client-submitted field data (untrusted).
+         * @param array $whitelist    Allowed properties to copy from submission.
+         * @return array The server field with allowed properties merged from submission.
+         */
+        protected function apply_field_whitelist(array $server_field, array $submitted, array $whitelist): array
         {
         }
     }
@@ -7717,53 +7790,55 @@ namespace {
          * @since 2.9.34
          * @updated 3.3.16
          */
-        public function nuke($areYouSure = \FALSE, $areYouReallySure = \FALSE, $nuke_multisite = \TRUE)
+        public function nuke($areYouSure = \FALSE, $areYouReallySure = \FALSE, $nuke_multisite = \FALSE)
         {
         }
         /**
          * Function to handle the actual deletion of tables and caches.
-         * 
+         *
          * @since 3.1.0
          */
-        private function _nuke()
+        protected function _nuke()
         {
         }
         /**
          * Function to nuke our 3.0 settings.
-         * 
+         *
          * @param $areYouSure (Boolean)
          * @param $areYouReallySure (Boolean)
-         * 
+         * @param $nuke_multisite (Boolean) Whether to delete settings across all subsites.
+         *
          * @since 3.1.0
          */
-        public function nuke_settings($areYouSure = \FALSE, $areYouReallySure = \FALSE)
+        public function nuke_settings($areYouSure = \FALSE, $areYouReallySure = \FALSE, $nuke_multisite = \FALSE)
         {
         }
         /**
          * Function to handle the actual deletion of our 3.0 settings.
-         * 
+         *
          * @since 3.1.0
          */
-        private function _nuke_settings()
+        protected function _nuke_settings()
         {
         }
         /**
          * Function to nuke our 2.9 database tables.
-         * 
+         *
          * @param $areYouSure (Boolean)
          * @param $areYouReallySure (Boolean)
-         * 
+         * @param $nuke_multisite (Boolean) Whether to delete deprecated data across all subsites.
+         *
          * @since 3.1.0
          */
-        public function nuke_deprecated($areYouSure = \FALSE, $areYouReallySure = \FALSE)
+        public function nuke_deprecated($areYouSure = \FALSE, $areYouReallySure = \FALSE, $nuke_multisite = \FALSE)
         {
         }
         /**
          * Function to handle the actual deletion of deprecated tables and options.
-         * 
+         *
          * @since 3.1.0
          */
-        private function _nuke_deprecated()
+        protected function _nuke_deprecated()
         {
         }
     }
@@ -13009,6 +13084,26 @@ namespace {
         public function __construct()
         {
         }
+        /**
+         * Validate submitted value is a configured option.
+         *
+         * @param array $field Field settings including submitted value.
+         * @param array $data  Form data.
+         * @return array Validation errors.
+         */
+        public function validate($field, $data)
+        {
+        }
+        /**
+         * Get calculation value for merge tag.
+         *
+         * Returns the configured calc value for matched options,
+         * or 0 if no match (fail closed for security).
+         *
+         * @param mixed $value Submitted field value.
+         * @param array $field Field settings including options.
+         * @return float Calculation value.
+         */
         public function get_calc_value($value, $field)
         {
         }
@@ -13028,6 +13123,26 @@ namespace {
         public function __construct()
         {
         }
+        /**
+         * Validate submitted value is a configured option.
+         *
+         * @param array $field Field settings including submitted value.
+         * @param array $data  Form data.
+         * @return array Validation errors.
+         */
+        public function validate($field, $data)
+        {
+        }
+        /**
+         * Get calculation value for merge tag.
+         *
+         * Returns the configured calc value for matched options,
+         * or 0 if no match (fail closed for security).
+         *
+         * @param mixed $value Submitted field value.
+         * @param array $field Field settings including options.
+         * @return float Calculation value.
+         */
         public function get_calc_value($value, $field)
         {
         }
@@ -17931,7 +18046,7 @@ namespace {
         /**
          * @since 3.0
          */
-        const VERSION = '3.14.8';
+        const VERSION = '3.14.9';
         /**
          * @since 3.4.0
          */
@@ -18445,6 +18560,54 @@ namespace Composer\Autoload {
     }
 }
 namespace {
+    /**
+     * Helper: Get the capability required for submissions table block access
+     *
+     * @return string The capability name
+     */
+    function nf_security_get_views_capability()
+    {
+    }
+    /**
+     * Helper: Strip all submissions-table blocks from content
+     *
+     * @param string $content The post content
+     * @return string Content with submissions-table blocks removed
+     */
+    function nf_security_strip_submissions_blocks($content)
+    {
+    }
+    /**
+     * Helper: Remove submissions-table blocks from a blocks array
+     *
+     * @param array $blocks Array of parsed blocks
+     * @return array Filtered blocks array
+     */
+    function nf_security_remove_submissions_blocks($blocks)
+    {
+    }
+    /**
+     * Helper: Extract submissions-table blocks from a blocks array
+     *
+     * @param array $blocks Array of parsed blocks
+     * @return array Array of submissions-table blocks with original indices preserved
+     */
+    function nf_security_extract_submissions_blocks($blocks)
+    {
+    }
+    /**
+     * Helper: Process blocks for unauthorized save
+     *
+     * - Preserves existing submissions-table blocks with their original formID
+     * - Strips any newly-added submissions-table blocks
+     *
+     * @param array $new_blocks Blocks from new content being saved
+     * @param array $original_submissions Original submissions-table blocks to preserve
+     * @return array Processed blocks array
+     */
+    function nf_security_process_blocks_for_unauthorized_save($new_blocks, $original_submissions)
+    {
+    }
     function ninja_forms_register_abilities()
     {
     }
