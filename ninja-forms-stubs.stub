@@ -6771,54 +6771,6 @@ namespace {
         {
         }
     }
-    /**
-     * NF_Survey_Promo Class
-     *
-     * @since 3.6
-     */
-    class NF_Admin_SurveyPromo
-    {
-        public $isDashboard = \false;
-        /**
-         *
-         */
-        public function __construct()
-        {
-        }
-        public function show()
-        {
-        }
-        public function isTargetPage()
-        {
-        }
-        /**
-         * Check if we should show the survey promo
-         *
-         * @return bool
-         */
-        public function shouldShow()
-        {
-        }
-        public function isDashboard()
-        {
-        }
-        /**
-         * Set the ninja_forms_disable_survey_promo transient
-         *
-         * @return Void
-         */
-        public function dismiss()
-        {
-        }
-        /**
-         * Echo the html for the notice
-         *
-         * @return Void
-         */
-        public function getNoticeHtml()
-        {
-        }
-    }
     class NF_Admin_UserDataRequests
     {
         /**
@@ -17884,7 +17836,7 @@ namespace {
         /**
          * @since 3.0
          */
-        const VERSION = '3.14.6';
+        const VERSION = '3.14.7';
         /**
          * @since 3.4.0
          */
