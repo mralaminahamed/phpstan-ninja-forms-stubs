@@ -18060,7 +18060,7 @@ namespace {
         /**
          * @since 3.0
          */
-        const VERSION = '3.14.10';
+        const VERSION = '3.14.11';
         /**
          * @since 3.4.0
          */
