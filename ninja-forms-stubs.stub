@@ -7382,6 +7382,13 @@ namespace {
         public static function filterItemsByCategroy($items, $category)
         {
         }
+        /**
+         * Admin notice shown when the cached add-ons feed is corrupted/unreadable
+         * and we've fallen back to the bundled add-ons list.
+         */
+        public function render_feed_unavailable_notice()
+        {
+        }
         public static function getItemStatus($item)
         {
         }
@@ -14524,6 +14531,24 @@ namespace {
         private function stringify_value($field_value, $field)
         {
         }
+        /**
+         * Combine a stored date value into the single string we display.
+         *
+         * A date field's submission is stored as separate date/hour/minute/ampm
+         * parts. Every surface that shows one - the submissions columns, CSV
+         * export, merge tags - needs the same combined string. Exposed statically
+         * so a date field nested inside a repeater, whose parts are stored under
+         * the repeater rather than as a field of its own, renders identically to
+         * one outside a repeater. See issue #7440.
+         *
+         * @param mixed $field_value Stored value: the parts array, or a plain string.
+         * @param bool $hours_24 Whether the field is configured for 24 hour time.
+         * @param string $date_mode 'date_only', 'date_and_time' or 'time_only'.
+         * @return string
+         */
+        public static function combine_value_parts($field_value, $hours_24 = \false, $date_mode = '')
+        {
+        }
         private function get_hours_options($hour, $field)
         {
         }
@@ -15914,6 +15939,46 @@ namespace {
         {
         }
         /**
+         * Returns the authored settings of a single field within the fieldset
+         *
+         * @param string $fieldsetFieldReference Any reference to the child field
+         * @param array $fieldSettings Provided by (obj)$field->get_settings()
+         * @return array Empty when the child cannot be resolved
+         */
+        public function getFieldsetFieldSettings($fieldsetFieldReference, $fieldSettings)
+        {
+        }
+        /**
+         * Render a fieldset child's stored value the way it reads outside a repeater
+         *
+         * Child fields keep their submission nested under the parent repeater, so
+         * the per-field-type display filters that run for a standard field never
+         * reach them. Date fields are stored as separate date/hour/minute/ampm
+         * parts, which is why an unformatted value surfaces as a bare date or as
+         * raw parts. See issue #7440.
+         *
+         * @param string $fieldsetFieldReference Any reference to the child field
+         * @param mixed $value Stored value for that child
+         * @param string $type Field type of that child
+         * @param array $fieldSettings Provided by (obj)$field->get_settings()
+         * @return mixed Formatted string for types we format, otherwise $value
+         */
+        public function formatFieldsetFieldValue($fieldsetFieldReference, $value, $type, $fieldSettings)
+        {
+        }
+        /**
+         * Reduce any child reference to the child's id within the fieldset
+         *
+         * Depending on the caller a child is referenced as '7.2', as '7.2_0', or
+         * as a bare '2'. All three identify the same child field.
+         *
+         * @param string $reference
+         * @return string
+         */
+        protected function reduceToFieldsetFieldId($reference)
+        {
+        }
+        /**
          * Given a field reference (ID or Key), return boolean for 'is repeater field'
          * 
          * Determines if the given field reference is a fieldset repeater construct.
@@ -16657,6 +16722,27 @@ namespace {
          * @return array|string
          */
         public static function kses_post($value)
+        {
+        }
+        /**
+         * Apply the safe-HTML allowlist to a list field's option labels.
+         *
+         * Labels are user-facing and may legitimately carry basic formatting, so
+         * they are allowlisted rather than escaped or stripped. Option values are
+         * identifiers rather than markup and are left untouched here — they are
+         * escaped where they are displayed instead.
+         *
+         * wp_kses_post() normalises a bare ampersand to &amp;. Labels are edited in
+         * a plain text box, so a re-encoded ampersand resurfaces to the person
+         * editing the form as a literal "&amp;" and survives every subsequent save.
+         * Restoring just the ampersand keeps the round trip stable. Angle brackets
+         * deliberately stay encoded: anything wp_kses_post left behind as &lt; is
+         * text, and decoding it would let it be parsed as markup again.
+         *
+         * @param $options array Option rows, each optionally carrying a 'label'.
+         * @return array|mixed The options with their labels cleaned.
+         */
+        public static function kses_list_options($options)
         {
         }
         /**
@@ -19788,7 +19874,7 @@ namespace {
         /**
          * @since 3.0
          */
-        const VERSION = '3.15.0';
+        const VERSION = '3.15.1';
         /**
          * @since 3.4.0
          */
