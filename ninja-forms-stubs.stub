@@ -17941,6 +17941,20 @@ namespace {
         protected function system_date()
         {
         }
+        /**
+         * Neutralize shortcode brackets to prevent shortcode injection.
+         *
+         * Converts [ and ] to HTML entities so they display correctly
+         * but are not interpreted as shortcodes by do_shortcode().
+         *
+         * @see https://github.com/Saturday-Drive/ninja-forms/issues/8123
+         *
+         * @param mixed $value The value to sanitize.
+         * @return mixed The sanitized value with brackets converted to entities.
+         */
+        protected function neutralize_shortcodes($value)
+        {
+        }
         protected function system_ip()
         {
         }
@@ -18220,7 +18234,7 @@ namespace {
          * @param mixed $value The value to sanitize.
          * @return mixed The sanitized value with brackets converted to entities.
          */
-        protected function neutralize_shortcodes($value)
+        public function neutralize_shortcodes($value)
         {
         }
         protected function system_date()
@@ -19874,7 +19888,7 @@ namespace {
         /**
          * @since 3.0
          */
-        const VERSION = '3.15.1';
+        const VERSION = '3.15.2';
         /**
          * @since 3.4.0
          */
@@ -20475,9 +20489,96 @@ namespace {
     /**
      * Check if current user can manage forms
      *
-     * @return bool
+     * @return bool|WP_Error
      */
     function ninja_forms_ability_can_manage_forms()
+    {
+    }
+    /**
+     * Check if current user can manage plugin settings
+     *
+     * Requires manage_options capability. Plugin settings contain sensitive data
+     * such as reCAPTCHA secret keys.
+     *
+     * @since 3.8.23
+     * @see https://github.com/Saturday-Drive/ninja-forms/issues/8124
+     *
+     * @return bool|WP_Error
+     */
+    function ninja_forms_ability_can_manage_settings()
+    {
+    }
+    /**
+     * Check if current user can read submissions
+     *
+     * Requires manage_options capability. Submission data may contain
+     * sensitive user information.
+     *
+     * @since 3.8.23
+     * @see https://github.com/Saturday-Drive/ninja-forms/issues/8124
+     *
+     * @return bool|WP_Error
+     */
+    function ninja_forms_ability_can_read_submissions()
+    {
+    }
+    /**
+     * Check if current user can modify submissions
+     *
+     * Requires manage_options capability.
+     *
+     * @since 3.8.23
+     * @see https://github.com/Saturday-Drive/ninja-forms/issues/8124
+     *
+     * @return bool|WP_Error
+     */
+    function ninja_forms_ability_can_edit_submissions()
+    {
+    }
+    /**
+     * Check if current user can delete submissions
+     *
+     * Requires manage_options capability.
+     *
+     * @since 3.8.23
+     * @see https://github.com/Saturday-Drive/ninja-forms/issues/8124
+     *
+     * @return bool|WP_Error
+     */
+    function ninja_forms_ability_can_delete_submissions()
+    {
+    }
+    /**
+     * Check if current user can embed forms into posts
+     *
+     * Requires manage_options capability. The embed-form ability writes to
+     * WordPress posts/pages which is an administrative action outside the
+     * form builder scope.
+     *
+     * Note: Per-object authorization checks for specific posts are performed
+     * in the execute callback when the target post_id is known.
+     *
+     * @since 3.8.23
+     * @see https://github.com/Saturday-Drive/ninja-forms/issues/8124
+     *
+     * @return bool|WP_Error
+     */
+    function ninja_forms_ability_can_embed_form()
+    {
+    }
+    /**
+     * Check if current user can manage form lifecycle (create, delete, duplicate, import)
+     *
+     * Requires manage_options capability. Form lifecycle operations are
+     * administrative actions that go beyond editing an existing form.
+     * The nf_edit_forms capability is for editing existing forms only.
+     *
+     * @since 3.8.23
+     * @see https://github.com/Saturday-Drive/ninja-forms/issues/8124
+     *
+     * @return bool|WP_Error
+     */
+    function ninja_forms_ability_can_manage_form_lifecycle()
     {
     }
     /**
