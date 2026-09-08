@@ -3676,6 +3676,30 @@ namespace {
          * PROTECTED METHODS
          */
         abstract protected function get_lists();
+        /**
+         * Did this lookup fail to produce a usable list of lists?
+         *
+         * An empty result, or a result holding nothing but the placeholder entry,
+         * means the provider could not be reached or refused the request. It is
+         * never a real answer, and must not be cached or shown as one.
+         *
+         * @param mixed $lists
+         * @return bool
+         */
+        protected function is_failed_lookup($lists)
+        {
+        }
+        /**
+         * Explain to the person why their lists could not be loaded.
+         *
+         * Add-ons override this to name their own service and, where they can,
+         * the actual reason.
+         *
+         * @return string
+         */
+        protected function get_list_lookup_message()
+        {
+        }
         /*
          * PRIVATE METHODS
          */
@@ -5618,6 +5642,30 @@ namespace NinjaForms\Includes\Abstracts {
          * PROTECTED METHODS
          */
         abstract protected function get_lists();
+        /**
+         * Did this lookup fail to produce a usable list of lists?
+         *
+         * An empty result, or a result holding nothing but the placeholder entry,
+         * means the provider could not be reached or refused the request. It is
+         * never a real answer, and must not be cached or shown as one.
+         *
+         * @param mixed $lists
+         * @return bool
+         */
+        protected function is_failed_lookup($lists)
+        {
+        }
+        /**
+         * Explain to the person why their lists could not be loaded.
+         *
+         * Add-ons override this to name their own service and, where they can,
+         * the actual reason.
+         *
+         * @return string
+         */
+        protected function get_list_lookup_message()
+        {
+        }
         /*
          * PRIVATE METHODS
          */
@@ -10257,6 +10305,22 @@ namespace {
          * @return $this
          */
         public function update_field_value($field_ref, $value)
+        {
+        }
+        /**
+         * Whether a field legitimately stores markup rather than plain text.
+         *
+         * Resolves the field, then defers to WPN_Helper::field_stores_html() so the
+         * storage path and the display path answer this the same way. A field that
+         * cannot be resolved is treated as plain text, because the safe answer when
+         * we do not know is the one that stores nothing parsable. See issue #4003.
+         *
+         * @see https://github.com/Saturday-Drive/ninja-forms/issues/4003
+         *
+         * @param int|string $field_id Field the value belongs to.
+         * @return bool
+         */
+        protected function field_stores_html($field_id)
         {
         }
         /**
@@ -16725,6 +16789,80 @@ namespace {
         {
         }
         /**
+         * Prepare a value a site visitor submitted for storage.
+         *
+         * A visitor typing into a form field is writing text, not markup. Running
+         * the safe-HTML allowlist over that text does two things customers have
+         * reported since 2019 (issue #4003): it rewrites a bare ampersand as
+         * &amp;, and it deletes anything that looks like a tag it does not allow,
+         * so "Try to understand <redacted>" reaches the database as
+         * "Try to understand ". Encoding instead of allowlisting loses nothing and
+         * leaves nothing a browser could parse: every character survives, and it
+         * survives as text.
+         *
+         * Entities are deliberately double-encoded. Someone writing about HTML who
+         * types the literal characters "&amp;" is storing five characters, and must
+         * read those five characters back rather than a bare ampersand.
+         *
+         * A field that stores markup on purpose - the Paragraph field with its rich
+         * text editor on - passes $allow_html and keeps the allowlist.
+         *
+         * Pair this with decode_submission_value(), which is applied once wherever a
+         * stored value is read back out.
+         *
+         * @see https://github.com/Saturday-Drive/ninja-forms/issues/4003
+         *
+         * @param mixed $value      Submitted value; arrays are handled per item.
+         * @param bool  $allow_html Whether the field legitimately stores markup.
+         * @return array|string
+         */
+        public static function encode_submission_value($value, $allow_html = \false)
+        {
+        }
+        /**
+         * Whether a field legitimately stores markup rather than plain text.
+         *
+         * Almost every field holds what a visitor typed, and that is text: encoding
+         * it loses nothing and leaves nothing a browser could parse (issue #4003).
+         * Two fields genuinely hold markup - the Paragraph field with its rich text
+         * editor enabled, and the Signature field, whose value is an image. Those
+         * keep the safe-HTML allowlist.
+         *
+         * A field that cannot be read is treated as plain text, because the safe
+         * answer when we do not know is the one that stores nothing parsable.
+         *
+         * @see https://github.com/Saturday-Drive/ninja-forms/issues/4003
+         *
+         * @param mixed $field Field object, or its settings array.
+         * @return bool
+         */
+        public static function field_stores_html($field)
+        {
+        }
+        /**
+         * Turn a stored field value back into the characters the visitor typed.
+         *
+         * Applied once per read, wherever a submission value leaves storage, so the
+         * submissions screen, the CSV exports, and email notifications all show the
+         * same thing. Submissions saved before issue #4003 was fixed already carry
+         * entities in the database, and this repairs them on the way out without
+         * rewriting any stored data.
+         *
+         * Decoding runs exactly once. A stored "&amp;amp;" yields the literal text
+         * "&amp;" and stops there, so a value cannot drift each time it is read.
+         *
+         * Callers displaying the result on an HTML page must still escape it for
+         * that page. This returns text, not markup.
+         *
+         * @see https://github.com/Saturday-Drive/ninja-forms/issues/4003
+         *
+         * @param mixed $value Stored value; arrays are handled per item.
+         * @return array|string
+         */
+        public static function decode_submission_value($value)
+        {
+        }
+        /**
          * Apply the safe-HTML allowlist to a list field's option labels.
          *
          * Labels are user-facing and may legitimately carry basic formatting, so
@@ -16764,6 +16902,30 @@ namespace {
         {
         }
         public static function str_putcsv($array, $delimiter = ',', $enclosure = '"', $terminator = "\n")
+        {
+        }
+        /**
+         * Build one enclosed CSV line from a row of values.
+         *
+         * A CSV field wrapped in the enclosure character must double any occurrence
+         * of that character inside it, or the reader ends the field early and every
+         * later cell on the row shifts left. The bulk export used to wrap and join
+         * these values by hand without that step; the fault was invisible only for
+         * as long as submissions stored `&quot;` in place of a quote, and surfaced
+         * as soon as issue #4003 let real quotes through.
+         *
+         * Commas and newlines inside a value need no escaping once the value is
+         * enclosed, and are deliberately left alone.
+         *
+         * @see https://github.com/Saturday-Drive/ninja-forms/issues/4003
+         *
+         * @param array  $values     Cell values for this row.
+         * @param string $delimiter  Character between cells.
+         * @param string $enclosure  Character wrapping each cell.
+         * @param string $terminator End-of-line sequence.
+         * @return string
+         */
+        public static function csv_row(array $values, $delimiter = ',', $enclosure = '"', $terminator = "\n")
         {
         }
         public static function get_query_string($key, $default = \FALSE)
@@ -19888,7 +20050,7 @@ namespace {
         /**
          * @since 3.0
          */
-        const VERSION = '3.15.2';
+        const VERSION = '3.15.3';
         /**
          * @since 3.4.0
          */
