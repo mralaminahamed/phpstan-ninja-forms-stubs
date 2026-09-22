@@ -4156,6 +4156,19 @@ namespace {
         public function get_parent_type()
         {
         }
+        /**
+         * Validate submitted value is a configured option.
+         *
+         * Provides server-side option validation for all list field types.
+         * Handles both single-value and multi-value (array) submissions.
+         *
+         * @param array $field Field settings including submitted value.
+         * @param array $data  Form data.
+         * @return array Validation errors.
+         */
+        public function validate($field, $data)
+        {
+        }
         public function admin_form_element($id, $value)
         {
         }
@@ -7974,6 +7987,68 @@ namespace {
         public function get_capability()
         {
         }
+        /**
+         * Bytes of a log file read when collecting recent entries.
+         *
+         * The Error logs section only ever shows the most recent entries, so only
+         * the tail of each file is read. Reading whole files exhausted memory and
+         * crashed this page on sites with a very large debug log (issue #8149).
+         */
+        const LOG_READ_BYTES = 262144;
+        /** Maximum number of log entries listed. */
+        const LOG_ENTRY_LIMIT = 50;
+        /** Untranslated default for the oversized-log notice. */
+        const OVERSIZED_LOG_NOTICE = 'Note: %1$s is %2$s. Only the most recent entries are shown.';
+        /**
+         * Collect the recent PHP error entries shown in the Error logs section.
+         *
+         * @param array $logFiles Candidate log file paths.
+         * @return array Log entries, most recent first.
+         */
+        public function readErrorLog(array $logFiles)
+        {
+        }
+        /**
+         * Describe any log file too large to be read in full.
+         *
+         * @param array       $logFiles Candidate log file paths.
+         * @param string|null $format   Translated sprintf format; the untranslated
+         *                              default is used when none is supplied.
+         * @return array Human readable notices, one per oversized file.
+         */
+        public function describeOversizedLogs(array $logFiles, $format = \null)
+        {
+        }
+        /**
+         * Resolve the candidate log paths to readable files, without duplicates.
+         *
+         * Several of the candidate locations commonly resolve to the same physical
+         * file, which would otherwise be read more than once.
+         *
+         * @param array $logFiles Candidate log file paths.
+         * @return array Existing, readable, de-duplicated paths.
+         */
+        protected function uniqueLogFiles(array $logFiles)
+        {
+        }
+        /**
+         * Read the tail of a log file, never more than self::LOG_READ_BYTES.
+         *
+         * @param string $logFile Readable log file path.
+         * @return string Trailing portion of the file.
+         */
+        protected function readLogTail($logFile)
+        {
+        }
+        /**
+         * Format a file size for display.
+         *
+         * @param int $bytes
+         * @return string
+         */
+        protected function formatLogSize($bytes)
+        {
+        }
         public function display()
         {
         }
@@ -10423,6 +10498,22 @@ namespace {
         {
         }
         public static function sort_fields($a, $b)
+        {
+        }
+        /**
+         * Safely deserialize field values, preventing PHP Object Injection.
+         *
+         * Uses allowed_classes => false to prevent arbitrary object instantiation
+         * during unserialization. Serialized objects become __PHP_Incomplete_Class
+         * which cannot execute magic methods (__wakeup, __destruct).
+         *
+         * @since 3.15.4
+         * @see https://github.com/developer/ninja-forms/issues/8183
+         *
+         * @param mixed $value Potentially serialized value from submission field.
+         * @return mixed Deserialized array/scalar, or original value if not serialized.
+         */
+        protected static function safely_deserialize_field_value($value)
         {
         }
     }
@@ -14747,7 +14838,7 @@ namespace {
         protected $_type = 'hidden';
         protected $_templates = 'hidden';
         protected $_wrap_template = 'wrap-no-label';
-        protected $_settings_only = array('key', 'label', 'default', 'admin_label');
+        protected $_settings_only = array('key', 'label', 'default', 'admin_label', 'classes');
         protected $_use_merge_tags_include = array('calculations');
         public function __construct()
         {
@@ -14902,16 +14993,6 @@ namespace {
         {
         }
         /**
-         * Validate submitted value is a configured option.
-         *
-         * @param array $field Field settings including submitted value.
-         * @param array $data  Form data.
-         * @return array Validation errors.
-         */
-        public function validate($field, $data)
-        {
-        }
-        /**
          * Get calculation value for merge tag.
          *
          * Returns the configured calc value for matched options,
@@ -14938,16 +15019,6 @@ namespace {
         protected $_templates = 'listselect';
         protected $_old_classname = 'list-select';
         public function __construct()
-        {
-        }
-        /**
-         * Validate submitted value is a configured option.
-         *
-         * @param array $field Field settings including submitted value.
-         * @param array $data  Form data.
-         * @return array Validation errors.
-         */
-        public function validate($field, $data)
         {
         }
         /**
@@ -17205,7 +17276,7 @@ namespace {
          *
          * @since 3.6.5
          *
-         * @param stdClass $data
+         * @param mixed $data Optional details from the store; scalars have no entries.
          *
          * @return array
          */
@@ -20050,7 +20121,7 @@ namespace {
         /**
          * @since 3.0
          */
-        const VERSION = '3.15.3';
+        const VERSION = '3.15.4';
         /**
          * @since 3.4.0
          */
@@ -21412,6 +21483,18 @@ namespace {
      * @return bool|WP_Error True if allowed, WP_Error if not
      */
     function ninja_forms_ability_can_manage_forms_with_csrf($request = \null)
+    {
+    }
+    /**
+     * Retrieve a submission only when its stored WordPress post exists.
+     *
+     * The submission model alone is not an existence check: it retains an
+     * arbitrary requested ID even when no corresponding post exists.
+     *
+     * @param int $submission_id Submission post ID.
+     * @return NF_Database_Models_Submission|false Stored submission model, or false.
+     */
+    function ninja_forms_ability_find_submission($submission_id)
     {
     }
     function ninja_forms_ability_get_submissions($input)
