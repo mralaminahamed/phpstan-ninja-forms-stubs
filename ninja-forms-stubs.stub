@@ -2309,6 +2309,19 @@ namespace {
          * @param array $whitelist    Allowed properties to copy from submission.
          * @return array The server field with allowed properties merged from submission.
          */
+        /**
+         * Resolve a Repeatable Fieldset entry to the child field it belongs to.
+         *
+         * @see https://github.com/Saturday-Drive/ninja-forms/issues/8116
+         *
+         * @param string $index           the submitted entry's key
+         * @param array  $valid_child_ids child fields of this fieldset, keyed by id
+         *
+         * @return string|null the child field id, or null when the entry matches none
+         */
+        protected function resolve_repeater_child_id($index, $valid_child_ids)
+        {
+        }
         protected function apply_field_whitelist(array $server_field, array $submitted, array $whitelist): array
         {
         }
@@ -18106,10 +18119,23 @@ namespace {
     {
         protected $id = 'calcs';
         protected $_default_group = \FALSE;
+        /** @var array Separators for each calculation, separate from numeric values. */
+        protected $calc_formats = array();
+        /** @var bool Whether the current replacement is for a display action. */
+        protected $format_action_values = \false;
         public function __construct()
         {
         }
         public function __call($name, $arguments)
+        {
+        }
+        /**
+         * Format display actions even when their settings omit builder-only objectType.
+         *
+         * @param mixed $subject Action settings.
+         * @return string|array
+         */
+        public function action_replace($subject)
         {
         }
         public function set_merge_tags($key, $value, $round = 2, $dec = '.', $sep = ',')
@@ -18483,6 +18509,9 @@ namespace {
         {
         }
         protected function mergetag_random($length = 5)
+        {
+        }
+        protected function mergetag_formatted_date()
         {
         }
         protected function mergetag_year()
@@ -20121,7 +20150,7 @@ namespace {
         /**
          * @since 3.0
          */
-        const VERSION = '3.15.4';
+        const VERSION = '3.15.5';
         /**
          * @since 3.4.0
          */
