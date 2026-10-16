@@ -2248,6 +2248,32 @@ namespace {
          *
          * @return void
          */
+        /**
+         * Submission "extra" data keys reserved for server-generated data.
+         *
+         * Client-submitted values under these keys are discarded during
+         * processing so they cannot spoof or overwrite server data, or reach
+         * an admin screen that renders stored extra data. See issue #8228.
+         *
+         * @return array
+         */
+        protected function getReservedExtraKeys(): array
+        {
+        }
+        /**
+         * Remove client-submitted extra data stored under a reserved key.
+         *
+         * WordPress unslashes post meta keys when they are written, so each
+         * submitted key is compared to the reserved list in the form it will be
+         * stored as. This runs for both fresh and resumed submissions, and the
+         * re-merge in the calculations step reads the same scrubbed source.
+         * See issue #8228.
+         *
+         * @return void
+         */
+        protected function scrubReservedExtraKeys(): void
+        {
+        }
         private function maybePreserveExtraData(): void
         {
         }
@@ -3690,6 +3716,57 @@ namespace {
          */
         abstract protected function get_lists();
         /**
+         * How long to wait before asking a provider again after a failed lookup.
+         *
+         * Short enough that a site recovers on its own, long enough that a site
+         * whose connection is broken stops calling a provider that is already
+         * refusing it.
+         *
+         * @return int seconds
+         */
+        protected function get_lookup_retry_delay()
+        {
+        }
+        /**
+         * Should this request ask the provider for its lists at all?
+         *
+         * The list options exist to populate a dropdown in the form builder. A
+         * visitor loading the public site does not need them, and neither does a
+         * form submission, which reaches admin-ajax and would otherwise pay for an
+         * outbound call on every entry.
+         *
+         * @return bool
+         */
+        protected function should_look_up_lists()
+        {
+        }
+        /**
+         * Are we still inside the wait period after a failed lookup?
+         *
+         * @return bool
+         */
+        protected function is_waiting_after_failure()
+        {
+        }
+        /**
+         * Start the wait period after a failed lookup.
+         */
+        protected function start_wait_after_failure()
+        {
+        }
+        /**
+         * End the wait period, so the next request asks again.
+         */
+        protected function clear_wait_after_failure()
+        {
+        }
+        /**
+         * @return string
+         */
+        protected function get_retry_transient()
+        {
+        }
+        /**
          * Did this lookup fail to produce a usable list of lists?
          *
          * An empty result, or a result holding nothing but the placeholder entry,
@@ -4031,6 +4108,29 @@ namespace {
          * @return array $errors
          */
         public function validate($field, $data)
+        {
+        }
+        /**
+         * Required Field Message
+         *
+         * Resolves the message shown when a required field is submitted empty.
+         *
+         * The browser-side check renders the form's `validateRequiredField`
+         * setting, so this server-side check resolves the same setting instead of
+         * carrying wording of its own. One required-field condition therefore
+         * produces one message, whichever check detects it. See issue #8182.
+         *
+         * The wording is read from the saved form, never from the submitted
+         * payload, so a submitted `settings` array cannot dictate the message.
+         *
+         * The default below must stay identical to the `validateRequiredField`
+         * entry in includes/Config/i18nFrontEnd.php: they are deliberately one
+         * translatable string, and splitting them is the defect this fixes.
+         *
+         * @param array $data The submitted form data.
+         * @return string
+         */
+        protected function get_required_field_message($data)
         {
         }
         public function process($field, $data)
@@ -4533,6 +4633,13 @@ namespace {
          * @var boolean
          */
         protected $use_safe = \FALSE;
+        /**
+         * Is the current replacement going into content that will be run
+         * through do_shortcode()?
+         *
+         * @var boolean
+         */
+        protected $neutralize_substituted_shortcodes = \FALSE;
         public function __construct()
         {
         }
@@ -4543,6 +4650,19 @@ namespace {
          * @return string|array
          */
         public function action_replace($subject)
+        {
+        }
+        /**
+         * Merge Tag replacement on a field default value
+         *
+         * Default values are run through do_shortcode() when the form renders, so
+         * values substituted into them are made unable to form a shortcode. The
+         * default value's own text is left untouched.
+         *
+         * @param mixed $subject
+         * @return string|array
+         */
+        public function replace_default_value($subject)
         {
         }
         /**
@@ -4580,6 +4700,16 @@ namespace {
          * @return string
          */
         protected function getReplacement($callback)
+        {
+        }
+        /**
+         * Neutralize shortcode brackets in a substituted value when the content
+         * being replaced will be run through do_shortcode()
+         *
+         * @param mixed $value
+         * @return mixed
+         */
+        protected function maybeNeutralizeSubstitutedShortcodes($value)
         {
         }
         /**
@@ -5669,6 +5799,57 @@ namespace NinjaForms\Includes\Abstracts {
          */
         abstract protected function get_lists();
         /**
+         * How long to wait before asking a provider again after a failed lookup.
+         *
+         * Short enough that a site recovers on its own, long enough that a site
+         * whose connection is broken stops calling a provider that is already
+         * refusing it.
+         *
+         * @return int seconds
+         */
+        protected function get_lookup_retry_delay()
+        {
+        }
+        /**
+         * Should this request ask the provider for its lists at all?
+         *
+         * The list options exist to populate a dropdown in the form builder. A
+         * visitor loading the public site does not need them, and neither does a
+         * form submission, which reaches admin-ajax and would otherwise pay for an
+         * outbound call on every entry.
+         *
+         * @return bool
+         */
+        protected function should_look_up_lists()
+        {
+        }
+        /**
+         * Are we still inside the wait period after a failed lookup?
+         *
+         * @return bool
+         */
+        protected function is_waiting_after_failure()
+        {
+        }
+        /**
+         * Start the wait period after a failed lookup.
+         */
+        protected function start_wait_after_failure()
+        {
+        }
+        /**
+         * End the wait period, so the next request asks again.
+         */
+        protected function clear_wait_after_failure()
+        {
+        }
+        /**
+         * @return string
+         */
+        protected function get_retry_transient()
+        {
+        }
+        /**
          * Did this lookup fail to produce a usable list of lists?
          *
          * An empty result, or a result holding nothing but the placeholder entry,
@@ -6327,6 +6508,20 @@ namespace {
          */
         protected $_tags = array();
         /**
+         * Absolute path of the CSV file created for the current submission, so it
+         * can be removed after sending without recomputing a shared path. See #8200.
+         *
+         * @var string
+         */
+        protected $_csv_path = '';
+        /**
+         * Absolute path of the unique per-submission directory holding the CSV,
+         * removed alongside the file after sending. See #8200.
+         *
+         * @var string
+         */
+        protected $_csv_dir = '';
+        /**
          * Constructor
          */
         public function __construct()
@@ -6350,6 +6545,72 @@ namespace {
          * @return array
          */
         protected function sanitize_address_fields($action_settings)
+        {
+        }
+        /**
+         * Removes carriage returns and line feeds from a header value
+         *
+         * RFC 5322 section 2.2 forbids a bare CR or LF inside a header field.
+         * Merge tag values can carry either, so every value is stripped before it
+         * is written into a header line.
+         *
+         * @param  string|null $value
+         * @return string
+         */
+        protected function strip_header_breaks($value)
+        {
+        }
+        /**
+         * Splits an email address setting into its individual entries
+         *
+         * A merge tag placed in an address setting can expand to a list separated
+         * by line breaks, semicolons or pipes as well as by commas, so all of those
+         * are treated as separators. Empty and whitespace-only entries are dropped;
+         * entries that are not valid addresses are preserved so that
+         * check_for_errors() can still surface them to administrators.
+         *
+         * @param  string|array $value
+         * @return array
+         */
+        protected function split_address_list($value)
+        {
+        }
+        /**
+         * Normalises the From address
+         *
+         * The From address is a single address rather than a list, so it is never
+         * split on a separator. Carriage returns and line feeds are removed,
+         * because they have no legitimate use in an address and RFC 5322 section
+         * 2.2 forbids them inside a header field.
+         *
+         * @param  string|array $value
+         * @return string
+         */
+        protected function normalize_from_address($value)
+        {
+        }
+        /**
+         * Returns the individual entries of an address setting
+         *
+         * Every setting except the From address is a list; the From address is a
+         * single address. Both paths match what _format_recipients() and
+         * _format_from() will do with the same value, so validation and header
+         * construction never disagree.
+         *
+         * @param  string       $setting
+         * @param  string|array $value
+         * @return array
+         */
+        protected function address_entries($setting, $value)
+        {
+        }
+        /**
+         * Determines whether an entry can be used as an email recipient
+         *
+         * @param  string $email
+         * @return bool
+         */
+        protected function is_valid_recipient($email)
         {
         }
         protected function check_for_errors($action_settings)
@@ -10640,6 +10901,13 @@ namespace {
          * @return void
          */
         public function send($slug, $data = array())
+        {
+        }
+        protected function constructSiteData(): array
+        {
+        }
+        /** Deliver independently of monthly environment collection; retry without data loss. */
+        public function sendBehavioralData()
         {
         }
     }
@@ -15730,6 +15998,39 @@ namespace {
         public function process($field, $data)
         {
         }
+        /**
+         * Validate the submitted terms.
+         *
+         * A Terms List field never carries an `options` setting: its options are
+         * built from the taxonomy and the per-term switches when the field is
+         * localized for display. The shared list validation added for issue #8147
+         * reads options through the `ninja_forms_render_options` filters, which this
+         * field does not use, so it would reject every submitted term. Build the
+         * offered options here before deferring to it.
+         *
+         * When the site owner has switched Add New Terms on, the visitor may submit
+         * a term that was never offered - that is the purpose of the setting - so
+         * only the shared required check applies to that field.
+         *
+         * @see https://github.com/Saturday-Drive/ninja-forms/issues/8131
+         * @see https://github.com/Saturday-Drive/ninja-forms/issues/8147
+         *
+         * @param array $field Field settings including submitted value.
+         * @param array $data  Form data.
+         * @return array Validation errors.
+         */
+        public function validate($field, $data)
+        {
+        }
+        /**
+         * Build the options this field offers, as the display layer builds them.
+         *
+         * @param array $field Field settings.
+         * @return array Options, each with a `value` and `label`.
+         */
+        protected function get_offered_options($field)
+        {
+        }
         public function init_settings()
         {
         }
@@ -15737,6 +16038,119 @@ namespace {
         {
         }
         public function add_term_options($field)
+        {
+        }
+        /**
+         * Render the field on the single-submission screen.
+         *
+         * Rendered here rather than on the parent so that a stored answer matching
+         * no available term stays on screen and survives an administrator pressing
+         * Update. #8135
+         *
+         * @since 3.14.10
+         *
+         * @param int $id Field ID.
+         * @param mixed $value Stored submission value.
+         * @return string
+         */
+        public function admin_form_element($id, $value)
+        {
+        }
+        /**
+         * Render the available terms as a checkbox list with the stored answer
+         * selected.
+         *
+         * @since 3.14.10
+         *
+         * @param int $id Field ID.
+         * @param mixed $value Stored submission value.
+         * @param array $options Available term options.
+         * @return string
+         */
+        public function render_admin_checkbox_list($id, $value, $options)
+        {
+        }
+        /**
+         * Render one checkbox for the single-submission screen.
+         *
+         * @param int $id Field ID.
+         * @param string $value Option value.
+         * @param string $label Option label.
+         * @param bool $checked Whether the option is selected.
+         * @return string
+         */
+        protected function render_admin_checkbox($id, $value, $label, $checked)
+        {
+        }
+        /**
+         * Normalize a stored submission value to an array of strings.
+         *
+         * @param mixed $value Stored submission value.
+         * @return array
+         */
+        protected function normalize_stored_value($value)
+        {
+        }
+        /**
+         * Provide the available terms as render options.
+         *
+         * The terms a form owner made available on the field are its options, but
+         * they are stored as `taxonomy_term_<id>` toggles rather than in `options`.
+         * Publishing them here is what lets submission validation accept a chosen
+         * term and lets the single-submission screen render a control.
+         *
+         * @since 3.14.10
+         *
+         * @param array $options Options provided so far.
+         * @param array|object $settings Field settings, or the field itself.
+         * @return array
+         */
+        public function render_term_options($options, $settings)
+        {
+        }
+        /**
+         * Display a stored submission value as term names.
+         *
+         * A submission stores term IDs. A value that resolves to no term is
+         * returned untouched: terms typed in through Add New Terms are stored as
+         * the text itself, and a term deleted after submission no longer resolves.
+         * Both must stay visible rather than disappear. #8135
+         *
+         * @since 3.14.10
+         *
+         * @param mixed $value Stored submission value.
+         * @param array|object $field Field settings, or the field itself.
+         * @return mixed
+         */
+        public function display_value($value, $field)
+        {
+        }
+        /**
+         * Build option definitions for the terms made available on the field.
+         *
+         * @param array $settings Field settings.
+         * @return array
+         */
+        protected function build_term_options($settings)
+        {
+        }
+        /**
+         * Resolve a stored value to its term name, or return it as it stands.
+         *
+         * @param mixed $stored Stored value.
+         * @param string $taxonomy Taxonomy the field is mapped to.
+         * @return mixed
+         */
+        protected function term_name_or_stored_value($stored, $taxonomy)
+        {
+        }
+        /**
+         * Read the taxonomy from a field given as settings or as a field object.
+         *
+         * @param array|object $field Field settings, or the field itself.
+         * @return string
+         */
+        protected function get_field_taxonomy($field)
         {
         }
         public function merge_tag_value($value, $field)
@@ -17202,6 +17616,16 @@ namespace {
         public static function maybe_escape_csv_column($value): string
         {
         }
+        /**
+         * Run a field default value through do_shortcode(), keeping it unchanged
+         * when a shortcode echoes rather than returns its output.
+         *
+         * @param mixed $value
+         * @return mixed
+         */
+        public static function process_default_value_shortcodes($value)
+        {
+        }
     }
     /**
      * Allows plugins to use their own update API.
@@ -18290,6 +18714,19 @@ namespace {
         {
         }
         /**
+         * Return the ids of the fields the fieldset currently holds
+         *
+         * Submission values are keyed on the fieldset field id alone, while the
+         * field settings reference each field as {fieldsetRepeaterFieldId}.{fieldsetFieldId},
+         * so the settings references are parsed down to the same form.
+         *
+         * @param array $fieldSettings Repeatable fieldset field settings
+         * @return array
+         */
+        protected function getCurrentFieldsetFieldIds($fieldSettings)
+        {
+        }
+        /**
          * Get List Labels
          * Accepts a field loops over options, compares field values and returns the labels.
          * @since 3.2.22
@@ -18333,13 +18770,34 @@ namespace {
         {
         }
         /**
-         * Strip tags in value
+         * Render a submitted value as literal, inert text
          *
          * @param int|string $id
          * @param mixed $incoming
          * @return mixed 
          */
         protected function stripTagsMaybeFieldset($id, $incoming)
+        {
+        }
+        /**
+         * Render a submitted value as literal, inert text
+         *
+         * A submitted value is data, not markup. strip_tags() reads a `<` as the
+         * start of a tag and discards everything after it, so a submission
+         * containing `<` reached the recipient truncated. Escaping instead keeps
+         * every submitted character while ensuring nothing a customer typed is
+         * acted on as markup by a mail client or a browser.
+         *
+         * htmlspecialchars() is called directly, with double encoding enabled, so
+         * that a customer who literally types `&amp;` receives `&amp;` and not
+         * `&`; esc_html() leaves an existing entity untouched and would lose it.
+         *
+         * @see Saturday-Drive/ninja-forms#7279
+         *
+         * @param mixed $value
+         * @return mixed Escaped string, or the value unchanged when not a string
+         */
+        protected function makeValueInert($value)
         {
         }
         /**
@@ -18983,6 +19441,8 @@ namespace {
         /**
          * Store telemetry data
          *
+         * Legacy arrays without schema_version are rejected with 410 and not stored.
+         *
          * @since 3.8.18
          * @since 3.14.5 Added input validation and sanitization
          *
@@ -19099,6 +19559,74 @@ namespace {
          * @return int
          */
         public function set_expiration_time($exp)
+        {
+        }
+    }
+    class NF_Telemetry_BehavioralEvent
+    {
+        const PAGES = ['ninja-forms', 'nf-submissions', 'nf-settings', 'nf-import-export', 'nf-system-status'];
+        const ACTIONS = ['navigation_link', 'navigate_ninja-forms', 'navigate_nf-submissions', 'navigate_nf-settings', 'navigate_nf-import-export', 'navigate_nf-system-status', 'add_button', 'cancel_button'];
+        public static function valid($event)
+        {
+        }
+    }
+    /** Per-event options avoid the shared read/append/write queue race. Never autoload. */
+    class NF_Telemetry_BehavioralQueue
+    {
+        const PREFIX = 'nf_be_event_';
+        const HOOK = 'nf_behavioral_delivery';
+        const CAPACITY = 1000;
+        const LEGACY_OPTION = 'nf_be_data';
+        const LEGACY_ATTEMPTS = 'nf_be_legacy_attempts';
+        const LEGACY_MAX_ATTEMPTS = 3;
+        const LEGACY_MAX_BYTES = 1048576;
+        public static function enqueue(array $event)
+        {
+        }
+        public static function count()
+        {
+        }
+        /**
+         * Names and values come from one query, so a persistent object cache cannot serve a
+         * stale copy of an event that another server has just written or acknowledged.
+         */
+        public static function pending($limit = 100)
+        {
+        }
+        /**
+         * Trust boundary: the authenticated collector's accepted_event_ids decide deletion. Only
+         * IDs from the batch just sent can match, so a faulty acknowledgment affects that batch alone.
+         */
+        public static function acknowledge(array $sent, array $response)
+        {
+        }
+        public static function schedule($delay)
+        {
+        }
+        /**
+         * The pre-v2 backlog sent with the monthly report. Nothing appends to it any more, so it
+         * can only shrink. A backlog too large to be accepted is dropped rather than resent.
+         */
+        public static function legacyBacklog()
+        {
+        }
+        /**
+         * Record the outcome of a monthly report that carried the backlog. After three reports
+         * without an acknowledgment it is dropped, so a site the collector never accepts cannot
+         * keep it forever.
+         */
+        public static function settleLegacy(array $sent, $response)
+        {
+        }
+        public static function discardLegacy()
+        {
+        }
+        /** Older versions autoloaded the backlog; stop loading it on every request. */
+        public static function unloadLegacy()
+        {
+        }
+        /** Remove a legacy snapshot only if no writer has changed it in the meantime. */
+        public static function acknowledgeLegacy(array $sent, array $response)
         {
         }
     }
@@ -20150,7 +20678,7 @@ namespace {
         /**
          * @since 3.0
          */
-        const VERSION = '3.15.5';
+        const VERSION = '3.15.6';
         /**
          * @since 3.4.0
          */
@@ -20311,6 +20839,29 @@ namespace {
         {
         }
         function maybe_load_public_form($template)
+        {
+        }
+        /**
+         * Whether the requested address is the public link itself and nothing more.
+         *
+         * The rewrite rule claims the key alone, but a site whose rewrite rules
+         * have not been flushed since updating still matches anything appended to
+         * it, so the request is checked directly as well.
+         *
+         * @param string $public_link_key
+         * @return bool
+         */
+        protected function is_canonical_public_link_request($public_link_key)
+        {
+        }
+        /**
+         * Turn a public link request that resolves to nothing into the site's
+         * ordinary 404, at the address that was requested.
+         *
+         * @param string $template
+         * @return string
+         */
+        protected function public_link_not_found($template)
         {
         }
         /**
@@ -20545,6 +21096,17 @@ namespace {
          * Activation
          */
         public function activation()
+        {
+        }
+        /**
+         * Remove the 2.9-era ninja_forms_load_deprecated option.
+         *
+         * Add-ons still switch to their removed 2.9 code when this option is set,
+         * which hides their license fields or blocks their activation (#7246).
+         *
+         * @return void
+         */
+        private static function remove_legacy_deprecated_option()
         {
         }
         /**
@@ -21566,6 +22128,52 @@ namespace {
     {
     }
     /**
+     * Gather the option names of every expired session.
+     *
+     * Scans only the `_wp_session_expires_` rows, which hold a bare timestamp, so
+     * this never reads the payload rows — those are the large ones, routinely
+     * hundreds of kilobytes each. The scan is paged and performs no deletes, so
+     * the offsets stay stable while it runs.
+     *
+     * @return array<int,string> Option names to delete, data and expiry rows interleaved.
+     */
+    function nf_session_collect_expired_option_names()
+    {
+    }
+    /**
+     * Clean up expired sessions by removing data and their expiration entries from
+     * the WordPress options table.
+     *
+     * Deletes in bounded chunks. Sites that have been accumulating since 2017 hold
+     * hundreds of megabytes of these rows, and a single unbounded DELETE is what
+     * managed hosts abort part-way — which would leave the site exactly as full as
+     * it started. Each chunk that completes is committed, so an interrupted run
+     * still makes progress and the next run continues from there.
+     *
+     * This method should never be called directly and should instead be triggered as part
+     * of a scheduled task or cron job.
+     *
+     * @return void
+     */
+    function wp_session_cleanup()
+    {
+    }
+    /**
+     * Register the garbage collector as a twice daily event.
+     *
+     * Hooked to `init` rather than `wp`. `wp` only fires on a rendered page view,
+     * so a site whose Ninja Forms traffic is admin-ajax and cron — which is every
+     * site — never scheduled the collector at all.
+     *
+     * Re-registers itself whenever the event is missing, so a cleared cron table
+     * or a plugin that flushes schedules cannot silently switch collection off.
+     *
+     * @return void
+     */
+    function wp_session_register_garbage_collection()
+    {
+    }
+    /**
      * Return the current cache expire setting.
      *
      * @return int
@@ -21633,22 +22241,6 @@ namespace {
      * Write session data and end session
      */
     function wp_session_write_close()
-    {
-    }
-    /**
-     * Clean up expired sessions by removing data and their expiration entries from
-     * the WordPress options table.
-     *
-     * This method should never be called directly and should instead be triggered as part
-     * of a scheduled task or cron job.
-     */
-    function wp_session_cleanup()
-    {
-    }
-    /**
-     * Register the garbage collector as a twice daily event.
-     */
-    function wp_session_register_garbage_collection()
     {
     }
     // class Foo_Widget
