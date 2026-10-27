@@ -2237,6 +2237,18 @@ namespace {
         public function submit()
         {
         }
+        /**
+         * Refuse a logged-out submission to a form that requires a logged-in user.
+         *
+         * The requirement is read from the saved form, never from the request.
+         * The form's logged-out message is reused as the error and filtered the
+         * same way as on display, because the front end renders form errors as HTML.
+         *
+         * @return void
+         */
+        protected function maybe_refuse_logged_out_submission()
+        {
+        }
         public function resume()
         {
         }
@@ -4640,7 +4652,31 @@ namespace {
          * @var boolean
          */
         protected $neutralize_substituted_shortcodes = \FALSE;
+        /**
+         * Stand-ins for the braces of a substituted value while the merge tag
+         * groups run, so a value one group substitutes is never read as a merge
+         * tag by a group that runs after it. Private-use code points, so they
+         * cannot collide with submitted text.
+         */
+        const SUBSTITUTED_OPEN_BRACE = "";
+        const SUBSTITUTED_CLOSE_BRACE = "";
+        /**
+         * Filters that run merge tag replacement. Every group adds its callback at
+         * the default priority; the braces are put back once all of them have run.
+         *
+         * @var array
+         */
+        protected static $replacement_filters = array('ninja_forms_render_default_value', 'ninja_forms_run_action_settings', 'ninja_forms_run_action_settings_preview', 'ninja_forms_calc_setting', 'ninja_forms_merge_tags');
         public function __construct()
+        {
+        }
+        /**
+         * Put back the braces of substituted values once every group has run.
+         *
+         * @param mixed $subject
+         * @return mixed
+         */
+        public static function restore_substituted_braces($subject)
         {
         }
         /**
@@ -4700,6 +4736,41 @@ namespace {
          * @return string
          */
         protected function getReplacement($callback)
+        {
+        }
+        /**
+         * Prepare a value for substitution into the subject: neutralise shortcode
+         * brackets where the content is run through do_shortcode(), and always
+         * stand in for its braces so a later group cannot expand merge tags
+         * within it (restore_substituted_braces() puts them back).
+         *
+         * @param mixed $value
+         * @return mixed
+         */
+        protected function prepareSubstitutedValue($value)
+        {
+        }
+        /**
+         * The client's IP address, from the first source holding a valid one.
+         *
+         * Proxied sites rely on the forwarded headers and the IP filters, so they
+         * are still read, but only a valid IP address is ever returned. A filter
+         * that returns anything else (e.g. to anonymise) leaves the value empty
+         * rather than revealing the address it replaced.
+         *
+         * @return string
+         */
+        protected function get_client_ip()
+        {
+        }
+        /**
+         * Keep a post derived from the request's referer only if the person
+         * submitting could view it.
+         *
+         * @param int $post_id
+         * @return int|false
+         */
+        protected function viewable_referer_post_id($post_id)
         {
         }
         /**
@@ -17382,6 +17453,45 @@ namespace {
         {
         }
         /**
+         * Form settings that hold rich text and are printed as HTML on the front end.
+         *
+         * @since 3.15.7
+         * @see https://github.com/Saturday-Drive/ninja-forms/issues/8254
+         */
+        const FORM_HTML_SETTINGS = array('not_logged_in_msg', 'sub_limit_msg');
+        /**
+         * Apply the safe-HTML allowlist to a form's rich-text message settings.
+         *
+         * Callers decide when to apply it, using the same unfiltered_html policy
+         * as field settings. Other settings and non-string values are untouched.
+         * Shortcodes survive as text and still run when the message is displayed.
+         *
+         * @since 3.15.7
+         *
+         * @param array|mixed $settings Form settings keyed by setting name.
+         * @return array|mixed The settings with their rich-text messages cleaned.
+         */
+        public static function sanitize_form_html_settings($settings)
+        {
+        }
+        /**
+         * Clean a stored rich-text form message before display on sites that
+         * disallow unfiltered HTML.
+         *
+         * On those sites no one may store scripts, so this also neutralises any
+         * stored before 3.15.7. Elsewhere the message is returned unchanged.
+         * Apply it to the stored message before do_shortcode(), so shortcode
+         * output is not filtered.
+         *
+         * @since 3.15.7
+         *
+         * @param mixed $message Stored message.
+         * @return mixed The message, cleaned when unfiltered HTML is disallowed.
+         */
+        public static function maybe_kses_form_message($message)
+        {
+        }
+        /**
          * @param $value
          * @return array|string
          */
@@ -17879,6 +17989,20 @@ namespace {
          * @return string $error
          */
         public function get_error()
+        {
+        }
+        /**
+         * Whether requests to the store verify its TLS certificate.
+         *
+         * Verified by default. Shares the filter used by EDD_SL_Plugin_Updater so
+         * one switch governs every store request carrying the license key.
+         *
+         * @since 3.15.7
+         * @see https://github.com/Saturday-Drive/ninja-forms/issues/8141
+         *
+         * @return bool
+         */
+        protected function verify_ssl(): bool
         {
         }
         private function maybe_debug($data, $key = 'debug')
@@ -20678,7 +20802,7 @@ namespace {
         /**
          * @since 3.0
          */
-        const VERSION = '3.15.6';
+        const VERSION = '3.15.7';
         /**
          * @since 3.4.0
          */
