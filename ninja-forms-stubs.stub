@@ -2160,6 +2160,254 @@ namespace {
         {
         }
     }
+    /**
+     * Connect, disconnect, and status-refresh for the core PayPal connection.
+     *
+     * Onboarding binds the site, not the WordPress user who happened to click the
+     * button, so a different administrator can refresh or disconnect later.
+     */
+    class NF_AJAX_Controllers_PayPalConnect
+    {
+        /**
+         * How long a status answer stays good for, in seconds.
+         *
+         * Every refresh becomes a live PayPal API call, and PayPal rate-limits.
+         * Opening the Payments page in three tabs, or two administrators looking
+         * at once, would otherwise be three or six calls asking a question whose
+         * answer changes when a merchant does something in PayPal — hours or days
+         * apart, not seconds. Pressing "Refresh Connection" always bypasses this.
+         */
+        public const STATUS_FRESH_FOR = 300;
+        /** Transient: PayPal's status was asked recently. See mark_status_checked(). */
+        public const STATUS_CHECKED = 'nf_paypal_status_checked';
+        /** Transient: an open attempt was asked about within the last minute. */
+        public const ATTEMPT_CHECKED = 'nf_paypal_attempt_checked';
+        /**
+         * Register the Payments page's AJAX endpoints (all administrator-only).
+         *
+         * @return void
+         */
+        public function __construct()
+        {
+        }
+        /**
+         * The PayPal sign-up link for the Payments page's Connect button.
+         *
+         * PayPal's seller-onboarding guide puts the link on the page as a button
+         * that their partner.js opens in PayPal's own mini-browser, so the link has
+         * to exist before the merchant clicks. An unused link is offered again
+         * rather than minting a referral — and a service credential — each time
+         * the page is opened; PayPal's links work only once, so a followed one is
+         * replaced.
+         *
+         * Beginning a referral is the only request the site ever makes unsigned:
+         * the service issues this site its credential with it.
+         *
+         * Responds with the dashboard connection state plus approvalUrl, or a
+         * JSON error with a merchant-facing message.
+         *
+         * @return void
+         */
+        public function connect(): void
+        {
+        }
+        /**
+         * The merchant followed the sign-up link. From here PayPal may have an
+         * answer, so checks begin, and the next Connect needs a fresh link.
+         *
+         * @return void
+         */
+        public function opened(): void
+        {
+        }
+        /**
+         * Find out from PayPal whether the open attempt connected anyone.
+         *
+         * The one place a connection is made. PayPal link the merchant to our
+         * referral when they grant permission, and may then never send them back —
+         * a verification step, a "Save and close" or a closed window all end on
+         * PayPal's own dashboard (live, 2026-09-17). So nothing here depends on the
+         * trip back: the service asks PayPal which merchant is linked to this
+         * site's referral, and that answer is the only thing ever stored. No
+         * merchant id from a URL or a browser is read, so a crafted link has
+         * nothing to offer.
+         *
+         * @return string|WP_Error 'connected', 'waiting' (nothing linked yet), or
+         *                         'none' (no attempt to ask about)
+         */
+        private function settle_attempt()
+        {
+        }
+        /**
+         * The Payments page asking, while the merchant is in PayPal's mini-browser,
+         * whether they have finished. Polled every few seconds, and once more when
+         * the merchant says they are done.
+         *
+         * `final` marks that last ask. Only then may the answer be "nothing was
+         * connected" — the attempt still stays open, so a merchant who finishes
+         * verifying later is found the next time the page is opened.
+         *
+         * Responds with the dashboard connection state plus outcome and
+         * unfinishedAttempt.
+         *
+         * @return void
+         */
+        public function check(): void
+        {
+        }
+        /**
+         * Where PayPal send the merchant when they do send them back — the page
+         * behind PayPal's mini-browser, which PayPal navigate here as they close it.
+         *
+         * Nothing PayPal append to the URL is read. The attempt is settled by
+         * asking PayPal, exactly as the Payments page does; this is just an early,
+         * free moment to ask. A crafted link to it can do no more than make this
+         * site ask PayPal about its own referral.
+         *
+         * Always ends the request with a redirect to the Payments page.
+         *
+         * @return void
+         */
+        public function handle_return(): void
+        {
+        }
+        /**
+         * Disconnect the site from PayPal, here and at the service.
+         *
+         * Responds with the now-disconnected dashboard connection state.
+         *
+         * @return void
+         */
+        public function disconnect(): void
+        {
+        }
+        /**
+         * Re-read PayPal's gating flags. The Payments page does this on every load.
+         *
+         * Answers from the stored connection while the last check is still fresh,
+         * unless the request posts force=1 (the "Refresh Connection" button).
+         *
+         * @return void
+         */
+        public function refresh(): void
+        {
+        }
+        /**
+         * PayPal's status was just read: the Payments page need not ask again
+         * until it goes stale.
+         *
+         * @return void
+         */
+        private static function mark_status_checked(): void
+        {
+        }
+        /**
+         * Said when PayPal could not be asked whether an attempt connected anyone.
+         *
+         * @return string Translated merchant-facing message.
+         */
+        private static function unreachable(): string
+        {
+        }
+        /**
+         * The service answers in camelCase; the connection stores PayPal's own names.
+         *
+         * @param array $status The service's status answer (paymentsReceivable,
+         *                      primaryEmailConfirmed, scopes).
+         * @return array{payments_receivable: bool, primary_email_confirmed: bool, scopes: array}
+         */
+        private static function normalise(array $status): array
+        {
+        }
+        /**
+         * No fragment, ever: PayPal append their parameters to the end of the
+         * return URL, and after a `#` they would never reach the server.
+         *
+         * @return string The admin-ajax URL that runs handle_return().
+         */
+        private function return_url(): string
+        {
+        }
+        /**
+         * Refuse the request unless it carries the Payments page nonce and comes
+         * from an administrator. Ends the request on failure.
+         *
+         * @return void
+         */
+        private function authorize(): void
+        {
+        }
+    }
+    /**
+     * Create the PayPal order for a halted submission, when the visitor presses
+     * a payment button.
+     *
+     * PayPal require every order to name the method it will be paid with, and
+     * that is not known until a button is pressed - so the gateway halts the
+     * submission without an order and this makes it on the click. Decision,
+     * 2026-09-09.
+     *
+     * The browser gets to say one thing: which button. Everything else the order
+     * needs - amount, currency, the merchant, the buyer's email, the item name -
+     * was fixed by the gateway when the form was submitted and lives in the
+     * halted submission core keeps in its session. Nothing in the request is
+     * trusted for any of it, and the session is what ties the order to this
+     * visitor's submission: a request without the session cookie finds nothing to
+     * pay for.
+     */
+    final class NF_AJAX_Controllers_PayPalOrder
+    {
+        /**
+         * Register the order endpoint for visitors and logged-in users alike.
+         *
+         * @return void
+         */
+        public function __construct()
+        {
+        }
+        /**
+         * AJAX handler for nf_paypal_order: create (or reuse) the PayPal order for
+         * the button the visitor pressed.
+         *
+         * Responds with { orderId } on success; every refusal is a JSON error
+         * carrying a visitor-facing message. Never returns normally in production,
+         * because both responses end the request.
+         *
+         * @return void
+         */
+        public function create(): void
+        {
+        }
+        /**
+         * The buttons this form was offered: the PayPal wallet always (it is also
+         * what the deterministic test button stands in for), plus whatever the
+         * service listed. Anything else is a request the page never made.
+         *
+         * @param array $order The halted submission's nf_paypal_order extra.
+         * @return string[]
+         */
+        private function methods_offered(array $order): array
+        {
+        }
+        /**
+         * The same nonce the form itself submits with, timestamped the same way.
+         * See NF_AJAX_Controllers_Submission::submit().
+         *
+         * @return void
+         */
+        private function check_nonce(): void
+        {
+        }
+        /**
+         * End the request with a JSON error the checkout script shows the visitor.
+         *
+         * @param string $message Translated, visitor-facing reason.
+         * @return void
+         */
+        private function refuse(string $message): void
+        {
+        }
+    }
     class NF_AJAX_Controllers_Preview extends \NF_Abstracts_Controller
     {
         private static $transient_prefix = 'nf_form_preview_';
@@ -6326,6 +6574,34 @@ namespace NinjaForms\Includes\Traits {
         {
         }
         /**
+         * Set Nicename
+         *
+         * For labels that cannot be translated when the action is constructed.
+         * Actions are registered on plugins_loaded, and asking for a translation
+         * before init makes WordPress load the textdomain too early and report it
+         * as a mistake, once per request. An action in that position stores its
+         * label plainly and calls this once init has run.
+         *
+         * @param string $nicename
+         * @return void
+         */
+        public function set_nicename(string $nicename): void
+        {
+        }
+        /**
+         * Set Documentation URL
+         *
+         * For actions re-instantiated under another name, such as a Collect
+         * Payment locked to one gateway, whose documentation is not the generic
+         * action's. Shown as the help link beside the action's name.
+         *
+         * @param string $url
+         * @return void
+         */
+        public function set_documentation_url(string $url): void
+        {
+        }
+        /**
          * Get Section
          *
          * Returns the drawer section for an action.
@@ -8097,6 +8373,64 @@ namespace {
         {
         }
     }
+    /**
+     * The Payments submenu under Ninja Forms.
+     *
+     * The page itself is drawn by the React dashboard (the menu slug is a hash
+     * route into it), so this class only registers the menu entry and decides
+     * when it should not appear.
+     */
+    final class NF_Admin_Menus_Payments extends \NF_Abstracts_Submenu
+    {
+        public $parent_slug = 'ninja-forms';
+        public $page_title = 'Payments';
+        public $menu_slug = 'ninja-forms#payments';
+        public $position = 3.5;
+        /**
+         * Register the menu, then the check that may remove it again.
+         *
+         * @return void
+         */
+        public function __construct()
+        {
+        }
+        /**
+         * Unregister the menu item while required updates are pending, or when an
+         * existing PayPal add-on manages payments instead.
+         *
+         * @return void
+         */
+        public function nf_upgrade_redirect(): void
+        {
+        }
+        /**
+         * Translated page title; the class property cannot call translation functions.
+         *
+         * @return string
+         */
+        public function get_page_title()
+        {
+        }
+        /**
+         * Capability required to see the Payments menu.
+         *
+         * Defaults to manage_options, the same check every PayPal Connect AJAX
+         * endpoint makes, so the menu is never shown to a role the page cannot serve.
+         *
+         * @return string
+         */
+        public function get_capability()
+        {
+        }
+        /**
+         * Required by the parent; the React dashboard renders the page.
+         *
+         * @return void
+         */
+        public function display()
+        {
+        }
+    }
     final class NF_Admin_Menus_Settings extends \NF_Abstracts_Submenu
     {
         public $parent_slug = 'ninja-forms';
@@ -8556,6 +8890,49 @@ namespace {
         public function __construct()
         {
         }
+        public function render_metabox($post, $metabox)
+        {
+        }
+    }
+    /**
+     * The PayPal payment, shown on the submission it belongs to.
+     *
+     * The payment details are already written onto the entry; without this they
+     * sit in the database where only a developer would find them. A merchant
+     * looking at an order wants the amount, whether it actually completed, and a
+     * way through to the transaction in their own PayPal account.
+     *
+     * Absent on submissions that were never paid for, rather than an empty panel
+     * on every entry of every form.
+     */
+    final class NF_Admin_Metaboxes_PayPalPayment extends \NF_Abstracts_SubmissionMetabox
+    {
+        /**
+         * Register the box only on the edit screen of a submission PayPal paid for.
+         *
+         * @return void
+         */
+        public function __construct()
+        {
+        }
+        /**
+         * Set the translated title once translations are loaded.
+         *
+         * @return void
+         */
+        public function init(): void
+        {
+        }
+        /**
+         * Print the payment rows and a link through to the PayPal transaction.
+         *
+         * Refreshes the status from PayPal first, so a refund made in the PayPal
+         * dashboard shows here without waiting for a webhook.
+         *
+         * @param WP_Post $post    The submission post being edited.
+         * @param array   $metabox The metabox arguments WordPress passes.
+         * @return void
+         */
         public function render_metabox($post, $metabox)
         {
         }
@@ -10025,6 +10402,19 @@ namespace {
         {
         }
         /**
+         * Delete what the core PayPal connection stores.
+         *
+         * nf_paypal_connect holds the site's PayPal service identity and signing
+         * credential, so "delete all data" must not leave it behind. A merchant
+         * who reinstalls connects again and is issued a fresh credential.
+         *
+         * Names are spelled out rather than read from the PayPal classes so the
+         * cleanup does not depend on loading them.
+         */
+        protected function _nuke_paypal_settings()
+        {
+        }
+        /**
          * Function to nuke our 2.9 database tables.
          *
          * @param $areYouSure (Boolean)
@@ -11428,7 +11818,11 @@ namespace NinjaForms\Includes\Entities {
          */
         protected $title = '';
         /**
-         * Collection of label/value/styling pairs for output
+         * Collection of label/value/styling/url elements for output
+         *
+         * Each element: 'label' and 'value' (required), 'styling' (optional class
+         * hint), and 'url' (optional link for the value, escaped with esc_url_raw;
+         * '' when absent).
          *
          * @var array
          */
@@ -11449,6 +11843,20 @@ namespace NinjaForms\Includes\Entities {
         {
         }
         protected function validateLabelValueCollection($incomingLabelValueCollection): array
+        {
+        }
+        /**
+         * Escaped url of a label/value element, or '' when it has none
+         *
+         * Empty urls are skipped so an element without a link needs no WordPress functions.
+         *
+         * Untyped on purpose: add-on metaboxes pass label/value elements too, and
+         * some may be array-like objects rather than arrays.
+         *
+         * @param array|\ArrayAccess $labelValueElement
+         * @return string
+         */
+        private static function normaliseUrl($labelValueElement): string
         {
         }
         /**
@@ -14807,7 +15215,7 @@ namespace {
          *
          * @param $value checkbox field value
          * @param $field checkbox field model
-         * @return string|void
+         * @return string
          */
         public function export_value($value, $field)
         {
@@ -15256,6 +15664,35 @@ namespace {
         public function filter_options($options, $settings)
         {
         }
+        /**
+         * The countries this field offers, as code => translated name.
+         *
+         * Reads the code-keyed list, where no two countries can merge however
+         * their names translate, and then carries across whatever the older
+         * name-keyed filter did, so an add-on that adds, removes or renames a
+         * country through `ninja_forms_config_country_list` still gets its way.
+         * That filter's own shape can collide under translation, so it is used
+         * only to find the difference it made, never as the list itself.
+         *
+         * @return array Country code => translated country name.
+         */
+        private static function country_options()
+        {
+        }
+        /**
+         * Order the country names as a reader expects.
+         *
+         * The labels are translated, so a byte comparison files every accented
+         * name after the whole plain alphabet: Åland Islands below Zimbabwe in
+         * English, États-Unis and Égypte below Zimbabwe in French. Folding the
+         * accents away first puts each name under the letter it reads as. The
+         * original comparison breaks ties so the order stays deterministic when
+         * two names fold to the same text.
+         *
+         * @param array $option_a One option, carrying a 'label'.
+         * @param array $option_b The option to compare it with.
+         * @return int
+         */
         private function sort_options_by_label($option_a, $option_b)
         {
         }
@@ -19206,6 +19643,1161 @@ namespace {
         {
         }
     }
+    /**
+     * The merchant's PayPal connection state, as stored on this site.
+     *
+     * This holds no PayPal credential of any kind. Under PayPal's third-party
+     * partner model the partner client secret lives only on the Saturday Drive
+     * service, so the site stores nothing more than who the merchant is and what
+     * PayPal last told us about their account.
+     */
+    final class NF_PayPal_Connection
+    {
+        /** The option the whole connection state is stored in. */
+        const OPTION = 'nf_paypal_connect';
+        /** Onboarding attempts kept for support; PayPal ties a tracking ID to an account permanently. */
+        const MAX_ATTEMPTS = 20;
+        /**
+         * How long an unfinished attempt is still news worth telling the merchant
+         * about. The attempt itself stays open longer: PayPal's link to it is
+         * permanent, so a merchant who finishes verifying hours later is still
+         * found the next time the Payments page is opened.
+         */
+        const ATTEMPT_NEWS_FOR = 1800;
+        /**
+         * How long a sign-up link we have not used yet is offered again. PayPal's
+         * links work once; an unused one is reused rather than minting a referral
+         * (and a service credential) every time the Payments page is opened.
+         */
+        const LINK_FRESH_FOR = 3600;
+        /**
+         * Which service a *new* connection is made against.
+         *
+         * Live, unless this site deliberately opts out. Sandbox was the default
+         * while this was being built, and that is precisely the wrong thing to
+         * ship: a merchant pointed at the sandbox service would see a successful
+         * connection, a working checkout and completed payments on their entries,
+         * while no money moved anywhere at all. Nothing would look broken until
+         * they checked a PayPal balance. The reassuring default is the dangerous
+         * one here, so it is not the default.
+         *
+         * The opt-out is ours, for testing, and is deliberately not reachable by a
+         * merchant: define NF_PAYPAL_SANDBOX in wp-config.php, or filter it.
+         *
+         * This never re-points an existing connection. The environment is stamped
+         * on the connection when it is made and read back from storage from then
+         * on, so a site connected in sandbox stays in sandbox even after this
+         * starts answering 'live' — which matters, because a sandbox credential
+         * sent to the live service would simply be refused, and the merchant would
+         * be told their connection had failed for no reason they could act on.
+         *
+         * @return string 'live' or 'sandbox'
+         */
+        public static function default_environment(): string
+        {
+        }
+        /**
+         * The state of a site that has never connected; every stored key is
+         * present here, so readers never need an isset().
+         *
+         * @return array
+         */
+        public static function defaults(): array
+        {
+        }
+        /**
+         * The stored state, filled out with defaults for any key not yet stored.
+         *
+         * May come from WordPress's in-request option cache; use fresh() before
+         * writing after a wait.
+         *
+         * @return array
+         */
+        public static function get(): array
+        {
+        }
+        /**
+         * The stored state as it is now, not as this request first read it.
+         *
+         * WordPress keeps an option in memory for the rest of a request once it has
+         * been read. A request that waits on PayPal and then writes would otherwise
+         * write back what it read before waiting — and if the merchant pressed
+         * Disconnect in the meantime, that silently reconnects them (seen on
+         * staging, 2026-09-17: a page-load status check outlived a Disconnect).
+         *
+         * @return array
+         */
+        public static function fresh(): array
+        {
+        }
+        /**
+         * Store the state, filling in defaults; not autoloaded, since only the
+         * Payments page and checkout read it.
+         *
+         * @param array $state The full or partial connection state.
+         * @return void
+         */
+        public static function save(array $state): void
+        {
+        }
+        /**
+         * A merchant is connected once onboarding has given us their payer ID.
+         * Whether they may actually take money is a further question — see
+         * can_process_payments(), which PayPal gates separately.
+         *
+         * @return bool
+         */
+        public static function is_connected(): bool
+        {
+        }
+        /**
+         * PayPal's three gates. All must hold, per the partner Solution Design
+         * Document: a merchant can be connected and still unable to be paid.
+         *
+         * @return bool
+         */
+        public static function can_process_payments(): bool
+        {
+        }
+        /**
+         * Why payments are unavailable, or '' when they are available. The two
+         * PayPal failure states get their own seller-facing copy on the page.
+         *
+         * @return string 'superseded_by_addon', 'not_connected',
+         *                'payments_not_receivable', 'email_not_confirmed',
+         *                'consent_revoked', or ''.
+         */
+        public static function blocker(): string
+        {
+        }
+        /**
+         * The service issued us a credential. Keep it; it signs everything after this.
+         *
+         * Called after waiting on the service, so it reads the state as it is now:
+         * the Payments page asks PayPal about an open attempt at the same moment it
+         * asks for a sign-up link, and that other request may have recorded the
+         * merchant while this one waited. A connection made meanwhile is kept, and
+         * this credential — for a referral nobody needs now — is not stored over it.
+         *
+         * @param string $site_id     The service's id for this site.
+         * @param string $credential  The secret this site signs requests with.
+         * @param string $tracking_id The new referral's tracking id.
+         * @return bool Whether the credential was stored.
+         */
+        public static function store_credential(string $site_id, string $credential, string $tracking_id): bool
+        {
+        }
+        /**
+         * Keep the sign-up link PayPal issued for the attempt just started.
+         *
+         * @param string      $url         PayPal's sign-up (action) URL.
+         * @param string|null $tracking_id The attempt the link belongs to. When a
+         *                                 newer attempt has begun meanwhile, the
+         *                                 link is not pinned to that one.
+         * @return void
+         */
+        public static function remember_link(string $url, ?string $tracking_id = \null): void
+        {
+        }
+        /**
+         * The sign-up link to offer now, or '' when a new one is needed: none was
+         * issued, it has been followed (PayPal's links work once), or it is stale.
+         *
+         * @return string
+         */
+        public static function unused_link(): string
+        {
+        }
+        /**
+         * The merchant followed the sign-up link: from now on PayPal may have an answer.
+         *
+         * @return void
+         */
+        public static function mark_opened(): void
+        {
+        }
+        /**
+         * Has the merchant gone to PayPal on an attempt still waiting for an answer?
+         *
+         * @return bool
+         */
+        public static function has_opened_attempt(): bool
+        {
+        }
+        /**
+         * The most recent onboarding attempt, or null when there has been none.
+         *
+         * The one place the last attempt is found, so every reader and writer
+         * agrees on which attempt that is and what an attempt missing a field
+         * means.
+         *
+         * @param array|null $state The state to read; the stored one when omitted.
+         * @return array|null The attempt with every field present, or null.
+         */
+        private static function last_attempt(?array $state = \null): ?array
+        {
+        }
+        /**
+         * $state with $changes written onto its last attempt. Does not save.
+         *
+         * @param array $state   The connection state.
+         * @param array $changes Attempt fields to overwrite.
+         * @return array The state, unchanged when there is no attempt.
+         */
+        private static function change_last_attempt(array $state, array $changes): array
+        {
+        }
+        /**
+         * Write $changes onto the last attempt, as stored now rather than as this
+         * request first read it — a request that waited on the service must not
+         * write back a connection recorded by another one meanwhile.
+         *
+         * @param array       $changes     Attempt fields to overwrite.
+         * @param string|null $tracking_id Only when the last attempt is this one.
+         * @return void
+         */
+        private static function update_last_attempt(array $changes, ?string $tracking_id = \null): void
+        {
+        }
+        /**
+         * Is there an onboarding attempt actually waiting to be completed?
+         *
+         * @return bool
+         */
+        public static function has_open_attempt(): bool
+        {
+        }
+        /**
+         * Should the merchant be told their last attempt connected nothing?
+         *
+         * Only ever asked after PayPal have said nothing is linked to the attempt,
+         * so this is never a guess about a merchant who did grant permission. A
+         * seller who backs out of PayPal's permission screen would otherwise land
+         * on the same Connect button they pressed a minute ago with nothing
+         * acknowledging it, which reads as a broken button.
+         *
+         * True once per attempt, because it is news the first time and clutter
+         * after that. Being told is recorded rather than the attempt being closed:
+         * the attempt stays open so a merchant who finishes later is still found.
+         * Not said about an attempt older than ATTEMPT_NEWS_FOR — that is
+         * archaeology rather than news.
+         *
+         * @return bool Whether the merchant should be told, now.
+         */
+        public static function unfinished_attempt(): bool
+        {
+        }
+        /**
+         * Close an attempt nobody is going to finish.
+         *
+         * A deliberate Disconnect ends whatever attempt was still open, so the
+         * page it lands on does not greet the merchant with news about a connection
+         * they have just chosen to remove.
+         *
+         * @return void
+         */
+        public static function abandon_attempt(): void
+        {
+        }
+        /**
+         * PayPal named the merchant linked to this attempt. The merchant and the
+         * status flags both come from PayPal by way of the service, never from a
+         * browser — we only record what we were told and when.
+         *
+         * @param string      $merchant_id PayPal's id for the linked merchant.
+         * @param array       $status      Gating flags: payments_receivable,
+         *                                 primary_email_confirmed, scopes.
+         * @param string|null $tracking_id The attempt PayPal were asked about;
+         *                                 nothing is written when it is no longer
+         *                                 the stored one.
+         * @return bool Whether the connection was recorded.
+         */
+        public static function complete_attempt(string $merchant_id, array $status, ?string $tracking_id = \null): bool
+        {
+        }
+        /**
+         * Refresh the three gates from PayPal without touching the merchant identity.
+         *
+         * @param array       $status  Gating flags: payments_receivable,
+         *                             primary_email_confirmed, scopes.
+         * @param string|null $site_id The connection PayPal were asked about. When
+         *                             it is no longer the stored one — disconnected
+         *                             or replaced while PayPal answered — nothing
+         *                             is written.
+         *
+         * @return bool Whether the answer was recorded.
+         */
+        public static function update_status(array $status, ?string $site_id = \null): bool
+        {
+        }
+        /**
+         * Fold PayPal's three gating flags into the stored state.
+         *
+         * One copy, because the two callers must agree: completing onboarding and
+         * refreshing afterwards write exactly the same fields, and a change made
+         * to one of two identical blocks is a change half-made.
+         *
+         * @param array $state  The connection state.
+         * @param array $status Gating flags: payments_receivable,
+         *                      primary_email_confirmed, scopes.
+         * @return array The state with the flags and last_checked written. Does not save.
+         */
+        private static function apply_status(array $state, array $status): array
+        {
+        }
+        /**
+         * Where to look this payment up in PayPal.
+         *
+         * Built from the environment stamped on the payment rather than the site's
+         * current one: a site that has moved from sandbox to live must not send
+         * someone hunting for an old test payment on the live site.
+         *
+         * @param string $transaction_id PayPal's capture (transaction) id.
+         * @param string $environment    'live' or 'sandbox'.
+         * @return string The PayPal activity URL, or '' without a transaction id.
+         */
+        public static function transaction_url(string $transaction_id, string $environment): string
+        {
+        }
+        /**
+         * Forget the merchant locally. This cannot revoke consent on PayPal's side
+         * — only the merchant can do that from their own PayPal account — so the
+         * page points them there rather than implying we did it for them.
+         *
+         * The attempts history is kept for support.
+         *
+         * @return void
+         */
+        public static function disconnect(): void
+        {
+        }
+        /**
+         * The shape the dashboard's React app reads.
+         *
+         * @return array connected, canProcess, blocker, merchantId, scopes,
+         *               environment, lastChecked, supersededBy.
+         */
+        public static function for_dashboard(): array
+        {
+        }
+    }
+    /**
+     * Does this site already have a PayPal path of its own?
+     *
+     * Core's PayPal connection stands down wherever one does. The rule is
+     * PayPal-specific on purpose: a site running Stripe, Authorize.net, Elavon or
+     * Recurly still sees the Payments page, because those merchants can perfectly
+     * well add PayPal through core. Only an existing PayPal integration wins.
+     *
+     * When one is present it does not merely hide the page — it disables whatever
+     * the merchant had set up in core. The add-on's own first-party connection is
+     * the integration, and it carries no platform fee.
+     */
+    final class NF_PayPal_ExistingIntegration
+    {
+        /** The paid PayPal Checkout add-on's main class. */
+        const CHECKOUT_CLASS = 'NF_Paypal';
+        /** The paid PayPal Checkout add-on's plugin path, for installs without the class loaded. */
+        const CHECKOUT_PLUGIN = 'ninja-forms-paypal/ninja-forms-paypal.php';
+        /** The legacy PayPal Express add-on's main class — roughly 600 merchants, never force-migrated. */
+        const EXPRESS_CLASS = 'NF_PayPalExpress';
+        /** The legacy PayPal Express add-on's plugin path. */
+        const EXPRESS_PLUGIN = 'ninja-forms-paypal-express/ninja-forms-paypal-express.php';
+        /**
+         * Which existing PayPal integration is present: 'checkout', 'express', or
+         * '' for none. Checkout wins when both somehow are.
+         *
+         * @return string 'checkout', 'express', a filtered value, or ''.
+         */
+        public static function which(): string
+        {
+        }
+        /**
+         * Whether any existing PayPal integration should make core stand down.
+         *
+         * @return bool
+         */
+        public static function exists(): bool
+        {
+        }
+        /**
+         * The add-on's human name, for telling the merchant what took over.
+         *
+         * @return string Translated add-on name, or '' when none is present.
+         */
+        public static function name(): string
+        {
+        }
+        /**
+         * Prefer the class: a merchant who installed the add-on by hand may have
+         * it in a differently named folder, which the plugin path would miss.
+         *
+         * @param string $class  The add-on's main class name.
+         * @param string $plugin The add-on's plugin path relative to the plugins directory.
+         * @return bool
+         */
+        private static function present(string $class, string $plugin): bool
+        {
+        }
+    }
+    /**
+     * Tell the merchant about the fee once their first payment actually lands.
+     *
+     * The fourth of the four disclosure surfaces. Deliberately once and
+     * dismissible: a reminder at the moment money first moves is useful, and
+     * repeating it after every payment would be nagging about a fee they already
+     * agreed to.
+     */
+    final class NF_PayPal_FirstPaymentNotice
+    {
+        /** Option holding '' (no payment yet), 'pending' (show the notice) or 'dismissed'. */
+        const SEEN_OPTION = 'nf_paypal_first_payment_notice';
+        /**
+         * Hook the notice, its dismiss script, and its dismiss endpoint.
+         *
+         * Printed on admin_notices directly rather than through NF_Admin_Notices:
+         * this is the fee disclosure owed after the first payment, so it must show
+         * even where the Ninja Forms "disable admin notices" setting is on.
+         *
+         * @return void
+         */
+        public function __construct()
+        {
+        }
+        /**
+         * Called when a payment completes. Records that there has been one.
+         *
+         * Only the first call has an effect, so the notice is never re-armed after
+         * the merchant dismisses it.
+         *
+         * @return void
+         */
+        public static function payment_taken(): void
+        {
+        }
+        /**
+         * Whether this admin should see the notice on this request.
+         *
+         * @return bool
+         */
+        private function should_show(): bool
+        {
+        }
+        /**
+         * Attach the dismiss handler to WordPress's own admin script.
+         *
+         * WordPress's dismiss button only hides the notice for this page load, so
+         * the dismissal is recorded server-side or it returns on every screen.
+         *
+         * @return void
+         */
+        public function enqueue(): void
+        {
+        }
+        /**
+         * Print the notice.
+         *
+         * @return void
+         */
+        public function render(): void
+        {
+        }
+        /**
+         * Record the dismissal so the notice does not return.
+         *
+         * @return void
+         */
+        public function dismiss(): void
+        {
+        }
+    }
+    /**
+     * PayPal as a gateway on the existing Collect Payment action.
+     *
+     * This is a gateway registration, not a new action and not a builder change:
+     * core already turns anything registered on ninja_forms_register_payment_gateways
+     * into an option in Collect Payment's gateway dropdown.
+     */
+    final class NF_PayPal_Gateway extends \NF_Abstracts_PaymentGateway
+    {
+        /**
+         * Also the name of the form action. Collect Payment locks a re-named
+         * instance's gateway dropdown to the gateway whose slug matches the
+         * action name, so these two must stay identical.
+         */
+        const SLUG = 'paypal-connect';
+        protected $_slug = self::SLUG;
+        protected $_name = 'PayPal';
+        /**
+         * The gateway's display name.
+         *
+         * Translated on demand rather than in the constructor. Gateways are built
+         * on plugins_loaded, and asking for a ninja-forms translation before init
+         * makes WordPress load the textdomain too early and say so — once per
+         * request, which is how this was found. Nothing reads the name before
+         * NF_Actions_CollectPayment::buildPaymentGatewayOptions at init/15.
+         *
+         * Deferring with an init hook was the obvious alternative and is worse: a
+         * gateway constructed after init would then have no name at all, silently.
+         * Answering when asked cannot get the order wrong.
+         *
+         * @return string
+         */
+        public function get_name()
+        {
+        }
+        /**
+         * The settings a merchant sees on the payment action.
+         *
+         * Built on demand, for the reason given on get_name() — every label here
+         * is translated. Memoised because CollectPayment merges these into the
+         * action's own settings and may ask more than once.
+         *
+         * @return array Builder setting definitions.
+         */
+        public function get_settings()
+        {
+        }
+        /**
+         * PayPal funding sources this release never offers.
+         *
+         * Regional bank and redirect methods: none were in PayPal's certification
+         * of this integration, each depends on merchant and buyer region, and some
+         * have been retired by their operators. They are not toggles, and they are
+         * always sent to PayPal as switched off so its buttons never show them.
+         */
+        private const NOT_OFFERED = array('bancontact', 'blik', 'eps', 'giropay', 'ideal', 'mercadopago', 'mybank', 'p24', 'sepa', 'sofort');
+        /**
+         * The payment options a merchant can turn on for one form.
+         *
+         * The same list, in the same words, as the Payments page: PayPal itself
+         * (always offered, so not a toggle), Credit & Debit Cards, Pay Later and
+         * Venmo. Pay Later covers PayPal Credit too, which PayPal treats as a
+         * funding source inside its wallet rather than a method of its own
+         * (Questions and Responses v2.0, answer 4). Apple Pay and Google Pay are
+         * not offered in this release, so they are not toggles that draw nothing.
+         * Cards and Pay Later start on; Venmo is US-only, so it starts off.
+         *
+         * A toggle is permission, not a promise. What actually renders is the
+         * intersection of this and what PayPal says the merchant is approved for -
+         * they asked us explicitly not to display methods unconditionally
+         * (Questions and Responses v2.0, answer 5).
+         *
+         * @return array<int, array<string, mixed>>
+         */
+        private static function funding_types(): array
+        {
+        }
+        /**
+         * Split the merchant's toggles into what PayPal should offer and what it
+         * should keep out of the way.
+         *
+         * Both halves are sent. Naming only the wanted ones would leave PayPal
+         * free to show the rest, and a merchant who turned something off means it.
+         *
+         * @param array $action_settings The payment action's settings.
+         * @return array{enable: string[], disable: string[]}
+         */
+        private function funding(array $action_settings): array
+        {
+        }
+        /**
+         * The buyer's email as the form supplied it, or '' when it did not.
+         *
+         * By the time this runs core has already replaced the setting's merge tag
+         * with the field's value. What is left is whatever the visitor typed, so
+         * it is checked as an email and otherwise dropped: a typo here must never
+         * stop a payment, because PayPal will ask for the address themselves.
+         *
+         * @param array $action_settings The payment action's settings, merge tags resolved.
+         * @return string
+         */
+        private function buyer_email(array $action_settings): string
+        {
+        }
+        /**
+         * Halt the submission and put PayPal's own buttons in front of the
+         * visitor, without leaving the page.
+         *
+         * No order is made here. PayPal require every order to name the method
+         * it will be paid with, and nobody knows that until the visitor presses a
+         * button - so this pass asks the service only for the SDK setup, halts,
+         * and NF_AJAX_Controllers_PayPalOrder creates the order on the click. The
+         * amount, currency and everything else the order needs are decided here,
+         * server-side, and stored with the halted submission; the browser gets to
+         * say which button was pressed and nothing else. Decision, 2026-09-09.
+         *
+         * Halting is core's existing contract for a payment that cannot finish in
+         * one pass; core's own resume handler names returning "from PayPal or
+         * Stripe". Only the trip changed, not the seam.
+         *
+         * Public, not protected as the abstract declares: Collect Payment calls
+         * this directly on the gateway object.
+         *
+         * @param array      $action_settings The payment action's settings, merge tags resolved.
+         * @param int|string $form_id         The form being submitted.
+         * @param array      $data            The submission data; carries 'resume' on the return leg.
+         * @return array The submission data: halted with the order details in
+         *               extra, completed, or carrying a form error.
+         */
+        public function process($action_settings, $form_id, $data)
+        {
+        }
+        /**
+         * The one line item's name, in the merchant's own words.
+         *
+         * PayPal require a line item on every order, and a form builder cannot
+         * know whether a payment is a donation, a ticket or a fee. So the words
+         * are the merchant's: the Item Name they set on the action (merge tags
+         * already resolved by core), or the form's title when they set nothing.
+         *
+         * @param array      $action_settings The payment action's settings, merge tags resolved.
+         * @param int|string $form_id         The form being submitted.
+         * @return string At most 127 characters.
+         */
+        private function item_name(array $action_settings, $form_id): string
+        {
+        }
+        /**
+         * What PayPal's checkout calls the seller: the merchant's site, because it
+         * is their customer paying them. Never "Ninja Forms".
+         *
+         * @return string At most 127 characters.
+         */
+        private function brand_name(): string
+        {
+        }
+        /**
+         * The visitor is back from PayPal. Capture the money, then let the rest of
+         * the form's actions run — emails and the like fire here, on the resumed
+         * pass, so they go out once and only for a payment that actually happened.
+         *
+         * @param array $data            The resumed submission data.
+         * @param array $action_settings The payment action's settings.
+         * @return array The submission data, with a form error unless the payment
+         *               completed or is pending.
+         */
+        private function complete(array $data, array $action_settings): array
+        {
+        }
+        /**
+         * What the entry already says about this payment, if anything.
+         *
+         * @param array $data The submission data.
+         * @return string The stored paypal_status, or '' without a saved entry.
+         */
+        private function recorded_status(array $data): string
+        {
+        }
+        /**
+         * One payment value the entry already carries.
+         *
+         * @param array  $data The submission data.
+         * @param string $key  The extra value's name.
+         * @return string The stored value, or '' without a saved entry.
+         */
+        private function recorded_value(array $data, string $key): string
+        {
+        }
+        /**
+         * The entry the Save action created for this submission, where the
+         * payment record lives. The one place that knows how to find it, for
+         * the read path and the write path alike.
+         *
+         * @param array $data The submission data.
+         * @return NF_Database_Models_Submission|null The saved entry, or null when
+         *                                            the Save action has not run.
+         */
+        private static function saved_entry(array $data)
+        {
+        }
+        /**
+         * The order this submission created, from the server's own copy.
+         *
+         * Core keeps the halted submission in its session while the visitor is
+         * paying; process() put the order's fixed facts there, and the order
+         * step (NF_AJAX_Controllers_PayPalOrder) wrote the order id into the same
+         * record. That copy is the only source the resume leg reads.
+         *
+         * @return array The nf_paypal_order record, or an empty array when the
+         *               session holds none.
+         */
+        private function halted_order(): array
+        {
+        }
+        /**
+         * Whether a capture is for the amount and currency this submission fixed.
+         *
+         * @param array  $order    The server's order record.
+         * @param string $total    The captured amount, as the service read it back.
+         * @param string $currency The captured currency.
+         * @return bool
+         */
+        private function matches_order(array $order, string $total, string $currency): bool
+        {
+        }
+        /**
+         * The one way a capture whose amount could not be confirmed is recorded:
+         * mismatched on the entry with the order id, mismatched on the order
+         * record the page is told, and the visitor warned. Reached when the
+         * service reports AMOUNT_MISMATCH and when the plugin's own check
+         * against the amount fixed at submit fails.
+         *
+         * @param array  $data     The resumed submission data.
+         * @param string $order_id The order that was captured.
+         * @return array The submission data, carrying the form error.
+         */
+        private function mismatched(array $data, string $order_id): array
+        {
+        }
+        /**
+         * What the visitor is told when the amount could not be confirmed. Never
+         * "you have not been charged": the plugin does not know that.
+         *
+         * @return string
+         */
+        private function mismatch_message(): string
+        {
+        }
+        /**
+         * Nothing about a payment is ever taken from the browser.
+         *
+         * Core stores a submission's `extra` data as the browser sent it and
+         * hands it to every action, so a request could carry a payment status or
+         * an order record of its own. The keys this gateway writes are removed
+         * before anything reads or saves them; the gateway sets its own, on the
+         * server. Hooked on ninja_forms_submit_data, which runs before the Save
+         * action and before any gateway code.
+         *
+         * @param array $form_data The submitted form data.
+         * @return array The same, without any paypal_* or nf_paypal_order extra.
+         */
+        public static function strip_visitor_payment_values($form_data)
+        {
+        }
+        /**
+         * Write the payment onto the entry, so the merchant can see it there.
+         *
+         * @param array $data   The submission data.
+         * @param array $values Extra values to write, keyed by name.
+         * @return void
+         */
+        private function record(array $data, array $values): void
+        {
+        }
+        /**
+         * The same, for the order step, which runs outside the action: it reaches
+         * the entry through the halted submission core keeps in its session.
+         *
+         * Never turns a completed payment into anything but a refund, and never
+         * turns a pending or mismatched payment into a failure.
+         *
+         * @param array $data   The submission data, as halted.
+         * @param array $values Extra values to write, keyed by name.
+         * @return void
+         */
+        public static function record_on_entry(array $data, array $values): void
+        {
+        }
+        /**
+         * Stop the submission with a message the visitor can act on. No retry
+         * loop, no queueing — reliability is ours to fix, not something to paper
+         * over at checkout.
+         *
+         * @param array  $data            The submission data.
+         * @param array  $action_settings The payment action's settings.
+         * @param string $message         Visitor-facing reason; a generic one when ''.
+         * @return array The submission data, carrying the form error.
+         */
+        private function fail(array $data, array $action_settings, string $message = ''): array
+        {
+        }
+        /**
+         * The site's Ninja Forms currency setting, as PayPal's upper-case code.
+         *
+         * @return string Defaults to 'USD' when unset.
+         */
+        private function currency(): string
+        {
+        }
+        /**
+         * Back to the page the form is on, carrying the flag core's front end
+         * watches for: seeing nf_resume, it re-submits and the halted action picks
+         * up where it left off.
+         *
+         * @param int|string $form_id The form being submitted.
+         * @param string     $outcome 'success' or 'cancel'.
+         * @return string
+         */
+        private function return_url($form_id, string $outcome): string
+        {
+        }
+    }
+    /**
+     * Bring an entry's payment up to date with what PayPal has since done to it.
+     *
+     * A merchant refunds in PayPal's own dashboard, as the paid add-on's merchants
+     * do. PayPal tell the Saturday Drive service by webhook, and the service
+     * records it against the order - but nothing pushes that to the merchant's
+     * site, which holds no PayPal credential and answers no webhooks. So the site
+     * asks, at the moment someone looks at the entry, and the entry stops saying
+     * Completed once the money has gone back.
+     *
+     * Only payments that can still change are asked about: a completed payment
+     * can be refunded, a partially refunded one refunded further, and a pending
+     * capture can complete. A failed, cancelled or fully refunded payment is
+     * final and costs no call.
+     */
+    final class NF_PayPal_PaymentSync
+    {
+        /** Statuses the service can still move. */
+        const OPEN = array('completed', 'pending', 'partially_refunded');
+        /**
+         * How long an answer is trusted before the entry is asked about again.
+         * The submissions list renders many entries at once; without this every
+         * page load would be one service call per paid entry.
+         */
+        const FRESH_FOR = 300;
+        /**
+         * Ask the service about an entry whose payment can still change, and write
+         * any change onto the entry before it is shown.
+         *
+         * At most one call per entry per FRESH_FOR seconds; a failed call is not
+         * retried for an hour, and never changes the entry.
+         *
+         * @param NF_Database_Models_Submission $sub
+         * @return string the entry's payment status after the check
+         */
+        public static function refresh($sub): string
+        {
+        }
+        /**
+         * What to write, given what the entry says and what the service now says.
+         *
+         * @param string $status the entry's stored status
+         * @param array  $answer the service's order status
+         * @return array<string, string> extra values to write, empty when nothing changed
+         */
+        public static function changes(string $status, array $answer): array
+        {
+        }
+    }
+    /**
+     * Wires PayPal Core Payments into core: its gateway, its form action, and its
+     * first-payment notice.
+     *
+     * Collect Payment is built to be re-instantiated under another name: given
+     * one, it becomes a distinct action and locks its gateway dropdown to the
+     * gateway whose slug matches that name. So merchants add a "PayPal Core Payments"
+     * action rather than a generic Collect Payment they then have to configure.
+     *
+     * The gateway and the action both stand down where a PayPal add-on already
+     * provides one.
+     */
+    final class NF_PayPal_Registration
+    {
+        /**
+         * PayPal Core Payments actions created by register_action(), awaiting their
+         * translated name at init.
+         *
+         * @var NF_Actions_CollectPayment[]
+         */
+        private $actions = array();
+        /**
+         * Slugs of every gateway registered the last time the gateway filter ran,
+         * or null until it has run.
+         *
+         * @var string[]|null
+         */
+        private $gateway_slugs = \null;
+        /**
+         * The once-only fee reminder shown after the merchant's first payment.
+         *
+         * @var NF_PayPal_FirstPaymentNotice
+         */
+        private $first_payment_notice;
+        /**
+         * Hook the gateway, the action, and the builder clean-up into core.
+         */
+        public function __construct()
+        {
+        }
+        /**
+         * Register the payment panel for the React submissions page.
+         *
+         * Keyed on paypal_environment, which only core writes (from the first write
+         * of an entry). paypal_status is a name PayPal Express uses for its own,
+         * and two handlers on one key means the later one silently replaces the
+         * other: core's handler on paypal_status took the panel away from Express
+         * entries, which carry no environment.
+         *
+         * @param array $handlers Extra-value key => handler class.
+         * @return array
+         */
+        public function register_panel_handler($handlers)
+        {
+        }
+        /**
+         * Add the PayPal Connect gateway, unless a PayPal add-on already provides one.
+         *
+         * @param array $gateways Registered payment gateways, keyed by slug.
+         * @return array
+         */
+        public function register_gateway($gateways)
+        {
+        }
+        /**
+         * Record which gateway slugs are registered, so checking them later does
+         * not rebuild every gateway object.
+         *
+         * @param array $gateways Registered payment gateways, keyed by slug.
+         * @return array The gateways, unchanged.
+         */
+        public function remember_gateway_slugs($gateways)
+        {
+        }
+        /**
+         * Add the PayPal Core Payments form action, unless a PayPal add-on already provides one.
+         *
+         * @param array $actions Registered form actions, keyed by name.
+         * @return array
+         */
+        public function register_action($actions)
+        {
+        }
+        /**
+         * Give each PayPal Core Payments action its translated name, once translations
+         * may load.
+         *
+         * @return void
+         */
+        public function translate_action_names(): void
+        {
+        }
+        /**
+         * Hide the generic Collect Payment action when PayPal Core Payments is the only
+         * gateway.
+         *
+         * Collect Payment only appears once some gateway is registered, so ours
+         * would otherwise summon a generic action whose only choice is PayPal,
+         * next to the PayPal Core Payments action that already says so.
+         *
+         * @param array $action_type_settings Builder action types, keyed by name.
+         * @return array
+         */
+        public function hide_generic_collect_payment($action_type_settings)
+        {
+        }
+    }
+    /**
+     * The site's client for the Saturday Drive PayPal service.
+     *
+     * Every call that needs the partner credential — creating an onboarding
+     * referral, reading a merchant's account status, creating and capturing
+     * fee-bearing orders — goes through paypal.ninjaforms.com. The site never calls
+     * PayPal directly for these, because the partner secret cannot ship in a GPL
+     * plugin.
+     *
+     * Requests are signed rather than bearing a token: the site credential itself
+     * never travels. See the service's docs/plugin-server-auth.md.
+     */
+    final class NF_PayPal_Service
+    {
+        /** The sandbox service. Sandbox and live are separate hosts with separate credentials and data. */
+        const HOST_SANDBOX = 'https://sandbox.paypal.ninjaforms.com';
+        /** The live service. */
+        const HOST_LIVE = 'https://paypal.ninjaforms.com';
+        /** begin_onboarding()'s answer when a connection was recorded while it waited. */
+        const ALREADY_CONNECTED = 'nf_paypal_already_connected';
+        /**
+         * The service host for the connection's environment, without a trailing
+         * slash.
+         *
+         * @return string
+         */
+        public static function host(): string
+        {
+        }
+        /**
+         * Begin onboarding. The only unsigned call: the site has no credential
+         * until this returns one, and it is returned exactly once.
+         *
+         * @return array|WP_Error The service's answer. A WP_Error coded
+         *                        ALREADY_CONNECTED means the merchant was
+         *                        connected meanwhile, which is not a failure.
+         *
+         * @param string $return_url Where PayPal send the merchant when they finish.
+         */
+        public static function begin_onboarding(string $return_url)
+        {
+        }
+        /**
+         * Ask whether the merchant has granted permission on this site's referral.
+         *
+         * Sends nothing but the signature: the service knows which referral is
+         * this site's, and PayPal say which merchant, if any, is linked to it.
+         * Answers `linked` false while the merchant is still on PayPal.
+         *
+         * @return array|WP_Error The service's answer (linked, merchantId, and the
+         *                        account status flags), or why it could not be had.
+         */
+        public static function check_onboarding()
+        {
+        }
+        /**
+         * Read the connected merchant's account status: the gating flags that
+         * decide whether payments can be taken.
+         *
+         * @return array|WP_Error The service's answer, or why it could not be had.
+         */
+        public static function get_account_status()
+        {
+        }
+        /**
+         * Ask the service to create the order.
+         *
+         * No fee is sent, and none would be honoured: the service computes 1.9%
+         * and injects it, so the site cannot calculate, transmit or tamper with
+         * what Saturday Drive earns.
+         *
+         * @param array $order merchantId, amount, currency, method and the order
+         *                     details the gateway fixed at submit.
+         * @return array|WP_Error The service's answer (orderId on success), or why
+         *                        it could not be had.
+         */
+        public static function create_order(array $order)
+        {
+        }
+        /**
+         * Everything the page needs to draw PayPal's buttons, before any order
+         * exists. The order itself is created when the visitor presses one of
+         * them, because it has to name the method it will be paid with.
+         *
+         * @param array $checkout The merchant, currency and funding the form offers.
+         * @return array|WP_Error The service's answer (SDK parameters and methods),
+         *                        or why it could not be had.
+         */
+        public static function prepare_checkout(array $checkout)
+        {
+        }
+        /**
+         * Capture an order the visitor approved. This is when the money moves.
+         *
+         * @param string $order_id PayPal's order id.
+         * @return array|WP_Error The service's answer (capture status and ids), or
+         *                        why it could not be had.
+         */
+        public static function capture_order(string $order_id)
+        {
+        }
+        /**
+         * What has become of an order since this site last heard - a refund made
+         * in PayPal's dashboard reaches the service by webhook and the site only
+         * by asking.
+         *
+         * @param string $order_id PayPal's order id.
+         * @return array|WP_Error The service's answer (status, amounts), or why it
+         *                        could not be had.
+         */
+        public static function order_status(string $order_id)
+        {
+        }
+        /**
+         * Tell the service this site is disconnecting, so it revokes the credential.
+         *
+         * @return array|WP_Error The service's answer, or why it could not be had.
+         */
+        public static function disconnect()
+        {
+        }
+        /**
+         * Sign and send.
+         *
+         * The signature covers who we are, when, a one-time value and a digest of
+         * the exact bytes sent — so a captured request cannot be replayed or
+         * altered, and the credential never leaves this site.
+         *
+         * @param string $path   Service path, beginning with a slash.
+         * @param array  $body   Sent as JSON.
+         * @param bool   $signed False only for begin_onboarding(), before a credential exists.
+         * @return array|WP_Error The decoded answer, or a WP_Error when the service
+         *                        could not be reached or refused.
+         */
+        private static function post(string $path, array $body, bool $signed = \true)
+        {
+        }
+    }
+    /**
+     * The PayPal payment, on the React submissions page.
+     *
+     * Registered through `nf_react_table_extra_value_keys`, the same seam the
+     * PayPal Checkout add-on and core's own Calculations box use, so a payment
+     * taken through core looks the same as one taken through the add-on.
+     *
+     * Returns null when the submission was never paid for, which leaves the panel
+     * off that entry entirely rather than showing an empty heading.
+     */
+    final class NF_PayPal_SubmissionMetabox
+    {
+        /**
+         * The stored status, in the reader's language.
+         *
+         * Statuses are stored as machine values and translated here. Storing the
+         * translated word instead makes the database contents depend on whoever
+         * happened to take the payment, and makes every later comparison a
+         * comparison between languages.
+         *
+         * Anything unrecognised is shown as-is rather than blanked: an entry
+         * written by an older version still has to render.
+         *
+         * @param string $status Stored machine status, e.g. 'completed'.
+         * @return string Translated label, or the status itself when unrecognised.
+         */
+        public static function status_label(string $status): string
+        {
+        }
+        /**
+         * Build the panel for a submission's stored PayPal status.
+         *
+         * Called through nf_react_table_extra_value_keys for every submission the
+         * React page shows; refreshes the status from PayPal first.
+         *
+         * @param mixed $extraValue                      value of the registered key
+         * @param NF_Database_Models_Submission $nfSub
+         * @return \NinjaForms\Includes\Entities\MetaboxOutputEntity|null
+         */
+        public function handle($extraValue, $nfSub): ?\NinjaForms\Includes\Entities\MetaboxOutputEntity
+        {
+        }
+        /**
+         * The payment's rows, shared by this panel and the classic submission
+         * metabox so both show the same thing.
+         *
+         * Rows with nothing to show are left out. The Transaction ID row carries a
+         * 'url' through to the payment in the merchant's PayPal account.
+         *
+         * @param string                        $status Stored machine status.
+         * @param NF_Database_Models_Submission $nfSub
+         * @return array[] Each row: label, value, styling, and optionally url.
+         */
+        public static function rows(string $status, $nfSub): array
+        {
+        }
+        /**
+         * Through to the transaction in the merchant's own PayPal account.
+         *
+         * The environment comes off the payment, not the site's current
+         * connection: moving a site from sandbox to live must not start pointing
+         * its old test payments at the live dashboard.
+         *
+         * @param string                        $transaction_id
+         * @param NF_Database_Models_Submission $nfSub
+         * @return string
+         */
+        private static function paypal_link(string $transaction_id, $nfSub): string
+        {
+        }
+    }
     class NF_PromotionManager
     {
         public $promotions;
@@ -20802,7 +22394,7 @@ namespace {
         /**
          * @since 3.0
          */
-        const VERSION = '3.15.7';
+        const VERSION = '3.16.0';
         /**
          * @since 3.4.0
          */
@@ -21061,6 +22653,51 @@ namespace {
         {
         }
         public function admin_notices()
+        {
+        }
+        /**
+         * Load this plugin's translations, language pack first.
+         *
+         * A WordPress.org language pack's wording wins for every string it carries,
+         * and the file bundled with the plugin fills the gaps behind it. WordPress
+         * gives us that for free as long as both files are loaded in the right
+         * order: when two catalogues are loaded into one text domain, the first one
+         * loaded keeps its wording and later ones only supply strings it is missing.
+         *
+         * So the pack is loaded first and the bundled file second, and neither is
+         * unloaded. Unloading was what made this an either/or before: it threw away
+         * whatever WordPress had already loaded, leaving only one source.
+         *
+         * The .mo path is handed to load_textdomain() deliberately. WordPress reads
+         * the faster .l10n.php sibling in preference when one sits beside it, which
+         * is why both formats ship.
+         *
+         * The lang/ folder is also registered as the domain's custom path, as
+         * load_plugin_textdomain() does. When something switches locale later in
+         * the request, WordPress reloads the domain by itself, a pack first and then
+         * that path, so a locale with no pack still gets our file, not English.
+         */
+        public function load_translations()
+        {
+        }
+        /**
+         * Apply the same fill-in rule to script translations.
+         *
+         * WordPress loads exactly one JSON file per script. When a plugin passes a
+         * folder it looks there before the language pack, so once we ship JSON files
+         * ours would replace a pack's wording outright rather than filling its gaps,
+         * which is the opposite of the rule we hold for PHP strings.
+         *
+         * There is no load order to exploit here, so the two files are merged by
+         * hand: ours underneath, the pack on top, string by string.
+         *
+         * @param string $translations JSON of the file WordPress chose.
+         * @param string $file         Path of that file.
+         * @param string $handle       Script handle.
+         * @param string $domain       Text domain.
+         * @return string JSON, merged when there is anything to merge.
+         */
+        public function merge_script_translations($translations, $file, $handle, $domain)
         {
         }
         public function plugins_loaded()
