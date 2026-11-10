@@ -6502,6 +6502,19 @@ namespace {
     }
     /**
      * Class NF_Abstracts_UserInfo
+     *
+     * Shared base for the First Name, Last Name and Email fields.
+     *
+     * These fields once offered a "User Meta (if logged in)" default type, driven by
+     * a `default_type` sub-setting on Default Value and a `filter_default_value`
+     * callback per field. The `default_type` sub-setting was removed from the field
+     * settings configuration before 3.0 shipped, leaving the callbacks unreachable
+     * from the builder but still hooked. Every caller of
+     * `ninja_forms_render_default_value` passes the field type as a string, so a
+     * field whose stored meta still carried `default_type = user-meta` fataled the
+     * request. The dead path is gone; Default Value is a plain text box, and the
+     * `{wp:user_first_name}` family of merge tags is the supported way to pre-fill
+     * a field from the logged-in user. See issue #8233.
      */
     abstract class NF_Abstracts_UserInfo extends \NF_Fields_Textbox
     {
@@ -6512,7 +6525,6 @@ namespace {
         public function __construct()
         {
         }
-        abstract public function filter_default_value($default_value, $field_class, $settings);
     }
 }
 namespace NinjaForms\Includes\Traits {
@@ -8688,6 +8700,34 @@ namespace {
         {
         }
         /**
+         * Whether a log entry was produced by a file inside a Ninja Forms plugin.
+         *
+         * A log entry names the file that produced it, as " in <path> on line <n>".
+         * An entry counts as ours when that file sits in a plugin directory whose
+         * name begins with "ninja-forms", which covers the core plugin and every
+         * add-on without a list to maintain as add-ons ship.
+         *
+         * @param string $line A single log entry.
+         * @return bool
+         */
+        protected function isNinjaFormsEntry($line)
+        {
+        }
+        /**
+         * Identify a deprecation notice independently of when it was written.
+         *
+         * One notice fires on every affected request, so occurrences differ only
+         * by their timestamp. Dropping that prefix lets repeats of a single notice
+         * collapse to one listed entry while two genuinely different notices, even
+         * from the same file, stay apart.
+         *
+         * @param string $line A single log entry.
+         * @return string
+         */
+        protected function deprecationSignature($line)
+        {
+        }
+        /**
          * Describe any log file too large to be read in full.
          *
          * @param array       $logFiles Candidate log file paths.
@@ -9149,6 +9189,161 @@ namespace {
         {
         }
     }
+}
+namespace NinjaForms\Includes\Admin\Processes {
+    /**
+     * Scheduled housekeeping for abandoned submission CSV export files.
+     *
+     * Submission exports are written into the uploads directory and are normally
+     * deleted the moment the browser finishes downloading them. When that
+     * hand-off breaks - the tab is closed, the export errors, the delete request
+     * never arrives - the file is left on disk with submission data in it. This
+     * task sweeps those abandoned files once they are old enough that no download
+     * can still be using them.
+     *
+     * @since 3.16.1
+     * @see https://github.com/Saturday-Drive/ninja-forms/issues/7856
+     */
+    class ExportFileCleanup
+    {
+        /**
+         * Scheduled event that runs the sweep.
+         */
+        public const HOOK = 'nf_export_file_cleanup';
+        /**
+         * Directory, below the uploads base directory, used by the batch export.
+         */
+        public const TEMP_DIRECTORY = 'ninja-forms-tmp';
+        /**
+         * Age, in seconds, at which an export file is treated as abandoned.
+         *
+         * Twenty four hours is deliberately generous: a slow export on a large
+         * form must never have its file swept out from under an active download.
+         */
+        public const RETENTION_SECONDS = 86400;
+        /**
+         * Exact filenames written by the legacy batch export.
+         *
+         * Legacy exports land in the customer's own uploads folders, alongside
+         * their media library, so only these exact shapes may be deleted.
+         */
+        public const LEGACY_PATTERN = '/^all-subs(-\d+)?\.csv$/';
+        /**
+         * Schedule the daily sweep and listen for it.
+         */
+        public function __construct()
+        {
+        }
+        /**
+         * Remove the scheduled sweep.
+         *
+         * Called on deactivation so a deactivated plugin leaves nothing behind on
+         * the site's schedule.
+         *
+         * @return void
+         */
+        public static function clearSchedule()
+        {
+        }
+        /**
+         * Delete every abandoned export file Ninja Forms owns.
+         *
+         * @return int Number of files deleted.
+         */
+        public function sweep()
+        {
+        }
+        /**
+         * Collect every abandoned export file in both export locations.
+         *
+         * @return array Absolute file paths.
+         */
+        protected function findAbandonedFiles()
+        {
+        }
+        /**
+         * Collect abandoned files from the batch export's own directory.
+         *
+         * That directory belongs exclusively to Ninja Forms, so anything in it old
+         * enough to be abandoned is an abandoned export.
+         *
+         * @param string $baseDir Uploads base directory, without a trailing slash.
+         * @return array Absolute file paths.
+         */
+        protected function findAbandonedTempFiles($baseDir)
+        {
+        }
+        /**
+         * Collect abandoned files written by the legacy batch export.
+         *
+         * The legacy export writes into the customer's normal uploads folders, so
+         * a candidate must match a Ninja Forms export name exactly and must not be
+         * a file the customer added to their media library.
+         *
+         * @param string $baseDir Uploads base directory, without a trailing slash.
+         * @return array Absolute file paths.
+         */
+        protected function findAbandonedLegacyFiles($baseDir)
+        {
+        }
+        /**
+         * Has this file been on disk long enough that no download can want it?
+         *
+         * @param string $path Absolute file path.
+         * @return bool
+         */
+        protected function isAbandoned($path)
+        {
+        }
+        /**
+         * Is this file registered in the customer's media library?
+         *
+         * A file whose status can't be checked counts as registered, so it is kept.
+         *
+         * @param string $baseDir Uploads base directory, without a trailing slash.
+         * @param string $path    Absolute file path.
+         * @return bool
+         */
+        protected function isMediaLibraryFile($baseDir, $path)
+        {
+        }
+        /**
+         * Delete a file, tolerating a filesystem that will not allow it.
+         *
+         * @param string $path Absolute file path.
+         * @return bool Whether the file is gone.
+         */
+        protected function deleteFile($path)
+        {
+        }
+        /**
+         * Matching paths for a glob pattern, as an array in every case.
+         *
+         * @param string $pattern
+         * @return array
+         */
+        protected function glob($pattern)
+        {
+        }
+        /**
+         * The uploads base directory, without a trailing slash.
+         *
+         * @return string Empty when the uploads directory cannot be resolved.
+         */
+        protected function baseDir()
+        {
+        }
+        /**
+         * Uploads directory information.
+         *
+         * @return array
+         */
+        protected function uploads()
+        {
+        }
+    }
+}
+namespace {
     /**
      * Class NF_Abstracts_Batch_Process
      */
@@ -15502,9 +15697,6 @@ namespace {
         public function validate($field, $data)
         {
         }
-        public function filter_default_value($default_value, $field_class, $settings)
-        {
-        }
     }
     /**
      * Class NF_Fields_FirstName
@@ -15519,9 +15711,6 @@ namespace {
         protected $_templates = 'firstname';
         protected $_test_value = 'John';
         public function __construct()
-        {
-        }
-        public function filter_default_value($default_value, $field_class, $settings)
         {
         }
     }
@@ -15617,9 +15806,6 @@ namespace {
         protected $_templates = 'lastname';
         protected $_test_value = 'Doe';
         public function __construct()
-        {
-        }
-        public function filter_default_value($default_value, $field_class, $settings)
         {
         }
     }
@@ -16687,6 +16873,57 @@ namespace {
         {
         }
         public function filter_csv_value($field_value, $field)
+        {
+        }
+        /**
+         * Convert stored rich text HTML into readable plain text
+         *
+         * Paragraphs, headings, list items and table rows each become one part,
+         * and the parts are joined with " / " so the answer stays on one line in
+         * every spreadsheet. List items get "* " or a number, table cells are
+         * separated by " | ", and links keep their address in brackets.
+         *
+         * @param string $html
+         * @return string
+         */
+        protected function rich_text_to_readable_text($html)
+        {
+        }
+        /**
+         * Readable text of every child of a node
+         *
+         * @param DOMNode $node
+         * @return string
+         */
+        protected function readable_text_of_children($node)
+        {
+        }
+        /**
+         * Readable text of one node; "\n" marks a part boundary
+         *
+         * @param DOMNode $node
+         * @return string
+         */
+        protected function readable_text_of_node($node)
+        {
+        }
+        /**
+         * Readable lines of a list; numbering restarts with each run of numbered items
+         *
+         * @param DOMElement $list
+         * @param string $tag ol or ul
+         * @return string
+         */
+        protected function readable_list($list, $tag)
+        {
+        }
+        /**
+         * Trim each line, drop empty lines, and join the rest with " / "
+         *
+         * @param string $text
+         * @return string
+         */
+        protected function join_readable_parts($text)
         {
         }
     }
@@ -18171,6 +18408,39 @@ namespace {
          * @return mixed
          */
         public static function process_default_value_shortcodes($value)
+        {
+        }
+        /**
+         * Build the long date format for the language the site is running in.
+         *
+         * The date field's verbose format option is the only one that spells out
+         * the month and day names, so it is the only one whose word order has to
+         * follow the site's language. It used to be the hardcoded English
+         * 'l, F d Y', which rendered a French site's date as
+         * "Samedi, Janvier 20 2018" while the builder's own French sample promised
+         * "Vendredi 18 novembre 2019". See issue #3308.
+         *
+         * WordPress already carries each language's date arrangement in its own
+         * translation of 'F j, Y', so take the arrangement from there and put the
+         * day name in front of it rather than maintaining a per-language table.
+         *
+         * @return string A PHP/flatpickr date format, e.g. 'l, F j, Y' in English
+         *                and 'l j F Y' in French.
+         */
+        public static function get_long_date_format()
+        {
+        }
+        /**
+         * Whether a date arrangement names the month before the day or the year.
+         *
+         * Reads the first meaningful format character, skipping any escaped
+         * literal, so Spanish's 'j \d\e F \d\e Y' is read as day-first rather
+         * than being misled by the 'd' of the literal word "de".
+         *
+         * @param string $arrangement A PHP date format string.
+         * @return bool
+         */
+        private static function arrangement_leads_with_month($arrangement)
         {
         }
     }
@@ -22394,12 +22664,27 @@ namespace {
         /**
          * @since 3.0
          */
-        const VERSION = '3.16.0';
+        const VERSION = '3.16.1';
         /**
          * @since 3.4.0
          */
         const DB_VERSION = '1.4';
         const WP_MIN_VERSION = '6.4';
+        /**
+         * Records the stored rewrite rules already examined for the public link
+         * address, so a set of rules that lacks it is rebuilt once rather than on
+         * every page load.
+         *
+         * @see https://github.com/Saturday-Drive/ninja-forms/issues/7389
+         */
+        const REWRITE_RULES_CHECKED_OPTION = 'nf_public_link_rewrite_checked';
+        /**
+         * Held for the moment a rebuild is under way, so simultaneous visitors to a
+         * broken public link produce one rebuild between them.
+         *
+         * @see https://github.com/Saturday-Drive/ninja-forms/issues/7389
+         */
+        const REWRITE_RULES_REBUILD_LOCK = 'nf_public_link_rewrite_rebuilding';
         /**
          * @var Ninja_Forms
          * @since 2.7
@@ -22525,6 +22810,7 @@ namespace {
         public $notices;
         public $widgets;
         public $submission_expiration_cron;
+        public $export_file_cleanup;
         /**
          * Main Ninja_Forms Instance
          *
@@ -22549,6 +22835,47 @@ namespace {
         {
         }
         public function register_rewrite_rules()
+        {
+        }
+        /**
+         * Put the public link address back into the rewrite rules the site has saved.
+         *
+         * The address is announced on every page load, but WordPress only consults
+         * the rules it has stored, and those are rebuilt rarely. A rebuild that
+         * happens without Ninja Forms loaded — host maintenance tooling, a
+         * migration or restore carrying another site's stored rules across, an
+         * administrator re-saving Permalinks while the plugin is switched off —
+         * leaves the address out of them. Every public link then returns the
+         * site's 404 until somebody re-saves Permalinks, and nothing about the
+         * plugin says so. Notice the address is missing and rebuild once.
+         *
+         * This runs on wp_loaded, after every plugin and the theme have declared
+         * their own rules and before the request is matched, so the rebuilt rules
+         * carry the whole site's addresses and take effect for the very request
+         * that found them missing.
+         *
+         * @see https://github.com/Saturday-Drive/ninja-forms/issues/7389
+         * @return void
+         */
+        public function maybe_restore_rewrite_rules()
+        {
+        }
+        /**
+         * A stable fingerprint of a set of stored rewrite rules.
+         *
+         * @param array $saved_rules The rules WordPress has stored.
+         * @return string
+         */
+        protected function rewrite_rules_signature($saved_rules)
+        {
+        }
+        /**
+         * Whether the site's stored rewrite rules carry the public link address.
+         *
+         * @param array $saved_rules The rules WordPress has stored.
+         * @return bool
+         */
+        protected function saved_rules_carry_public_link($saved_rules)
         {
         }
         public function admin_init()
@@ -23916,7 +24243,7 @@ namespace {
      *
      * @return void
      */
-    function wp_session_cleanup()
+    function nf_session_cleanup()
     {
     }
     /**
@@ -23931,7 +24258,7 @@ namespace {
      *
      * @return void
      */
-    function wp_session_register_garbage_collection()
+    function nf_session_register_garbage_collection()
     {
     }
     /**
