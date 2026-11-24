@@ -2479,10 +2479,43 @@ namespace {
          * @var string|int
          */
         protected $_form_id = '';
+        /**
+         * Request key carrying the hidden anti-spam box's value.
+         *
+         * The name attribute the form shell renders on that input
+         * (includes/Templates/form-hp.html). It arrives as its own request key
+         * because the honeypot is part of the shell rather than a stored field,
+         * so it is not inside formData.
+         *
+         * @see https://github.com/Saturday-Drive/ninja-forms/issues/7397
+         */
+        const HONEYPOT_FIELD = 'nf-field-hp';
         public function __construct()
         {
         }
         public function submit()
+        {
+        }
+        /**
+         * Refuse a submission to a form that has reached its submission limit.
+         *
+         * The limit is read from the form's own saved row, never from the request
+         * and never from the cached working copy of the form a request is served
+         * from, so accepting a submission uses the same value as deciding whether
+         * to display the form at all. While the two could disagree, a form whose
+         * limit had been changed kept rendering and kept taking submissions that
+         * were discarded without telling the visitor anything.
+         *
+         * The form's limit reached message is reused as the error and filtered the
+         * same way as on display, because the front end renders form errors as
+         * HTML. An unset or blank message falls back to the default wording rather
+         * than reaching the visitor as an empty refusal.
+         *
+         * @see https://github.com/Saturday-Drive/ninja-forms/issues/7466
+         *
+         * @return void
+         */
+        protected function maybe_refuse_over_limit_submission()
         {
         }
         /**
@@ -2495,6 +2528,24 @@ namespace {
          * @return void
          */
         protected function maybe_refuse_logged_out_submission()
+        {
+        }
+        /**
+         * Refuse a submission whose hidden anti-spam box (honeypot) arrived filled.
+         *
+         * The browser refuses this case too, but a submission can reach this
+         * controller without having run our JavaScript at all, so the value is
+         * re-checked here rather than trusted.
+         *
+         * The check is deliberately lenient: a request that does not carry the key
+         * is not refused, so a visitor holding a cached older copy of our scripts,
+         * and third-party integrations that post to this endpoint directly, keep
+         * working.
+         *
+         * @see https://github.com/Saturday-Drive/ninja-forms/issues/7397
+         * @return void
+         */
+        protected function maybe_refuse_filled_honeypot()
         {
         }
         public function resume()
@@ -4959,6 +5010,26 @@ namespace {
         {
         }
         /**
+         * Replace every occurrence of one merge tag with its own generated value.
+         *
+         * replace() above calls a tag's callback once and substitutes that single
+         * value into every occurrence, which is what nearly every merge tag needs:
+         * {other:date} written twice in one value has to read the same both times.
+         *
+         * A tag whose configuration declares 'generate_per_occurrence' promises a
+         * freshly generated value each time it is written, so its callback runs
+         * once per occurrence instead. {other:random} is such a tag: repeating it
+         * in one value used to yield the same string every time (#7571).
+         *
+         * @param string $tag
+         * @param string|array $callback
+         * @param string $subject
+         * @return string
+         */
+        protected function replaceEachOccurrence($tag, $callback, $subject)
+        {
+        }
+        /**
          * Return matches for merge tag
          *
          * @param string $subject Expects string value, but not guaranteed
@@ -7215,6 +7286,34 @@ namespace {
         protected function maybe_enqueue_recaptcha_js()
         {
         }
+        /**
+         * Script handles that will actually reach the page: everything enqueued,
+         * plus the registered dependencies those handles pull in with them.
+         *
+         * A handle that is only registered never reaches the page, so it cannot
+         * supply the grecaptcha object our field controller needs. Treating a bare
+         * registration as somebody else's reCAPTCHA left forms unusable alongside
+         * plugins that register the script unconditionally. See issue #6007.
+         *
+         * @return string[]
+         */
+        protected function get_page_bound_script_handles()
+        {
+        }
+        /**
+         * Is this handle the Google reCAPTCHA API loaded with our own site key?
+         *
+         * reCAPTCHA v3 binds the script to one site key through its render
+         * parameter, and Google refuses a token requested against any other key,
+         * so another plugin's key is no substitute for ours. See issue #6007.
+         *
+         * @param string $handle
+         *
+         * @return bool
+         */
+        protected function script_loads_our_recaptcha($handle)
+        {
+        }
         protected function get_form_data()
         {
         }
@@ -7353,6 +7452,42 @@ namespace {
         }
         /** @inheritDoc */
         public function process(array $action_settings, int $form_id, array $data): array
+        {
+        }
+        /**
+         * Does this field's Default Value have to be resolved after the save?
+         *
+         * The Form merge tags describe the submission being created, so a hidden
+         * field asking for {submission:sequence} or one of its siblings renders
+         * empty: at that point there is no submission to describe. Those fields
+         * are collected here and resolved once the submission exists.
+         *
+         * @see https://github.com/Saturday-Drive/ninja-forms/issues/4280
+         *
+         * @param array $field Field data from the submission.
+         * @return bool TRUE when the field's default still needs resolving.
+         */
+        protected function hasDeferredMergeTagDefault(array $field): bool
+        {
+        }
+        /**
+         * Store the resolved Default Value of every deferred hidden field.
+         *
+         * Runs after ninja_forms_save_sub, by which point the Form merge tags
+         * carry this submission's own sequence number. A default that resolves to
+         * something other than itself is stored, replacing whatever the browser
+         * posted for that field: this value is the server's to decide, and the
+         * browser has no business supplying it. A default holding no Form merge
+         * tag resolves to itself and is left exactly as it was.
+         *
+         * @see https://github.com/Saturday-Drive/ninja-forms/issues/4280
+         *
+         * @param NF_Database_Models_Submission $sub    The saved submission.
+         * @param array                         $fields Fields awaiting resolution.
+         * @param array                         $data   Submission data.
+         * @return array Submission data carrying the resolved values.
+         */
+        protected function resolveDeferredMergeTagDefaults($sub, array $fields, array $data): array
         {
         }
         /**
@@ -9414,6 +9549,19 @@ namespace {
          * @since 3.5.0
          * @return  void
          */
+        /**
+         * Write every batch of the export, then report it finished.
+         *
+         * Each batch is written in turn from this one call. The batches used to
+         * recurse, so the whole export ran as a single deepening chain of calls
+         * inside one request and nothing an earlier batch held could be released
+         * while the later ones ran. Memory therefore only grew across the export,
+         * and a form with a few thousand submissions reached PHP's memory limit
+         * before the file was written.
+         *
+         * @see https://github.com/Saturday-Drive/ninja-forms/issues/8388
+         * @return void
+         */
         public function process()
         {
         }
@@ -9498,6 +9646,21 @@ namespace {
         private $fields_per_step = 20;
         protected $form;
         /**
+         * Whether a <style> or <script> block was removed from field content on this import.
+         *
+         * Tracked here during startup, then carried on $this->form so it survives the batch's
+         * later steps, and reported once in cleanup(). See issue #8162.
+         *
+         * @var bool
+         */
+        protected $code_blocks_removed = \false;
+        /**
+         * Whether field content held an opening <style>/<script> tag with no closing tag.
+         *
+         * @var bool
+         */
+        protected $unclosed_code_block = \false;
+        /**
          * Store an array of columns that we want to store in our table rather than meta.
          *
          * This array stores the column name and the name of the setting that it maps to.
@@ -9528,6 +9691,34 @@ namespace {
         {
         }
         /**
+         * Decide what one imported field label is stored as.
+         *
+         * Without Trusted source, or for anyone WordPress does not trust with raw HTML, the
+         * label is stored as plain text exactly as before.
+         *
+         * With Trusted source, checked by a user holding unfiltered_html on a site that has not
+         * defined DISALLOW_UNFILTERED_HTML, the label keeps the markup the Import / Export
+         * screen promises to leave intact - the tags WordPress allows in post content, and
+         * nothing that can execute. wp_kses_post() draws that line, so a <strong> survives while
+         * a <script>, an iframe, an onmouseover handler and a javascript: URL do not.
+         *
+         * A label is rendered on the front end without escaping, which is why this stays an
+         * allowlist rather than passing the import file's markup straight through.
+         *
+         * The trust decision itself is made once in startup() and carried on $this->form,
+         * because this runs on a later request. A missing decision is treated as "sanitize":
+         * an import already in flight when the plugin updated must not be handed the relaxed
+         * path by accident.
+         *
+         * @see https://github.com/Saturday-Drive/ninja-forms/issues/8164
+         *
+         * @param string $label Label as it appears in the import file.
+         * @return string
+         */
+        protected function sanitize_imported_label($label)
+        {
+        }
+        /**
          * On processing steps after the first, we need to grab our data from our saved option.
          *
          * @since  3.4.0
@@ -9549,6 +9740,44 @@ namespace {
          * Function to cleanup any lingering temporary elements of a batch process after completion.
          */
         public function cleanup()
+        {
+        }
+        /**
+         * Clean one field's rich text content, remembering what had to be removed.
+         *
+         * <style> and <script> contents are removed first, because wp_kses_post() drops those
+         * tags but keeps the code between them, which then renders as visible text on the
+         * customer's form (issue #8162). wp_kses_post() still runs afterwards and still has
+         * the final word on what is allowed.
+         *
+         * @param string $value Field content from the import file.
+         * @return string
+         */
+        protected function sanitize_field_content($value)
+        {
+        }
+        /**
+         * Fold this step's removals into the record carried across the batch.
+         *
+         * Each step runs in its own request with a fresh instance, so this only ever turns a
+         * flag on. Assigning the instance value directly would let a later step - one that
+         * finds nothing, because an earlier step already cleaned the content - erase what an
+         * earlier step recorded. See issue #8162.
+         *
+         * @return void
+         */
+        protected function remember_removed_code_blocks()
+        {
+        }
+        /**
+         * Tell the person importing what was removed from their form, once, at the end.
+         *
+         * These are warnings, not failures: the form imported. The import screen renders them
+         * beside the success message. See issue #8162.
+         *
+         * @return void
+         */
+        protected function report_removed_code_blocks()
         {
         }
         /*
@@ -10400,6 +10629,74 @@ namespace {
         public function run()
         {
         }
+        /**
+         * Delete the answers collected by fieldset children this form no longer has.
+         *
+         * The builder promises, before removing a fieldset field that holds data,
+         * that "This will also DELETE all submission data associated with this
+         * field." Until issue #8175 nothing acted on that promise for a fieldset
+         * child: a Repeatable Fieldset's children are not rows in nf3_fields but
+         * entries in the parent's `fields` setting, so removing one never reaches
+         * `deleted_fields` or NF_Database_Models_Field::delete(). The answers
+         * stayed in the parent's record indefinitely, invisible on every admin
+         * screen.
+         *
+         * A whole fieldset's answers live in one `_field_{parentId}` postmeta
+         * record on the nf_sub post, keyed per child and per repeat:
+         *
+         *     "5.1_0" => array( 'value' => ..., 'id' => '5.1_0' )
+         *     "5.2_0" => array( 'value' => ..., 'id' => '5.2_0' )
+         *     "5.2_1" => array( 'value' => ..., 'id' => '5.2_1' )
+         *
+         * so removing child 5.2 means rewriting each record without every 5.2
+         * entry, not deleting the record.
+         *
+         * Which children went is decided against the list this publish declares,
+         * and nothing else. Diffing against the previously stored `fields` setting
+         * looks more natural and is wrong: children keep whatever ids they were
+         * imported with until a publish renumbers them, and the renumbering in
+         * check_update_new_repeater_field_ids() lands after the meta row for this
+         * publish has been written, so a live fieldset can be serving inputs named
+         * `11.2_0` while its own stored setting still reads `doomed-radio`. Read
+         * that way every child looks removed.
+         *
+         * @return void
+         */
+        private function remove_orphaned_fieldset_submission_data()
+        {
+        }
+        /**
+         * Rewrite one fieldset's stored answers without its removed children.
+         *
+         * Only entries belonging to a published child of this fieldset are ever
+         * considered, and an entry survives whenever this publish still names its
+         * child.
+         *
+         * @param int                $field_id Repeatable Fieldset field id.
+         * @param string             $prefix   "{fieldId}." — the published child prefix.
+         * @param array<string,bool> $keep     Child ids this publish declares.
+         * @return void
+         */
+        private function purge_fieldset_submission_entries($field_id, $prefix, array $keep)
+        {
+        }
+        /**
+         * The child a stored fieldset answer belongs to.
+         *
+         * Stored answers are keyed "{childId}_{repeatIndex}", and a child id is
+         * "{fieldId}.{n}" — a dot, never an underscore — so the repeat index is
+         * whatever follows the last underscore.
+         *
+         * Compared as a string throughout. A child is "5.2" and its parent is
+         * field 5, so any integer coercion here would match the whole fieldset and
+         * destroy every answer it ever collected.
+         *
+         * @param string $reference Stored key, e.g. "5.2_0".
+         * @return string Child id, e.g. "5.2".
+         */
+        private function fieldset_child_id_of($reference)
+        {
+        }
         public function get_updated_fields_data()
         {
         }
@@ -11035,6 +11332,31 @@ namespace {
         public function delete()
         {
         }
+        /**
+         * Remove every value this field ever collected.
+         *
+         * The builder warns, before deleting a saved field that holds data, that
+         * "This will also DELETE all submission data associated with this field."
+         * Nothing used to act on that: the field row, its settings and its
+         * relationships went, and the answers stayed in postmeta forever, hidden
+         * from every admin screen. See issue #8175.
+         *
+         * Submission values live as `_field_{fieldId}` postmeta on the `nf_sub`
+         * post. Field ids are unique across the install, so the key identifies one
+         * field's answers exactly.
+         *
+         * Deleted through delete_metadata() with $delete_all, rather than a hand
+         * written DELETE, so the object cache is invalidated for every affected
+         * submission. A site with many submissions makes this one publish slower;
+         * that is deliberate, so the product never reports "deleted" about data
+         * that is still there.
+         *
+         * @param int|string $field_id Field whose submission values should go.
+         * @return void
+         */
+        private function delete_submission_values($field_id)
+        {
+        }
         public static function import(array $settings, $field_id = '', $is_conversion = \FALSE)
         {
         }
@@ -11062,7 +11384,37 @@ namespace {
         private function prepare_in($sql, $vals)
         {
         }
+        /**
+         * Sequence numbers handed out before the submission row exists, keyed by
+         * form ID. A submission's file name is built while its fields are
+         * processed, which is before the submission is saved, so the number has to
+         * be claimed then and reused by the save. See issue #6859.
+         *
+         * @var array
+         */
+        protected static $reserved_sub_seq = array();
+        /**
+         * Claim this submission's sequence number before the submission is saved.
+         *
+         * Repeated calls within one request return the same number, so every merge
+         * tag in one submission sees the number the stored entry will keep.
+         *
+         * @param string|int $form_id Form ID.
+         * @return int The claimed sequence number.
+         */
+        public static function reserve_sub_seq($form_id)
+        {
+        }
         public static function get_next_sub_seq($form_id)
+        {
+        }
+        /**
+         * Advance the form's sequence counter and return the number taken.
+         *
+         * @param string|int $form_id Form ID.
+         * @return int
+         */
+        protected static function increment_sub_seq($form_id)
         {
         }
         public static function import(array $import, $id = '', $is_conversion = \false)
@@ -11719,11 +12071,23 @@ namespace {
         {
         }
         /**
-         * Locate_template will be loaded using second argument of the get_query_templates() function
-         * First argument will be prefixed with _template to create a hook
-         * @return void
+         * Supply the template the form preview is rendered with.
+         *
+         * Hooked to template_include, so WordPress performs the include itself and
+         * the rest of the render still runs. Ending the request here instead - which
+         * is what this did between 3.6.10 and the fix for issue #7878 - skips every
+         * later stage, and a theme that builds part of its layout in that stage, such
+         * as Divi, is left with a header and an empty body.
+         *
+         * get_query_template() resolves block templates as well as classic ones, so a
+         * block (FSE) theme receives the same template WordPress would have chosen for
+         * it. That is what the 3.6.10 change needed and what locate_template(), used
+         * here before it, could not give.
+         *
+         * @param string $template The template WordPress resolved.
+         * @return string
          */
-        function template_include()
+        function template_include($template)
         {
         }
         function post_thumbnail_html()
@@ -11732,6 +12096,15 @@ namespace {
     }
     class NF_Display_Render
     {
+        /**
+         * Settings whose stored text must reach the browser exactly as the form
+         * author typed it, never converted to a number. A display value of "0",
+         * "00" or "007" is a real value and loses its meaning once it becomes a
+         * float.
+         *
+         * @var array
+         */
+        protected static $verbatim_settings = array('custom_mask', 'checked_value', 'unchecked_value');
         protected static $render_instance_count = array();
         protected static $loaded_templates = array('app-layout', 'app-before-form', 'app-after-form', 'app-before-fields', 'app-after-fields', 'app-before-field', 'app-after-field', 'form-layout', 'form-hp', 'field-layout', 'field-before', 'field-after', 'fields-wrap', 'fields-wrap-no-label', 'fields-wrap-no-container', 'fields-label', 'fields-error', 'form-error', 'field-input-limit', 'field-null');
         public static $use_test_values = \FALSE;
@@ -11750,6 +12123,25 @@ namespace {
         protected static $recorded_forms = [];
         protected static $inline_vars_recorded = [];
         public static function localize($form_id)
+        {
+        }
+        /**
+         * The post the form is being displayed on, or 0 when the current view is
+         * not a single post. Archives, search results and 404 pages have no post
+         * of their own. See issue #4028.
+         *
+         * @return int
+         */
+        protected static function current_post_context_id()
+        {
+        }
+        /**
+         * Whether the current request is a form preview rather than a page that
+         * displays the form. See issue #4028.
+         *
+         * @return bool
+         */
+        protected static function is_form_preview_request()
         {
         }
         /**
@@ -11848,6 +12240,43 @@ namespace {
         public static function checkRepeaterChildReactField($field)
         {
         }
+        /**
+         * Whether a form message would reach the visitor as blank.
+         *
+         * True when the markup carries no words, no image and no shortcode that
+         * could produce either, so a message made of an image or built by a
+         * shortcode is still treated as a message the site owner meant to show.
+         *
+         * @see https://github.com/Saturday-Drive/ninja-forms/issues/7466
+         *
+         * @param string $message Message markup as stored on the form.
+         * @return bool
+         */
+        protected static function message_says_nothing($message)
+        {
+        }
+        /**
+         * The message a visitor sees when a form has reached its submission limit.
+         *
+         * Shared by the display path, which withholds the form, and the submission
+         * path, which refuses an attempt, so a visitor is told the same thing
+         * wherever they meet the limit. A form with no limit reached message of its
+         * own falls back to the default wording rather than showing nothing at all.
+         *
+         * "No message" covers more than an empty setting. Clearing the Limit
+         * Reached Message in the builder stores the rich text editor's empty
+         * document, '<p><br></p>', which renders as an empty paragraph: the form is
+         * withheld and the visitor is told nothing about why.
+         *
+         * @see https://github.com/Saturday-Drive/ninja-forms/issues/7466
+         *
+         * @param string     $message The form's limit reached message, if any.
+         * @param int|string $form_id The form's ID.
+         * @return string Message markup, ready to render.
+         */
+        public static function sub_limit_reached_message($message, $form_id)
+        {
+        }
         public static function localize_preview($form_id)
         {
         }
@@ -11925,6 +12354,67 @@ namespace {
          * like the signature field.
          */
         protected static function enqueue_react_field_assets()
+        {
+        }
+        /**
+         * Settings a rendered page has no use for.
+         *
+         * Two groups, neither of which is read by anything running in a browser:
+         * builder and database bookkeeping, and the per-field style settings the
+         * Layout & Styles add-on turns into CSS on the server. Publishing them only
+         * enlarges every page carrying a form, and admin_label and
+         * personally_identifiable describe the form's internals to any visitor who
+         * views source.
+         *
+         * Removing them cannot affect processing. A submission sends each field's id
+         * and value only, and NF_AJAX_Controllers_Submission reloads every setting
+         * from the database before acting on it.
+         *
+         * @since 3.16.2
+         */
+        const NON_CLIENT_SETTINGS = array('admin_label', 'personally_identifiable', 'created_at', 'editActive', 'objectDomain', 'objectType', 'parent_id', 'cellcid', 'manual_key');
+        /**
+         * Resolve the merge tags held in a field's Description.
+         *
+         * A Description advertises merge tag support in the builder, but nothing
+         * ever replaced them, so visitors read the raw tag text on the published
+         * form. Tags whose value is already known when the page is built - site,
+         * post, user and query-string tags - are replaced here.
+         *
+         * Field tags are deliberately left in place. The value of a field is
+         * whatever the visitor has entered, which does not exist yet when the page
+         * is built, so the browser fills those in as they type; see
+         * assets/js/front-end/controllers/fieldDescription.js. They are held aside
+         * while the merge tag groups run, because a group that does not recognise
+         * a tag replaces it with the empty string, which would leave the browser
+         * nothing to fill in.
+         *
+         * @since 3.16.2
+         *
+         * @param mixed $desc_text One field's stored Description.
+         * @return mixed The Description with its page-load merge tags resolved.
+         */
+        protected static function resolve_description_merge_tags($desc_text)
+        {
+        }
+        /**
+         * Drop the settings a browser never reads from one field's localized data.
+         *
+         * Runs after ninja_forms_localize_field_settings_{$type} so a setting an
+         * add-on injects there is trimmed as well, and recurses into a Repeatable
+         * Fieldset's children, which carry their own copy of the same settings.
+         *
+         * The style settings are matched by name rather than listed, because each
+         * control the add-on offers creates its own key. The resolved list is passed
+         * through a filter so an add-on that genuinely needs one of these settings
+         * in the browser can take it back off the list.
+         *
+         * @since 3.16.2
+         *
+         * @param array $settings One field's localized settings.
+         * @return array The same settings without the keys no browser reads.
+         */
+        protected static function remove_non_client_settings($settings)
         {
         }
     }
@@ -15356,6 +15846,19 @@ namespace {
         {
         }
         /**
+         * Has Display Value
+         * Determines whether a checked/unchecked display value setting was given a
+         * value by the form author. A value of "0" is a real value and must not be
+         * replaced with the built-in Checked/Unchecked labels.
+         * @since 3.16.2
+         *
+         * @param mixed $setting checked_value or unchecked_value setting
+         * @return bool
+         */
+        protected function has_display_value($setting)
+        {
+        }
+        /**
          * Admin Form Element
          * Display the checkbox on the edit submissions area.
          * @since 3.0
@@ -15389,6 +15892,26 @@ namespace {
          * @return string|void
          */
         public function filter_merge_tag_value($value, $field)
+        {
+        }
+        /**
+         * Resolve Display Wording
+         * Gives the words a merge tag prints for a checkbox: the wording the form
+         * author typed into Checked Value or Unchecked Value, and otherwise the
+         * built-in label.
+         *
+         * Calculation values are deliberately not consulted. They are numbers for
+         * calculations, and standing in for the wording here turned a customer's
+         * "Checked" line into "100" in their email notification.
+         *
+         * @since 3.16.2
+         * @see https://github.com/Saturday-Drive/ninja-forms/issues/7633
+         *
+         * @param array $settings field settings
+         * @param bool $is_checked whether the checkbox was checked
+         * @return string
+         */
+        protected function resolve_display_wording($settings, $is_checked)
         {
         }
         /**
@@ -15792,6 +16315,23 @@ namespace {
         public function __construct()
         {
         }
+        /**
+         * Get calculation value for merge tag.
+         *
+         * A fixed saved default can only be replaced by a value that a Conditional
+         * Logic "change value" rule on the form can set. Any other submitted value
+         * falls back to the saved default. Empty or merge-tag defaults, and rules
+         * whose value contains a merge tag, cannot be verified and are left as-is.
+         *
+         * @see https://github.com/Saturday-Drive/ninja-forms/issues/8257
+         *
+         * @param mixed $value Submitted field value.
+         * @param array $field Field settings, including server-supplied form_conditions.
+         * @return mixed Calculation value.
+         */
+        public function get_calc_value($value, $field)
+        {
+        }
     }
     /**
      * Class NF_Fields_FirstName
@@ -15841,6 +16381,31 @@ namespace {
         protected $_nicename = 'Country';
         protected $_section = 'userinfo';
         protected $_templates = array('listcountry', 'listselect');
+        /**
+         * The country list, worked out once per request.
+         *
+         * Building it reads two config files, translates about 250 names and runs
+         * the `ninja_forms_config_country_list` filter. Exporting submissions asks
+         * for the list once per exported value, so a form with a Country field and
+         * a few thousand submissions used to pay that cost thousands of times over
+         * and exhaust PHP's memory before the CSV was written.
+         *
+         * @see https://github.com/Saturday-Drive/ninja-forms/issues/8388
+         * @var array<string,string>|null
+         */
+        private static $country_options = \null;
+        /**
+         * Which callbacks were on the country-list filter when the list above was
+         * built, and under which locale.
+         *
+         * The list may only be remembered after the filter has run, so an add-on
+         * that adds, renames or removes a country still gets its way. An add-on
+         * that registers its callback after the list was first built, or a locale
+         * switch part way through the request, invalidates what was remembered.
+         *
+         * @var string|null
+         */
+        private static $country_options_built_for = \null;
         public function __construct()
         {
         }
@@ -15863,6 +16428,47 @@ namespace {
          * @return array Country code => translated country name.
          */
         private static function country_options()
+        {
+        }
+        /**
+         * Keep the finished list for the rest of the request.
+         *
+         * What is kept is always the list as it stands after
+         * `ninja_forms_config_country_list` has run, never the shipped list on its
+         * own, so remembering it cannot drop an add-on's change.
+         *
+         * @param array  $options   Country code => translated country name.
+         * @param string $built_for The filter and locale state it was built under.
+         * @return array Country code => translated country name.
+         */
+        private static function remember_country_options(array $options, $built_for)
+        {
+        }
+        /**
+         * What the remembered list depends on, besides the config files.
+         *
+         * The country list is only correct for the callbacks that were on
+         * `ninja_forms_config_country_list` when it was built. An add-on that
+         * registers its callback later in the request must not be served a list
+         * built before it, so the registered callbacks are part of the signature.
+         *
+         * Nothing here calls a WordPress function: this runs on the export path
+         * for every row and must stay cheap.
+         *
+         * @return string
+         */
+        private static function country_options_signature()
+        {
+        }
+        /**
+         * Forget the remembered list, so the next reader builds it again.
+         *
+         * Hooked to the locale switches, because every country name in the list is
+         * translated.
+         *
+         * @return void
+         */
+        public static function forget_country_options()
         {
         }
         /**
@@ -18032,6 +18638,32 @@ namespace {
         {
         }
         /**
+         * Remove <style> and <script> elements, contents included, from rich text content.
+         *
+         * wp_kses_post() removes a disallowed tag but keeps the text between the tags. For
+         * nearly every tag that is right: the inner text is content the customer wrote. For
+         * <style> and <script> the inner text is code, so kses leaves CSS rules behind as
+         * visible text on the form - a customer's ".nf-promo{color:red}" rendering above
+         * their own content after an import (issue #8162).
+         *
+         * This runs before wp_kses_post(), not instead of it. Nothing new is allowed
+         * through; the allowlist still has the final word.
+         *
+         * A block is only removed when its closing tag is present. An opening tag with no
+         * partner is reported and left completely alone: guessing where it was meant to end
+         * would mean deleting content the customer may still want. The caller tells them
+         * instead, so they can fix the source and import again.
+         *
+         * @see https://github.com/Saturday-Drive/ninja-forms/issues/8162
+         *
+         * @param string $value Rich text content.
+         * @return array{content:string,removed:bool,unclosed:bool} The cleaned content,
+         *               whether anything was removed, and whether an unclosed tag was seen.
+         */
+        public static function strip_code_blocks($value)
+        {
+        }
+        /**
          * Prepare a value a site visitor submitted for storage.
          *
          * A visitor typing into a form field is writing text, not markup. Running
@@ -18080,6 +18712,29 @@ namespace {
          * @return bool
          */
         public static function field_stores_html($field)
+        {
+        }
+        /**
+         * Whether a field's submissions-column formatter builds its own markup.
+         *
+         * The choice fields do not display the value a visitor submitted. Their
+         * ninja_forms_custom_columns formatter looks the chosen values up in the
+         * form's own option list and returns the matching labels, already escaped,
+         * joined by a line break so several answers read on separate lines. That
+         * return value is markup the plugin composed, not visitor text, so
+         * encoding it again prints the separator and the escaping as characters
+         * (issue #8174). Those columns keep the safe-HTML allowlist instead.
+         *
+         * This says nothing about what the field stores; a Checkbox List still
+         * stores plain text, and every other consumer of that value still treats
+         * it as text.
+         *
+         * @see https://github.com/Saturday-Drive/ninja-forms/issues/8174
+         *
+         * @param mixed $field Field object, or its settings array.
+         * @return bool
+         */
+        public static function field_column_builds_markup($field)
         {
         }
         /**
@@ -18226,6 +18881,32 @@ namespace {
         {
         }
         /**
+         * A form's submission limit, read from the form's own saved row.
+         *
+         * A request is otherwise served the cached working copy of the form, which
+         * NF_Abstracts_ModelFactory layers over the form model on construction.
+         * For most settings a copy that lags a builder change is cosmetic. The
+         * submission limit is the exception: a lagging limit leaves the form on the
+         * page taking submissions that are then refused, so the visitor appears to
+         * succeed while nothing is recorded.
+         *
+         * Both the display check, which withholds the form, and the submission
+         * check, which refuses an attempt, read the limit through here, so a
+         * visitor is never offered a form on terms the server will not honour.
+         *
+         * Both settings live in the form meta table; neither is one of the form
+         * model's own columns.
+         *
+         * @see https://github.com/Saturday-Drive/ninja-forms/issues/7466
+         *
+         * @param int|string $form_id The form's ID.
+         * @return array Keys 'number' (the limit, '' when there is none) and
+         *               'message' (the limit reached message, '' when unset).
+         */
+        public static function get_saved_sub_limit($form_id)
+        {
+        }
+        /**
          * Function to fetch our cache from the upgrades table (if it exists there).
          * 
          * @param $id (int) The form ID.
@@ -18360,6 +19041,94 @@ namespace {
          * @return string
          */
         public static function sanitize_classes($value): string
+        {
+        }
+        /**
+         * Runs rich text field content through wp_kses_post() without losing the
+         * colours the customer picked.
+         *
+         * WordPress's safe-HTML filter accepts `color:#e60000` and `color:red`, but
+         * discards `color:rgb(230, 0, 0)` because `rgb` is missing from its list of
+         * trusted CSS functions. Our Quill configuration writes colour and highlight
+         * as inline styles, and a browser always serialises a picked colour into the
+         * rgb() form, so every colour a customer picked was being thrown away on
+         * import (issue #7579).
+         *
+         * Colours are rewritten into the hex spelling WordPress already accepts and
+         * the filter then runs at full strength. Nothing about the filter is relaxed.
+         *
+         * Anything that isn't text (null, an array) goes to wp_kses_post() unchanged,
+         * exactly as it did before this helper existed.
+         *
+         * @param mixed $value Rich text content as authored.
+         * @return mixed Filtered content with picked colours intact.
+         */
+        public static function kses_post_rich_text($value)
+        {
+        }
+        /**
+         * Rewrites rgb()/rgba()/hsl()/hsla() colours inside style attributes into
+         * their hex equivalent.
+         *
+         * Only style attribute contents are touched, and only these four colour
+         * functions within them. A value that cannot be parsed as a colour is left
+         * exactly as authored for the safe-HTML filter to deal with as it does today.
+         *
+         * @param string $value Markup that may carry style attributes.
+         * @return string Same markup with colour functions expressed as hex.
+         */
+        public static function hexify_css_color_functions($value): string
+        {
+        }
+        /**
+         * Converts the arguments of a CSS colour function into a hex colour.
+         *
+         * Handles both the legacy comma syntax browsers emit (`rgb(230, 0, 0)`) and
+         * the space syntax with an optional slash alpha (`rgb(230 0 0 / 35%)`).
+         * Transparency becomes the 8-digit hex form, which WordPress accepts.
+         *
+         * @param string $function Colour function name: rgb, rgba, hsl or hsla.
+         * @param string $arguments Raw arguments from between the parentheses.
+         * @return string Hex colour, or an empty string when the value is not a
+         *                colour we can express exactly.
+         */
+        public static function css_color_function_to_hex($function, $arguments): string
+        {
+        }
+        /**
+         * Reads one red, green or blue channel, as a 0-255 number or a percentage.
+         *
+         * @param string $part Single channel argument.
+         * @return int|null Channel value 0-255, or null when it is not a number.
+         */
+        private static function css_rgb_channel_to_int($part)
+        {
+        }
+        /**
+         * Reads a CSS alpha argument, given either as a fraction or a percentage.
+         *
+         * @param string $part Alpha argument.
+         * @return float|null Alpha as a 0-1 fraction, or null when unreadable.
+         */
+        private static function css_alpha_to_fraction($part)
+        {
+        }
+        /**
+         * Converts hue, saturation and lightness arguments into rgb channels.
+         *
+         * @param array $parts Three arguments: hue, saturation, lightness.
+         * @return array|null Three 0-255 channels, or null when unreadable.
+         */
+        private static function css_hsl_to_rgb_channels($parts)
+        {
+        }
+        /**
+         * Reads a CSS percentage argument as a 0-1 fraction.
+         *
+         * @param string $part Percentage argument.
+         * @return float|null Fraction, or null when unreadable.
+         */
+        private static function css_percentage_to_fraction($part)
         {
         }
         /**
@@ -19396,6 +20165,31 @@ namespace {
         public function set_merge_tags($key, $value, $round = 2, $dec = '.', $sep = ',')
         {
         }
+        /**
+         * Order calculations so each one is evaluated after the calculations it uses.
+         *
+         * Calculations reference each other with {calc:name} merge tags, which only
+         * resolve once the referenced calculation has been set. Evaluating in the
+         * builder's list order therefore counted any later-listed reference as 0.
+         * References inside a loop (A uses B, B uses A, or a calc using itself) are
+         * left for the caller's scrub, so they still count as 0.
+         *
+         * @param array $calculations Calculation settings in builder order.
+         * @return array The same calculations in evaluation order.
+         */
+        public static function get_evaluation_order($calculations)
+        {
+        }
+        /**
+         * Re-key calculation results into the builder's list order.
+         *
+         * @param array $results Calculation results keyed by name, in evaluation order.
+         * @param array $calculations Calculation settings in builder order.
+         * @return array
+         */
+        public static function restore_builder_order($results, $calculations)
+        {
+        }
         public function get_calc_value($key)
         {
         }
@@ -19674,6 +20468,28 @@ namespace {
         protected $form_id;
         protected $form_title;
         protected $sub_seq;
+        /**
+         * Submission count frozen for the submission currently being processed.
+         *
+         * Calculations are evaluated before the submission is saved, while actions
+         * such as email and success message run after it. Counting the database on
+         * demand would therefore report one number to a calculation and a different
+         * number to the email describing the same submission. The count is taken
+         * once when submission processing starts, includes the submission being
+         * made, and is reused for the rest of the request.
+         *
+         * NULL means no submission is being processed and the count is read live.
+         *
+         * @since 3.16.2
+         * @var int|null
+         */
+        protected $in_progress_sub_count = \null;
+        /**
+         * Whether a submission is currently being processed for this form.
+         *
+         * @var bool
+         */
+        protected $processing_submission = \false;
         public function __construct()
         {
         }
@@ -19681,6 +20497,19 @@ namespace {
          * @return mixed
          */
         public function getSubSeq()
+        {
+        }
+        /**
+         * Tell the merge tags that a submission is being processed for this form.
+         *
+         * Only a real submission claims a sequence number; rendering a form on a
+         * page, or previewing one in the builder, must not consume one.
+         *
+         * @param string|int $form_id    Form being submitted.
+         * @param bool       $is_preview Whether this is a builder preview.
+         * @return void
+         */
+        public function prepareSubmissionProcessing($form_id, $is_preview = \false)
         {
         }
         /**
@@ -19716,6 +20545,23 @@ namespace {
         {
         }
         /**
+         * Freeze the submission count for the submission now being processed.
+         *
+         * Called by the submission controller once the form ID is known and before
+         * calculations are evaluated. The frozen count includes the submission
+         * being made, so {submission:count} answers "how many submissions have been
+         * made, including this one" everywhere in the request: in a calculation
+         * evaluated before the save, and in an email or success message rendered
+         * after it.
+         *
+         * @since 3.16.2
+         *
+         * @return void
+         */
+        public function start_submission()
+        {
+        }
+        /**
          * Setter method for the form_title
          *
          * @param string $form_title The title of the current form.
@@ -19731,6 +20577,20 @@ namespace {
          * @return array|int Count of the form submissions.
          */
         public function get_sub_count()
+        {
+        }
+        /**
+         * Counts the submissions a form currently has.
+         *
+         * Only published submissions count. A submission the site owner deleted is
+         * in the trash, and counting it would report capacity that is not in use.
+         * This matches the submission limit check in the submission controller.
+         *
+         * @since 3.16.2
+         *
+         * @return int Count of the form's submissions.
+         */
+        protected function query_sub_count()
         {
         }
     }
@@ -19838,6 +20698,24 @@ namespace {
     class NF_MergeTags_WP extends \NF_Abstracts_MergeTags
     {
         protected $id = 'wp';
+        /**
+         * The post the submitted form was displayed on.
+         *
+         * NULL means no context was carried with the submission. 0 means the form
+         * was displayed somewhere that has no post of its own, such as an archive
+         * or a search results page. See issue #4028.
+         *
+         * @var int|null
+         */
+        protected $post_context_id = \null;
+        /**
+         * Whether the view the submitted form was displayed on was the site's home
+         * page. A home page showing the latest posts has no post of its own but
+         * still has an address worth reporting. See issue #4028.
+         *
+         * @var bool
+         */
+        protected $post_context_is_home = \false;
         public function __construct()
         {
         }
@@ -19865,6 +20743,36 @@ namespace {
          * @return void
          */
         protected function getCurrentUserId(): int
+        {
+        }
+        /**
+         * Record the post the submitted form was displayed on.
+         *
+         * The settings posted back with a form are client data, so the post is only
+         * accepted when it exists and this request is allowed to read it. An absent
+         * key leaves the context unset, so forms rendered before this release keep
+         * their previous behaviour. See issue #4028.
+         *
+         * @param array $submitted_settings Form settings posted back with the submission.
+         * @return void
+         */
+        public function set_post_context($submitted_settings)
+        {
+        }
+        /**
+         * Forget any post context carried from a previous submission.
+         *
+         * @return void
+         */
+        public function clear_post_context()
+        {
+        }
+        /**
+         * Whether the submission told us which post the form was displayed on.
+         *
+         * @return bool
+         */
+        protected function has_post_context()
         {
         }
         protected function post_id()
@@ -22664,12 +23572,19 @@ namespace {
         /**
          * @since 3.0
          */
-        const VERSION = '3.16.1';
+        const VERSION = '3.16.2';
         /**
          * @since 3.4.0
          */
         const DB_VERSION = '1.4';
-        const WP_MIN_VERSION = '6.4';
+        /**
+         * Lowest WordPress version Ninja Forms supports, held identical to the
+         * "Requires at least" field of readme.txt so the System Status screen
+         * judges a site against the version the plugin actually requires.
+         *
+         * @see https://github.com/Saturday-Drive/ninja-forms/issues/7518
+         */
+        const WP_MIN_VERSION = '6.9';
         /**
          * Records the stored rewrite rules already examined for the public link
          * address, so a set of rules that lacks it is rebuilt once rather than on
